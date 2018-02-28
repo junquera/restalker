@@ -183,7 +183,10 @@ class Stalker():
 
     def parse(self, body, origin=None):
 
-        text = self.body_text(body)
+        try:
+            text = self.body_text(body)
+        except:
+            text = body
 
         # TODO Test si el valor es None
         # TODO Refactor para iterar
