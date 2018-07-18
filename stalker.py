@@ -105,6 +105,9 @@ i2p_hidden_url = r'((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)' % i2p_hidden_domai
 
 
 freenet_hidden_url = r'((?:(?:http\:\/\/)?(?:localhost\:8888\/))?(?:(?:[a-z]+\:)?[a-zA-Z0-9]+\@[^,]+,[^,]+,[A-Z]+)(?:\/[a-zA-Z0-9_-]+)+)'
+
+zeronet_hidden_url = r'((?:(?:http\:\/\/)?(?:(?:localhost|127\.0\.0\.1)\:43110\/))?(?:(?:[13][a-km-zA-HJ-NP-Z1-9]{25,34})|(?:(?:[a-zA-Z0-9]+\.)+bit))(?:\/[a-zA-Z0-9_-]*)*)'
+
 '''
 Crear sitios de freenet:
 
@@ -183,10 +186,7 @@ class Stalker():
 
     def parse(self, body, origin=None):
 
-        try:
-            text = self.body_text(body)
-        except:
-            text = body
+        text = self.body_text(body)
 
         # TODO Test si el valor es None
         # TODO Refactor para iterar
@@ -245,6 +245,13 @@ class Stalker():
             for link in freenet_links:
                 yield Freenet_URL(value=link)
 
+        if self.zeronet:
+            zeronet_links = self.extract_links(body,
+                                               url_format=zeronet_hidden_url,
+                                               origin=origin)
+            for link in zeronet_links:
+                yield Zeronet_URL(value=link)
+                
         if self.whatsapp:
             whatsapp_links = re.findall(whatsapp_url_regex, body)
             for link in whatsapp_links:
