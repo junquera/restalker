@@ -1,2 +1,3 @@
-import .stalker as stalker
-import .link_extractors as link_extractors
+from . import stalker
+from .stalker import Stalker
+from . import link_extractors
