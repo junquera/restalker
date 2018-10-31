@@ -1,4 +1,4 @@
-from crawler.link_extractors import UUF
+from .link_extractors import UUF
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
@@ -9,6 +9,9 @@ import re
 class Item():
     def __init__(self, value=None):
         self.value = value
+
+    def __str__(self):
+        return self.value
 
 
 class Phone(Item):
@@ -70,6 +73,18 @@ class Whatsapp_URL(Item):
 class Skype_URL(Item):
     pass
 
+class Paste(Item):
+    pass
+
+class MD5(Item):
+    pass
+
+class SHA1(Item):
+    pass
+
+class SHA256(Item):
+    pass
+
 
 
 phone_regex = r"(\(?\+[0-9]{1,3}\)? ?-?[0-9]{1,3} ?-?[0-9]{3,5} ?-?[0-9]{4}( ?-?[0-9]{3})? ?(\w{1,10}\s?\d{1,6})?)"
@@ -105,22 +120,39 @@ i2p_hidden_url = r'((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)' % i2p_hidden_domai
 
 
 freenet_hidden_url = r'((?:(?:http\:\/\/)?(?:localhost\:8888\/))?(?:(?:[a-z]+\:)?[a-zA-Z0-9]+\@[^,]+,[^,]+,[A-Z]+)(?:\/[a-zA-Z0-9_-]+)+)'
-
-zeronet_hidden_url = r'((?:(?:http\:\/\/)?(?:(?:localhost|127\.0\.0\.1)\:43110\/))?(?:(?:[13][a-km-zA-HJ-NP-Z1-9]{25,34})|(?:(?:[a-zA-Z0-9]+\.)+bit))(?:\/[a-zA-Z0-9_-]*)*)'
-
 '''
 Crear sitios de freenet:
 
 http://localhost:8888/freenet:USK@spOnEa2YvAoNfreZPfoy0tVNCzQghLdWaaNM10GEiEM,QRKjyaBkOX5Qw~aEml19WIDaJJo2X3hU9mGz8GcUuKc,AQACAAE/freesite_es/11/
 '''
 
+pastes = [
+    'justpaste.it',
+    'pastebin.com',
+    'pasted.co',
+    'hastebin.com',
+    'snipt.org',
+    'gist.github.com',
+    'ghostbin.com'
+]
+
+paste_url_regex = r'((?:https?\:\/\/)?(?:%s)(?:\/[a-zA-Z0-9_-]+)+)' % ("|".join(pastes))
+
+md5_regex = r'[a-f0-9]{32}'
+sha1_regex = r'[a-f0-9]{40}'
+sha256_regex = r'[a-f0-9]{64}'
+
 class Stalker():
 
     def __init__(self, phone=False, email=False, btc_wallet=False,
-                 twitter=False, tor=False, i2p=False,
-                 freenet=False, zeronet=False, username=False,
-                 password=False, base64=False, own_name=False,
-                 whatsapp=False, telegram=False, skype=False):
+                 tor=False, i2p=False,
+                 freenet=False, zeronet=False,
+                 paste=False, twitter=False,
+                 username=False, password=False,
+                 base64=False, own_name=False,
+                 whatsapp=False, telegram=False, skype=False,
+                 md5=False, sha1=False, sha256=False):
+
         self.phone = phone
         self.email = email
         self.btc_wallet = btc_wallet
@@ -131,6 +163,8 @@ class Stalker():
         self.freenet = freenet
         self.zeronet = zeronet
 
+        self.paste = paste
+
         self.username = username
         self.password = password
         self.base64 = base64
@@ -138,6 +172,10 @@ class Stalker():
         self.whatsapp = whatsapp
         self.telegram = telegram
         self.skype = skype
+
+        self.md5 = md5
+        self.sha1 = sha1
+        self.sha256 = sha256
 
     def extract_links(self, body, origin=None, url_format=any_url, domain_format=any_domain):
 
@@ -149,7 +187,7 @@ class Stalker():
             except Exception as e:
                 pass
 
-        soup = BeautifulSoup(body, "lxml")
+        soup = BeautifulSoup(body, "html.parser")
         if soup:
             links = soup.findAll('a')
             if links:
@@ -245,13 +283,6 @@ class Stalker():
             for link in freenet_links:
                 yield Freenet_URL(value=link)
 
-        if self.zeronet:
-            zeronet_links = self.extract_links(body,
-                                               url_format=zeronet_hidden_url,
-                                               origin=origin)
-            for link in zeronet_links:
-                yield Zeronet_URL(value=link)
-                
         if self.whatsapp:
             whatsapp_links = re.findall(whatsapp_url_regex, body)
             for link in whatsapp_links:
@@ -284,6 +315,11 @@ class Stalker():
             for username in usernames:
                 yield Username(value=username)
 
+        if self.paste:
+            pastes = re.findall(paste_url_regex, text)
+            for pst in pastes:
+                yield Paste(value=pst)
+
         if self.password:
             passwords = re.findall(password_regex, text)
             for password in passwords:
@@ -298,3 +334,18 @@ class Stalker():
             own_names = re.findall(own_name_regex, text)
             for own_name in own_names:
                 yield OwnName(value=own_name)
+
+        if self.md5:
+            md5s = re.findall(md5_regex, text)
+            for md5 in md5s:
+                yield MD5(value=md5)
+
+        if self.sha1:
+            sha1s = re.findall(sha1_regex, text)
+            for sha1 in sha1s:
+                yield SHA1(value=sha1)
+
+        if self.sha256:
+            sha256s = re.findall(sha256_regex, text)
+            for sha256 in sha256s:
+                yield SHA256(value=sha256)
