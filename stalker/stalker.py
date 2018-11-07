@@ -26,6 +26,10 @@ class BTC_Wallet(Item):
     pass
 
 
+class ETH_Wallet(Item):
+    pass
+
+
 class TW_Account(Item):
     pass
 
@@ -93,6 +97,8 @@ email_regex = r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]{2,6})"
 
 btc_wallet_regex = r"([13][a-km-zA-HJ-NP-Z1-9]{25,34})"
 
+eth_wallet_regex = r"0x([0-9a-f]{40})"
+
 tw_account_regex = r"[^a-zA-Z0-9]@([a-zA-Z0-9_]{3,15})"
 
 telegram_url_regex = r'((?:https?\:\/\/)?(?:t\.me|telegram\.me)(?:\/[a-zA-Z0-9_-]+)+)'
@@ -144,7 +150,8 @@ sha256_regex = r'[a-f0-9]{64}'
 
 class Stalker():
 
-    def __init__(self, phone=False, email=False, btc_wallet=False,
+    def __init__(self, phone=False, email=False,
+                 btc_wallet=False, eth_wallet=False,
                  tor=False, i2p=False,
                  freenet=False, zeronet=False,
                  paste=False, twitter=False,
@@ -155,8 +162,10 @@ class Stalker():
 
         self.phone = phone
         self.email = email
-        self.btc_wallet = btc_wallet
         self.twitter = twitter
+
+        self.btc_wallet = btc_wallet
+        self.eth_wallet = eth_wallet
 
         self.tor = tor
         self.i2p = i2p
@@ -246,6 +255,11 @@ class Stalker():
             btc_wallets = re.findall(btc_wallet_regex, body)
             for btc_wallet in btc_wallets:
                 yield BTC_Wallet(value=btc_wallet)
+
+        if self.eth_wallet:
+            eth_wallets = re.findall(eth_wallet_regex, body)
+            for eth_wallet in eth_wallets:
+                yield ETH_Wallet(value=eth_wallet)
 
         if self.twitter:
             tw_accounts = re.findall(tw_account_regex, text)
