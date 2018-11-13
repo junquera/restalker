@@ -1,3 +1,5 @@
+![doc/img/icon.png](doc/img/icon.png)
+
 ## Install
 
 In `requeriments.txt`:
