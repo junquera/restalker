@@ -46,7 +46,7 @@ class Freenet_URL(Item):
     pass
 
 
-class ZeroNet_URL(Item):
+class Zeronet_URL(Item):
     pass
 
 
@@ -125,12 +125,22 @@ i2p_hidden_domain = r'(?:[a-z0-9]+\.)+i2p(?:\:[0-9]{2,5})?$'
 i2p_hidden_url = r'((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)' % i2p_hidden_domain[:-1]
 
 
-freenet_hidden_url = r'((?:(?:http\:\/\/)?(?:localhost\:8888\/))?(?:(?:[a-z]+\:)?[a-zA-Z0-9]+\@[^,]+,[^,]+,[A-Z]+)(?:\/[a-zA-Z0-9_-]+)+)'
+freenet_hidden_url = r'((?:(?:http\:\/\/)?(?:(?:localhost|127\.0\.0\.1)\:8888\/))?(?:(?:[a-z]+\:)?[a-zA-Z0-9]+\@[^,]+,[^,]+,[A-Z]+)(?:\/[a-zA-Z0-9_-]+)+)'
 '''
 Crear sitios de freenet:
 
 http://localhost:8888/freenet:USK@spOnEa2YvAoNfreZPfoy0tVNCzQghLdWaaNM10GEiEM,QRKjyaBkOX5Qw~aEml19WIDaJJo2X3hU9mGz8GcUuKc,AQACAAE/freesite_es/11/
 '''
+
+http_regex = r'https?\:\/\/'
+localhost_regex = r'(?:localhost|127\.0\.0\.1)'
+port_regex = lambda p: r'(?:\:%d)?' % (p)
+path_regex = r'(?:\/[a-zA-Z0-9_-]*)*'
+
+
+bitname_domain_regex = r'(?:[a-zA-Z0-9]+\.)+bit'
+zeronet_params=dict(http=http_regex, localhost=localhost_regex, port=port_regex(43110), path=path_regex, bitcoin=btc_wallet_regex, bitname=bitname_domain_regex)
+zeronet_hidden_url = r'((?:(?:{http}?{localhost}{port})\/)?(?:{bitcoin}|{bitname})(?:{path}))'.format(**zeronet_params)
 
 pastes = [
     'justpaste.it',
@@ -153,7 +163,7 @@ class Stalker():
     def __init__(self, phone=False, email=False,
                  btc_wallet=False, eth_wallet=False,
                  tor=False, i2p=False,
-                 freenet=False, zeronet=False,
+                 freenet=False, zeronet=False
                  paste=False, twitter=False,
                  username=False, password=False,
                  base64=False, own_name=False,
@@ -296,6 +306,13 @@ class Stalker():
                                                origin=origin)
             for link in freenet_links:
                 yield Freenet_URL(value=link)
+
+        if self.zeronet:
+            zeronet_links = self.extract_links(body,
+                                               url_format=zeronet_hidden_url,
+                                               origin=origin)
+            for link in zeronet_links:
+                yield Zeronet_URL(value=link)
 
         if self.whatsapp:
             whatsapp_links = re.findall(whatsapp_url_regex, body)
