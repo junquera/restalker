@@ -206,7 +206,7 @@ class Stalker():
     def __init__(self, phone=False, email=False,
                  btc_wallet=False, eth_wallet=False,
                  tor=False, i2p=False,
-                 freenet=False, zeronet=False
+                 freenet=False, zeronet=False,
                  paste=False, twitter=False,
                  username=False, password=False,
                  base64=False, own_name=False,
