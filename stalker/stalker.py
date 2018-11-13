@@ -50,6 +50,10 @@ class Zeronet_URL(Item):
     pass
 
 
+class IPFS_URL(Item):
+    pass
+
+
 class Username(Item):
     pass
 
@@ -123,8 +127,8 @@ base64_regex = r"((?:[a-zA-Z0-9\+\/]{4})+(?:[a-zA-Z0-9\+\/]{3}[=]|[a-zA-Z0-9\+\/
 
 own_name_regex = r"([A-Z][a-z]{2,10} [A-Z][a-z]{2,10})"
 
-any_domain = r'(?:[a-z0-9]+\.)*[a-z0-9]+\.?(?:\:[0-9]{2,5})?$'
-any_url = r'((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)' % any_domain[:-1]
+domain_regex = r'(?:[a-z0-9]+\.)*[a-z0-9]+\.?(?:\:[0-9]{2,5})?$'
+any_url = r'((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)' % domain_regex[:-1]
 
 tor_hidden_domain = r'(?:[a-z0-9]+\.)*(?:[a-z0-9]{16}|[a-z0-9]{56})\.onion(?:\:[0-9]{2,5})?$'
 tor_hidden_url = r'((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)' % tor_hidden_domain[:-1]
@@ -184,6 +188,13 @@ freenet_hash = r'(?:{chk}|{ssk}|{usk}|{ksk})'.format(**freenet_keys)
 freenet_params=dict(http=http_regex, localhost=localhost_regex, port=port_regex(8888), path=path_regex, freenet_hash=freenet_hash)
 freenet_hidden_url = r'((?:(?:{http}?{localhost}{port})\/)?(?:freenet\:)?(?:{freenet_hash})(?:{path}))'.format(**freenet_params)
 
+'''
+http://localhost:8080/ipfs/QmW2WQi7j6c7UgJTarActp7tDNikE4B2qXtFCfLPdsgaTQ
+'''
+# TODO Evitar len44 (hay problemas con las llaves para formatear después domain)
+ipfs_hash = r'(?:ipfs\/Qm[a-zA-Z0-9]{len44}|ipns\/{domain})'.format(**dict(len44="{44}", domain=domain_regex))
+ipfs_params=dict(ipfs_hash=ipfs_hash, http=http_regex, localhost=localhost_regex, port=port_regex(8080), path=path_regex)
+ipfs_url = r'((?:{http}?{localhost}{port}(?:\/)?){ipfs_hash}{path})'.format(**ipfs_params)
 
 pastes = [
     'justpaste.it',
@@ -205,7 +216,7 @@ class Stalker():
 
     def __init__(self, phone=False, email=False,
                  btc_wallet=False, eth_wallet=False,
-                 tor=False, i2p=False,
+                 tor=False, i2p=False, ipfs=False,
                  freenet=False, zeronet=False,
                  paste=False, twitter=False,
                  username=False, password=False,
@@ -225,6 +236,8 @@ class Stalker():
         self.freenet = freenet
         self.zeronet = zeronet
 
+        self.ipfs = ipfs
+
         self.paste = paste
 
         self.username = username
@@ -239,7 +252,7 @@ class Stalker():
         self.sha1 = sha1
         self.sha256 = sha256
 
-    def extract_links(self, body, origin=None, url_format=any_url, domain_format=any_domain):
+    def extract_links(self, body, origin=None, url_format=any_url, domain_format=domain_regex):
 
         urls = set()
 
@@ -356,6 +369,13 @@ class Stalker():
                                                origin=origin)
             for link in zeronet_links:
                 yield Zeronet_URL(value=link)
+
+        if self.ipfs:
+            ipfs_links = self.extract_links(body,
+                                               url_format=ipfs_url,
+                                               origin=origin)
+            for link in ipfs_links:
+                yield IPFS_URL(value=link)
 
         if self.whatsapp:
             whatsapp_links = re.findall(whatsapp_url_regex, body)
