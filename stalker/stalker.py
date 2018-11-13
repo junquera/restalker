@@ -125,22 +125,61 @@ i2p_hidden_domain = r'(?:[a-z0-9]+\.)+i2p(?:\:[0-9]{2,5})?$'
 i2p_hidden_url = r'((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)' % i2p_hidden_domain[:-1]
 
 
-freenet_hidden_url = r'((?:(?:http\:\/\/)?(?:(?:localhost|127\.0\.0\.1)\:8888\/))?(?:(?:[a-z]+\:)?[a-zA-Z0-9]+\@[^,]+,[^,]+,[A-Z]+)(?:\/[a-zA-Z0-9_-]+)+)'
-'''
-Crear sitios de freenet:
-
-http://localhost:8888/freenet:USK@spOnEa2YvAoNfreZPfoy0tVNCzQghLdWaaNM10GEiEM,QRKjyaBkOX5Qw~aEml19WIDaJJo2X3hU9mGz8GcUuKc,AQACAAE/freesite_es/11/
-'''
 
 http_regex = r'https?\:\/\/'
 localhost_regex = r'(?:localhost|127\.0\.0\.1)'
 port_regex = lambda p: r'(?:\:%d)?' % (p)
+# TODO Add query parameters
 path_regex = r'(?:\/[a-zA-Z0-9_-]*)*'
 
 
 bitname_domain_regex = r'(?:[a-zA-Z0-9]+\.)+bit'
 zeronet_params=dict(http=http_regex, localhost=localhost_regex, port=port_regex(43110), path=path_regex, bitcoin=btc_wallet_regex, bitname=bitname_domain_regex)
 zeronet_hidden_url = r'((?:(?:{http}?{localhost}{port})\/)?(?:{bitcoin}|{bitname})(?:{path}))'.format(**zeronet_params)
+
+'''
+CHK@file hash,decryption key,crypto settings
+CHK@SVbD9~HM5nzf3AX4yFCBc-A4dhNUF5DPJZLL5NX5Brs,bA7qLNJR7IXRKn6uS5PAySjIM6azPFvK~18kSi6bbNQ,AAEA--8
+SSK@public key hash,decryption key,crypto settings/user selected name-version
+SSK@GB3wuHmt[..]o-eHK35w,c63EzO7u[..]3YDduXDs,AQABAAE/mysite-4
+USK@public key hash,decryption key,crypto settings/user selected name/number/
+USK@GB3wuHmt[..]o-eHK35w,c63EzO7u[..]3YDduXDs,AQABAAE/mysite/5/
+KSK@myfile.txt
+'''
+
+number_regex = r'[0-9]+'
+
+freenet_terms = dict(
+    file_hash = r'',
+    decryption_key = r'',
+    crypto_settings = r'',
+    public_key=r'',
+    user_selected_name = '[a-zA-Z0-9]+',
+    version = number_regex,
+    file_name = r'(?:[a-zA-Z0-9\_]+\.)+\.[a-zA-Z0-9]{2,4}'
+)
+
+freenet_keys = dict(
+    chk = 'CHK@{file_hash},{decryption_key},{crypto_settings}',
+    ssk = 'SSK@{public_key},{decryption_key},{crypto_settings}\/{user_selected_name}\-{version}',
+    usk = 'USK@{public_key},{decryption_key},{crypto_settings}\/{user_selected_name}\/{version}',
+    ksk = 'KSK@{file_name}'
+)
+
+for k in freenet_keys:
+    freenet_keys[k] = freenet_keys[k].format(**freenet_terms)
+
+freenet_hash = r'(?:{chk}|{ssk}|{usk}|{ksk})'.format(**freenet_keys)
+
+freenet_params=dict(http=http_regex, localhost=localhost_regex, port=port_regex(43110), path=path_regex, freenet_hash=freenet_hash)
+freenet_hidden_url = r'((?:(?:{http}?{localhost}{port})\/)?(?:{freenet_hash})(?:{path}))'.format(**freenet_params)
+
+'''
+Crear sitios de freenet:
+
+http://localhost:8888/freenet:USK@spOnEa2YvAoNfreZPfoy0tVNCzQghLdWaaNM10GEiEM,QRKjyaBkOX5Qw~aEml19WIDaJJo2X3hU9mGz8GcUuKc,AQACAAE/freesite_es/11/
+'''
+
 
 pastes = [
     'justpaste.it',
