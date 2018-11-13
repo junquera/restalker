@@ -91,6 +91,12 @@ class SHA256(Item):
 
 
 
+number_regex = r'[0-9]+'
+
+alnum_join = r'[a-zA-Z0-9\-\~]+'
+
+file_name = r'(?:[a-zA-Z0-9\_]+\.)+\.[a-zA-Z0-9]{2,4}'
+
 phone_regex = r"(\(?\+[0-9]{1,3}\)? ?-?[0-9]{1,3} ?-?[0-9]{3,5} ?-?[0-9]{4}( ?-?[0-9]{3})? ?(\w{1,10}\s?\d{1,6})?)"
 
 email_regex = r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]{2,6})"
@@ -98,6 +104,8 @@ email_regex = r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]{2,6})"
 btc_wallet_regex = r"([13][a-km-zA-HJ-NP-Z1-9]{25,34})"
 
 eth_wallet_regex = r"0x([0-9a-f]{40})"
+
+bitname_domain_regex = r'(?:[a-zA-Z0-9]+\.)+bit'
 
 tw_account_regex = r"[^a-zA-Z0-9]@([a-zA-Z0-9_]{3,15})"
 
@@ -132,8 +140,6 @@ port_regex = lambda p: r'(?:\:%d)?' % (p)
 # TODO Add query parameters
 path_regex = r'(?:\/[a-zA-Z0-9_-]*)*'
 
-
-bitname_domain_regex = r'(?:[a-zA-Z0-9]+\.)+bit'
 zeronet_params=dict(http=http_regex, localhost=localhost_regex, port=port_regex(43110), path=path_regex, bitcoin=btc_wallet_regex, bitname=bitname_domain_regex)
 zeronet_hidden_url = r'((?:(?:{http}?{localhost}{port})\/)?(?:{bitcoin}|{bitname})(?:{path}))'.format(**zeronet_params)
 
@@ -152,10 +158,6 @@ Crear sitios de freenet:
 
     http://localhost:8888/freenet:USK@spOnEa2YvAoNfreZPfoy0tVNCzQghLdWaaNM10GEiEM,QRKjyaBkOX5Qw~aEml19WIDaJJo2X3hU9mGz8GcUuKc,AQACAAE/freesite_es/11/
 '''
-
-number_regex = r'[0-9]+'
-alnum_join = r'[a-zA-Z0-9\-\~]+'
-file_name = r'(?:[a-zA-Z0-9\_]+\.)+\.[a-zA-Z0-9]{2,4}'
 
 freenet_terms = dict(
     file_hash = alnum_join,
