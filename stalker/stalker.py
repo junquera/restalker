@@ -145,7 +145,7 @@ port_regex = lambda p: r'(?:\:%d)?' % (p)
 path_regex = r'(?:\/[a-zA-Z0-9_-]*)*'
 
 zeronet_params=dict(http=http_regex, localhost=localhost_regex, port=port_regex(43110), path=path_regex, bitcoin=btc_wallet_regex, bitname=bitname_domain_regex)
-zeronet_hidden_url = r'((?:(?:{http}?{localhost}{port})\/)?(?:{bitcoin}|{bitname})(?:{path}))'.format(**zeronet_params)
+zeronet_hidden_url = r'(?:(?:{http}?{localhost}{port})\/)?((?:{bitcoin}|{bitname})(?:{path}))'.format(**zeronet_params)
 
 '''
 Freenet URL spec:
@@ -186,7 +186,7 @@ for k in freenet_keys:
 freenet_hash = r'(?:{chk}|{ssk}|{usk}|{ksk})'.format(**freenet_keys)
 
 freenet_params=dict(http=http_regex, localhost=localhost_regex, port=port_regex(8888), path=path_regex, freenet_hash=freenet_hash)
-freenet_hidden_url = r'((?:(?:{http}?{localhost}{port})\/)?(?:freenet\:)?(?:{freenet_hash})(?:{path}))'.format(**freenet_params)
+freenet_hidden_url = r'(?:(?:{http}?{localhost}{port})\/)?(?:freenet\:)?((?:{freenet_hash})(?:{path}))'.format(**freenet_params)
 
 '''
 http://localhost:8080/ipfs/QmW2WQi7j6c7UgJTarActp7tDNikE4B2qXtFCfLPdsgaTQ
@@ -211,6 +211,17 @@ paste_url_regex = r'((?:https?\:\/\/)?(?:%s)(?:\/[a-zA-Z0-9_-]+)+)' % ("|".join(
 md5_regex = r'[a-f0-9]{32}'
 sha1_regex = r'[a-f0-9]{40}'
 sha256_regex = r'[a-f0-9]{64}'
+
+# Method for avoid lists of lists
+def extract_elements(x):
+    if type(x) in [tuple, list, set]:
+        result = list()
+        for piece in x:
+            for element in extract_elements(piece):
+                result.append(element)
+        return set(result)
+    else:
+        return [x]
 
 class Stalker():
 
@@ -357,28 +368,27 @@ class Stalker():
                 yield Tor_URL(value=link_item)
 
         if self.freenet:
-            freenet_links = self.extract_links(body,
-                                               url_format=freenet_hidden_url,
-                                               origin=origin)
+            freenet_links = re.findall(freenet_hidden_url, body, re.DOTALL)
             for link in freenet_links:
                 yield Freenet_URL(value=link)
 
         if self.zeronet:
-            zeronet_links = self.extract_links(body,
-                                               url_format=zeronet_hidden_url,
-                                               origin=origin)
+            zeronet_links = re.findall(zeronet_hidden_url, body, re.DOTALL)
+            zeronet_links = extract_elements(zeronet_links)
+
             for link in zeronet_links:
                 yield Zeronet_URL(value=link)
 
         if self.ipfs:
-            ipfs_links = self.extract_links(body,
-                                               url_format=ipfs_url,
-                                               origin=origin)
+
+            ipfs_links = re.findall(ipfs_url, body, re.DOTALL)
+            ipfs_links = extract_elements(ipfs_links)
             for link in ipfs_links:
                 yield IPFS_URL(value=link)
 
         if self.whatsapp:
             whatsapp_links = re.findall(whatsapp_url_regex, body)
+            whatsapp_links = extract_elements(whatsapp_links)
             for link in whatsapp_links:
                 try:
                     link_item = UUF(link).full_url
