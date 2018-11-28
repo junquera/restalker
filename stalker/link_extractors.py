@@ -44,7 +44,7 @@ class UUF():
                     self.signature = None
                 else:
                     self.netloc = self.path.split('/')[0]
-                    self.path = '/'
+                    self.path = "/" + "/".join(self.path.split('/')[1:])
 
             if len(self.protocol) == 0:
                 self.protocol = 'http'

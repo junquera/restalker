@@ -1,11 +1,11 @@
 from setuptools import setup
 
 setup(name='stalker',
-      version='0.2',
+      version='0.3',
       description='',
       url='https://gitlab.com/junquera/stalker',
       author='Javier Junquera Sánchez',
-      author_email='javier.junquera.sanchez@protonmail.com',
+      author_email='javier@junquera.xyz',
       license='MIT',
       packages=['stalker'],
       install_requires=[
