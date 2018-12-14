@@ -22,7 +22,7 @@ def is_bin(b):
             # If its "decodeable", its not a file
             b.decode('utf8')
             return False
-        except:
+        except Exception as e:
             pass
 
     return True
@@ -49,7 +49,7 @@ def get_metadata(byte_array):
             tags = get_image_metadata(byte_array)
         elif t.find('application/pdf') == 0:
             tags = get_pdf_metadata(byte_array)
-    except:
+    except Exception as e:
         tags = {}
     signature = sha256(byte_array).hexdigest()
 
@@ -64,7 +64,7 @@ def get_ofimatica_metadata(byte_array):
 
     try:
         ole = olefile.OleFileIO(sys.argv[1])
-    except IndexError:
+    except IndexError as ie:
         tags = {}
 
     # parse and display metadata:
@@ -102,7 +102,7 @@ class TmpFile():
     def delete(self):
         try:
             os.remove(self._filename)
-        except:
+        except Exception as e:
             print("Error deleting %s" % self._filename)
 
 
@@ -111,7 +111,7 @@ def get_image_metadata(byte_array):
     try:
         exif_json = p.get_json(filename)
         tags = exif_json[0]
-    except:
+    except Exception as e:
         tags = {}
 
     return tags
@@ -124,7 +124,7 @@ def get_pdf_metadata(byte_array):
     try:
         pdf = PdfFileReader(v)
         tags = pdf.getDocumentInfo()
-    except:
+    except Exception as e:
         tags = {}
     return tags
 
