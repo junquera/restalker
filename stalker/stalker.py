@@ -233,35 +233,35 @@ class Stalker():
                  username=False, password=False,
                  base64=False, own_name=False,
                  whatsapp=False, telegram=False, skype=False,
-                 md5=False, sha1=False, sha256=False):
+                 md5=False, sha1=False, sha256=False, all=False):
 
-        self.phone = phone
-        self.email = email
-        self.twitter = twitter
+        self.phone = phone or all
+        self.email = email or all
+        self.twitter = twitter or all
 
-        self.btc_wallet = btc_wallet
-        self.eth_wallet = eth_wallet
+        self.btc_wallet = btc_wallet or all
+        self.eth_wallet = eth_wallet or all
 
-        self.tor = tor
-        self.i2p = i2p
-        self.freenet = freenet
-        self.zeronet = zeronet
+        self.tor = tor or all
+        self.i2p = i2p or all
+        self.freenet = freenet or all
+        self.zeronet = zeronet or all
 
-        self.ipfs = ipfs
+        self.ipfs = ipfs or all
 
-        self.paste = paste
+        self.paste = paste or all
 
-        self.username = username
-        self.password = password
-        self.base64 = base64
-        self.own_name = own_name
-        self.whatsapp = whatsapp
-        self.telegram = telegram
-        self.skype = skype
+        self.username = username or all
+        self.password = password or all
+        self.base64 = base64 or all
+        self.own_name = own_name or all
+        self.whatsapp = whatsapp or all
+        self.telegram = telegram or all
+        self.skype = skype or all
 
-        self.md5 = md5
-        self.sha1 = sha1
-        self.sha256 = sha256
+        self.md5 = md5 or all
+        self.sha1 = sha1 or all
+        self.sha256 = sha256 or all
 
     def extract_links(self, body, origin=None, url_format=any_url, domain_format=domain_regex):
 
@@ -453,3 +453,6 @@ class Stalker():
             sha256s = re.findall(sha256_regex, text)
             for sha256 in sha256s:
                 yield SHA256(value=sha256)
+
+if __name__ == '__main__':
+    s = Stalker
