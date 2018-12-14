@@ -1,1 +1,3 @@
 - [ ] Continuar con https://python-packaging.readthedocs.io/en/latest/metadata.html
+- [ ] Búsqueda de tags
+- [ ] Añadir funcionalidad de detección de idioma 

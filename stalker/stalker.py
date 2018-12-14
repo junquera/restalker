@@ -455,4 +455,4 @@ class Stalker():
                 yield SHA256(value=sha256)
 
 if __name__ == '__main__':
-    s = Stalker
+    s = Stalker(all=True)
