@@ -34,11 +34,6 @@ class UUF():
             domain_port = self.netloc.split(':')
             self.domain = domain_port[0]
 
-            if len(domain_port) > 1:
-                self.port = self.service_port.get(domain_port[1], 80)
-            else:
-                self.port = 80
-
             if self.netloc == '':
                 if self.path == '':
                     self.signature = None
@@ -53,6 +48,11 @@ class UUF():
                         self.protocol = service
                         break
                 self.scheme = self.protocol
+            
+            if len(domain_port) > 1:
+                self.port = self.service_port.get(domain_port[1], self.service_port((self.scheme)))
+            else:
+                self.port = 80
 
             if len(self.query) > 0:
                 query_args = {a[0]: (a[1] if len(a) > 1 else None) for a in (arg.split('=') for arg in self.query.split('&'))}
