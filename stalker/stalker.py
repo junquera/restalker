@@ -93,6 +93,11 @@ class SHA1(Item):
 class SHA256(Item):
     pass
 
+class Organization(Item):
+    pass
+
+class Location(Item):
+    pass
 
 
 number_regex = r'[0-9]+'
@@ -225,15 +230,23 @@ def extract_elements(x):
 
 class Stalker():
 
-    def __init__(self, phone=False, email=False,
+    def __init__(self,
+                 phone=False, email=False,
                  btc_wallet=False, eth_wallet=False,
                  tor=False, i2p=False, ipfs=False,
                  freenet=False, zeronet=False,
                  paste=False, twitter=False,
                  username=False, password=False,
+                 location=False, organization=False,
                  base64=False, own_name=False,
                  whatsapp=False, telegram=False, skype=False,
-                 md5=False, sha1=False, sha256=False, all=False):
+                 md5=False, sha1=False, sha256=False,
+                 all=False):
+
+        self.ner =  own_name or location or organization
+        self.own_name = own_name or all
+        self.location = location or all
+        self.organization = organization or all
 
         self.phone = phone or all
         self.email = email or all
@@ -254,7 +267,6 @@ class Stalker():
         self.username = username or all
         self.password = password or all
         self.base64 = base64 or all
-        self.own_name = own_name or all
         self.whatsapp = whatsapp or all
         self.telegram = telegram or all
         self.skype = skype or all
@@ -311,6 +323,31 @@ class Stalker():
     def parse(self, body, origin=None):
 
         text = self.body_text(body)
+
+        if self.ner:
+
+            import nltk
+
+            tokens = nltk.tokenize.word_tokenize(text)
+            pos = nltk.pos_tag(tokens)
+            sentt = nltk.ne_chunk(pos, binary = False)
+
+
+
+            if self.own_name:
+                for subtree in sentt.subtrees(filter=lambda t: t.label() == 'PERSON'):
+                    for leave in subtree.leaves():
+                        yield OwnName(value=leave[0])
+
+            if self.organization:
+                for subtree in sentt.subtrees(filter=lambda t: t.label() == 'ORGANIZATION'):
+                    for leave in subtree.leaves():
+                        yield Organization(value=leave[0])
+
+            if self.location:
+                for subtree in sentt.subtrees(filter=lambda t: t.label() == 'LOCATION'):
+                    for leave in subtree.leaves():
+                        yield Location(value=leave[0])
 
         # TODO Test si el valor es None
         # TODO Refactor para iterar
@@ -433,11 +470,6 @@ class Stalker():
             base64s = re.findall(base64_regex, body)
             for b64 in base64s:
                 yield Base64(value=b64)
-
-        if self.own_name:
-            own_names = re.findall(own_name_regex, text)
-            for own_name in own_names:
-                yield OwnName(value=own_name)
 
         if self.md5:
             md5s = re.findall(md5_regex, text)
