@@ -333,7 +333,6 @@ class Stalker():
             sentt = nltk.ne_chunk(pos, binary = False)
 
 
-
             if self.own_name:
                 for subtree in sentt.subtrees(filter=lambda t: t.label() == 'PERSON'):
                     for leave in subtree.leaves():

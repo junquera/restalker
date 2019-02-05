@@ -1,4 +1,6 @@
 - [ ] Instalador de NLTK
+- [ ] Carteras de crédito
+- [ ] Monero regex
 - [ ] Probar Tika
 - [ ] Continuar con https://python-packaging.readthedocs.io/en/latest/metadata.html
 - [ ] Búsqueda de tags y keywords

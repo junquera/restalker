@@ -32,6 +32,7 @@ class UUF():
             self.protocol = self.scheme
 
             domain_port = self.netloc.split(':')
+
             self.domain = domain_port[0]
 
             if self.netloc == '':
@@ -41,6 +42,12 @@ class UUF():
                     self.netloc = self.path.split('/')[0]
                     self.path = "/" + "/".join(self.path.split('/')[1:])
 
+            # TODO Hay que replantearse cómo hacer el análisis de dominio/protocolo
+            if len(domain_port) > 1:
+                self.port = self.service_port.get(domain_port[1], self.service_port.get(self.scheme))
+            else:
+                self.port = 80
+
             if len(self.protocol) == 0:
                 self.protocol = 'http'
                 for service in self.service_port:
@@ -48,11 +55,7 @@ class UUF():
                         self.protocol = service
                         break
                 self.scheme = self.protocol
-            
-            if len(domain_port) > 1:
-                self.port = self.service_port.get(domain_port[1], self.service_port((self.scheme)))
-            else:
-                self.port = 80
+
 
             if len(self.query) > 0:
                 query_args = {a[0]: (a[1] if len(a) > 1 else None) for a in (arg.split('=') for arg in self.query.split('&'))}
