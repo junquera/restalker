@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='stalker',
-      version='0.4.0',
+      version='0.4.1',
       description='',
       url='https://gitlab.com/junquera/stalker',
       author='Javier Junquera Sánchez',
