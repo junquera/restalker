@@ -132,13 +132,13 @@ base64_regex = r"((?:[a-zA-Z0-9\+\/]{4})+(?:[a-zA-Z0-9\+\/]{3}[=]|[a-zA-Z0-9\+\/
 
 own_name_regex = r"([A-Z][a-z]{2,10} [A-Z][a-z]{2,10})"
 
-domain_regex = r'(?:[a-z0-9]+\.)*[a-z0-9]+\.?(?:\:[0-9]{2,5})?$'
+domain_regex = r'(?:[a-z0-9]+\.){0,4}[a-z0-9]+\.?(?:\:[0-9]{2,5})?$'
 any_url = r'((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)' % domain_regex[:-1]
 
-tor_hidden_domain = r'(?:[a-z0-9]+\.)*(?:[a-z0-9]{16}|[a-z0-9]{56})\.onion(?:\:[0-9]{2,5})?$'
+tor_hidden_domain = r'(?:[a-z0-9]+\.){0,4}(?:[a-z0-9]{16}|[a-z0-9]{56})\.onion(?:\:[0-9]{2,5})?$'
 tor_hidden_url = r'((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)' % tor_hidden_domain[:-1]
 
-i2p_hidden_domain = r'(?:[a-z0-9]+\.)+i2p(?:\:[0-9]{2,5})?$'
+i2p_hidden_domain = r'(?:[a-z0-9]+\.){1,5}i2p(?:\:[0-9]{2,5})?$'
 i2p_hidden_url = r'((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)' % i2p_hidden_domain[:-1]
 
 
