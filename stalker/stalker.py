@@ -50,6 +50,10 @@ class Zeronet_URL(Item):
     pass
 
 
+class Bitname_URL(Item):
+    pass
+
+
 class IPFS_URL(Item):
     pass
 
@@ -143,14 +147,19 @@ i2p_hidden_url = r'((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)' % i2p_hidden_domai
 
 
 
-http_regex = r'https?\:\/\/'
+http_regex = r'(?:https?\:\/\/)'
 localhost_regex = r'(?:localhost|127\.0\.0\.1)'
 port_regex = lambda p: r'(?:\:%d)?' % (p)
 # TODO Add query parameters
 path_regex = r'(?:\/[a-zA-Z0-9_-]*)*'
 
 zeronet_params=dict(http=http_regex, localhost=localhost_regex, port=port_regex(43110), path=path_regex, bitcoin=btc_wallet_regex, bitname=bitname_domain_regex)
-zeronet_hidden_url = r'(?:(?:{http}?{localhost}{port})\/)?((?:{bitcoin}|{bitname})(?:{path}))'.format(**zeronet_params)
+
+bitname_url = r'((?:{http})?(?:{bitcoin}|{bitname})(?:{port})?(?:{path})?)'.format(**zeronet_params)
+
+zeronet_params['bitname_url'] = bitname_url
+zeronet_hidden_url = r'((?:{http}?{localhost}{port}\/)?(?:{bitname_url}))'.format(**zeronet_params)
+
 
 '''
 Freenet URL spec:
@@ -234,7 +243,7 @@ class Stalker():
                  phone=False, email=False,
                  btc_wallet=False, eth_wallet=False,
                  tor=False, i2p=False, ipfs=False,
-                 freenet=False, zeronet=False,
+                 freenet=False, zeronet=False, bitname=False,
                  paste=False, twitter=False,
                  username=False, password=False,
                  location=False, organization=False,
@@ -259,6 +268,7 @@ class Stalker():
         self.i2p = i2p or all
         self.freenet = freenet or all
         self.zeronet = zeronet or all
+        self.bitname = bitname or all
 
         self.ipfs = ipfs or all
 
@@ -415,6 +425,13 @@ class Stalker():
             for link in zeronet_links:
                 yield Zeronet_URL(value=link)
 
+        if self.bitname:
+            bitname_links = re.findall(bitname_url, body, re.DOTALL)
+            bitname_links = extract_elements(bitname_links)
+
+            for link in bitname_links:
+                yield Bitname_URL(value=link)
+
         if self.ipfs:
 
             ipfs_links = re.findall(ipfs_url, body, re.DOTALL)
@@ -485,5 +502,6 @@ class Stalker():
             for sha256 in sha256s:
                 yield SHA256(value=sha256)
 
-if __name__ == '__main__':
-    s = Stalker(all=True)
+# import stalker
+# s = stalker.Stalker(zeronet=True)
+# print([str(x) for x in s.parse('http://abc.bit')])
