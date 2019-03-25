@@ -1,5 +1,21 @@
 from urllib.parse import urlparse
 from hashlib import md5
+import .stalker
+import re
+
+def looks_like_link(l):
+    if re.match(stalker.any_url, l):
+        return True
+    else:
+        proto = l.split('://')
+        if len(proto) > 1:
+            return len(proto[1].split('.')) > 1
+        else:
+            url = proto[0].split('.')
+            if len(url) > 1:
+                return len(("".join(url[1:])).split('/')) > 1
+            else:
+                return False
 
 
 # TODO Heredar de urlparse
