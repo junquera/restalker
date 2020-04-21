@@ -50,6 +50,10 @@ class Zeronet_URL(Item):
     pass
 
 
+class Bitname_URL(Item):
+    pass
+
+
 class IPFS_URL(Item):
     pass
 
@@ -93,6 +97,11 @@ class SHA1(Item):
 class SHA256(Item):
     pass
 
+class Organization(Item):
+    pass
+
+class Location(Item):
+    pass
 
 
 number_regex = r'[0-9]+'
@@ -127,25 +136,30 @@ base64_regex = r"((?:[a-zA-Z0-9\+\/]{4})+(?:[a-zA-Z0-9\+\/]{3}[=]|[a-zA-Z0-9\+\/
 
 own_name_regex = r"([A-Z][a-z]{2,10} [A-Z][a-z]{2,10})"
 
-domain_regex = r'(?:[a-z0-9]+\.)*[a-z0-9]+\.?(?:\:[0-9]{2,5})?$'
+domain_regex = r'(?:[a-z0-9]+\.){0,4}[a-z0-9]+\.?(?:\:[0-9]{2,5})?$'
 any_url = r'((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)' % domain_regex[:-1]
 
-tor_hidden_domain = r'(?:[a-z0-9]+\.)*(?:[a-z0-9]{16}|[a-z0-9]{56})\.onion(?:\:[0-9]{2,5})?$'
+tor_hidden_domain = r'(?:[a-z0-9]+\.){0,4}(?:[a-z0-9]{16}|[a-z0-9]{56})\.onion(?:\:[0-9]{2,5})?$'
 tor_hidden_url = r'((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)' % tor_hidden_domain[:-1]
 
-i2p_hidden_domain = r'(?:[a-z0-9]+\.)+i2p(?:\:[0-9]{2,5})?$'
+i2p_hidden_domain = r'(?:[a-z0-9]+\.){1,5}i2p(?:\:[0-9]{2,5})?$'
 i2p_hidden_url = r'((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)' % i2p_hidden_domain[:-1]
 
 
 
-http_regex = r'https?\:\/\/'
+http_regex = r'(?:https?\:\/\/)'
 localhost_regex = r'(?:localhost|127\.0\.0\.1)'
 port_regex = lambda p: r'(?:\:%d)?' % (p)
 # TODO Add query parameters
 path_regex = r'(?:\/[a-zA-Z0-9_-]*)*'
 
 zeronet_params=dict(http=http_regex, localhost=localhost_regex, port=port_regex(43110), path=path_regex, bitcoin=btc_wallet_regex, bitname=bitname_domain_regex)
-zeronet_hidden_url = r'(?:(?:{http}?{localhost}{port})\/)?((?:{bitcoin}|{bitname})(?:{path}))'.format(**zeronet_params)
+
+bitname_url = r'((?:{http})?(?:{bitcoin}|{bitname})(?:{port})?(?:{path})?)'.format(**zeronet_params)
+
+zeronet_params['bitname_url'] = bitname_url
+zeronet_hidden_url = r'((?:{http}?{localhost}{port}\/)?(?:{bitname_url}))'.format(**zeronet_params)
+
 
 '''
 Freenet URL spec:
@@ -225,43 +239,51 @@ def extract_elements(x):
 
 class Stalker():
 
-    def __init__(self, phone=False, email=False,
+    def __init__(self,
+                 phone=False, email=False,
                  btc_wallet=False, eth_wallet=False,
                  tor=False, i2p=False, ipfs=False,
-                 freenet=False, zeronet=False,
+                 freenet=False, zeronet=False, bitname=False,
                  paste=False, twitter=False,
                  username=False, password=False,
+                 location=False, organization=False,
                  base64=False, own_name=False,
                  whatsapp=False, telegram=False, skype=False,
-                 md5=False, sha1=False, sha256=False):
+                 md5=False, sha1=False, sha256=False,
+                 all=False):
 
-        self.phone = phone
-        self.email = email
-        self.twitter = twitter
+        self.ner =  own_name or location or organization
+        self.own_name = own_name or all
+        self.location = location or all
+        self.organization = organization or all
 
-        self.btc_wallet = btc_wallet
-        self.eth_wallet = eth_wallet
+        self.phone = phone or all
+        self.email = email or all
+        self.twitter = twitter or all
 
-        self.tor = tor
-        self.i2p = i2p
-        self.freenet = freenet
-        self.zeronet = zeronet
+        self.btc_wallet = btc_wallet or all
+        self.eth_wallet = eth_wallet or all
 
-        self.ipfs = ipfs
+        self.tor = tor or all
+        self.i2p = i2p or all
+        self.freenet = freenet or all
+        self.zeronet = zeronet or all
+        self.bitname = bitname or all
 
-        self.paste = paste
+        self.ipfs = ipfs or all
 
-        self.username = username
-        self.password = password
-        self.base64 = base64
-        self.own_name = own_name
-        self.whatsapp = whatsapp
-        self.telegram = telegram
-        self.skype = skype
+        self.paste = paste or all
 
-        self.md5 = md5
-        self.sha1 = sha1
-        self.sha256 = sha256
+        self.username = username or all
+        self.password = password or all
+        self.base64 = base64 or all
+        self.whatsapp = whatsapp or all
+        self.telegram = telegram or all
+        self.skype = skype or all
+
+        self.md5 = md5 or all
+        self.sha1 = sha1 or all
+        self.sha256 = sha256 or all
 
     def extract_links(self, body, origin=None, url_format=any_url, domain_format=domain_regex):
 
@@ -311,6 +333,30 @@ class Stalker():
     def parse(self, body, origin=None):
 
         text = self.body_text(body)
+
+        if self.ner:
+
+            import nltk
+
+            tokens = nltk.tokenize.word_tokenize(text)
+            pos = nltk.pos_tag(tokens)
+            sentt = nltk.ne_chunk(pos, binary = False)
+
+
+            if self.own_name:
+                for subtree in sentt.subtrees(filter=lambda t: t.label() == 'PERSON'):
+                    for leave in subtree.leaves():
+                        yield OwnName(value=leave[0])
+
+            if self.organization:
+                for subtree in sentt.subtrees(filter=lambda t: t.label() == 'ORGANIZATION'):
+                    for leave in subtree.leaves():
+                        yield Organization(value=leave[0])
+
+            if self.location:
+                for subtree in sentt.subtrees(filter=lambda t: t.label() == 'LOCATION'):
+                    for leave in subtree.leaves():
+                        yield Location(value=leave[0])
 
         # TODO Test si el valor es None
         # TODO Refactor para iterar
@@ -379,6 +425,13 @@ class Stalker():
             for link in zeronet_links:
                 yield Zeronet_URL(value=link)
 
+        if self.bitname:
+            bitname_links = re.findall(bitname_url, body, re.DOTALL)
+            bitname_links = extract_elements(bitname_links)
+
+            for link in bitname_links:
+                yield Bitname_URL(value=link)
+
         if self.ipfs:
 
             ipfs_links = re.findall(ipfs_url, body, re.DOTALL)
@@ -434,11 +487,6 @@ class Stalker():
             for b64 in base64s:
                 yield Base64(value=b64)
 
-        if self.own_name:
-            own_names = re.findall(own_name_regex, text)
-            for own_name in own_names:
-                yield OwnName(value=own_name)
-
         if self.md5:
             md5s = re.findall(md5_regex, text)
             for md5 in md5s:
@@ -453,3 +501,7 @@ class Stalker():
             sha256s = re.findall(sha256_regex, text)
             for sha256 in sha256s:
                 yield SHA256(value=sha256)
+
+# import stalker
+# s = stalker.Stalker(zeronet=True)
+# print([str(x) for x in s.parse('http://abc.bit')])

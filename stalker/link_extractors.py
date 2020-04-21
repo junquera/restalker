@@ -1,5 +1,21 @@
 from urllib.parse import urlparse
 from hashlib import md5
+import .stalker
+import re
+
+def looks_like_link(l):
+    if re.match(stalker.any_url, l):
+        return True
+    else:
+        proto = l.split('://')
+        if len(proto) > 1:
+            return len(proto[1].split('.')) > 1
+        else:
+            url = proto[0].split('.')
+            if len(url) > 1:
+                return len(("".join(url[1:])).split('/')) > 1
+            else:
+                return False
 
 
 # TODO Heredar de urlparse
@@ -32,12 +48,8 @@ class UUF():
             self.protocol = self.scheme
 
             domain_port = self.netloc.split(':')
-            self.domain = domain_port[0]
 
-            if len(domain_port) > 1:
-                self.port = self.service_port.get(domain_port[1], 80)
-            else:
-                self.port = 80
+            self.domain = domain_port[0]
 
             if self.netloc == '':
                 if self.path == '':
@@ -46,6 +58,12 @@ class UUF():
                     self.netloc = self.path.split('/')[0]
                     self.path = "/" + "/".join(self.path.split('/')[1:])
 
+            # TODO Hay que replantearse cómo hacer el análisis de dominio/protocolo
+            if len(domain_port) > 1:
+                self.port = self.service_port.get(domain_port[1], self.service_port.get(self.scheme))
+            else:
+                self.port = 80
+
             if len(self.protocol) == 0:
                 self.protocol = 'http'
                 for service in self.service_port:
@@ -53,6 +71,7 @@ class UUF():
                         self.protocol = service
                         break
                 self.scheme = self.protocol
+
 
             if len(self.query) > 0:
                 query_args = {a[0]: (a[1] if len(a) > 1 else None) for a in (arg.split('=') for arg in self.query.split('&'))}
