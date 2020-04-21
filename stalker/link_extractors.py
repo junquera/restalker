@@ -1,6 +1,6 @@
 from urllib.parse import urlparse
 from hashlib import md5
-import .stalker
+from . import stalker
 import re
 
 def looks_like_link(l):
