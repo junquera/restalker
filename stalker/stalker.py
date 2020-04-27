@@ -151,14 +151,14 @@ http_regex = r'(?:https?\:\/\/)'
 localhost_regex = r'(?:localhost|127\.0\.0\.1)'
 port_regex = lambda p: r'(?:\:%d)?' % (p)
 # TODO Add query parameters
-path_regex = r'(?:\/[a-zA-Z0-9_-]*)*'
+path_regex = r'(?:\/[a-zA-Z0-9_-]+)*'
 
 zeronet_params=dict(http=http_regex, localhost=localhost_regex, port=port_regex(43110), path=path_regex, bitcoin=btc_wallet_regex, bitname=bitname_domain_regex)
 
 bitname_url = r'((?:{http})?(?:{bitcoin}|{bitname})(?:{port})?(?:{path})?)'.format(**zeronet_params)
 
 zeronet_params['bitname_url'] = bitname_url
-zeronet_hidden_url = r'((?:{http}?{localhost}{port}\/)?(?:{bitname_url}))'.format(**zeronet_params)
+zeronet_hidden_url = r'(?:(?:{http}?{localhost}{port}\/)?({bitname_url}))'.format(**zeronet_params)
 
 
 '''
