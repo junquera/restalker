@@ -382,7 +382,8 @@ class Stalker():
         ta = TextAnalysis(body)
 
         for k in self.keywords:
-            if ta.is_keyword_present(k) > 0:
+            # TODO Generate k variations 
+            if ta.is_keyword_present(k) > 0 or body.find(k) >= 0:
                 yield Keyword(value=k)
 
         if self.keyphrase:
