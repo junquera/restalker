@@ -29,7 +29,7 @@ class Email(Item):
 class Keyphrase(Item):
     pass
 
-class Keywords(Item):
+class Keyword(Item):
     pass
 
 class BTC_Wallet(Item):
@@ -269,7 +269,7 @@ class Stalker():
         self.organization = organization or all
 
         self.keyphrase = keyphrase or all
-        self.keywords = []
+        self.keywords = keywords
 
         self.phone = phone or all
         self.email = email or all
@@ -299,6 +299,13 @@ class Stalker():
         self.md5 = md5 or all
         self.sha1 = sha1 or all
         self.sha256 = sha256 or all
+
+    def add_keyword(self, keyword):
+        self.keywords.append(keyword)
+
+    def remove_keyword(self, keyword):
+        while keyword in self.keywords:
+            self.keywords.remove(keyword)
 
     def extract_links(self, body, origin=None, url_format=any_url, domain_format=domain_regex):
 
