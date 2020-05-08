@@ -5,6 +5,10 @@ from bs4 import BeautifulSoup
 
 import re
 
+import nltk
+
+from .textan import TextAnalysis
+
 
 class Item():
     def __init__(self, value=None):
@@ -21,6 +25,12 @@ class Phone(Item):
 class Email(Item):
     pass
 
+
+class Keyphrase(Item):
+    pass
+
+class Keywords(Item):
+    pass
 
 class BTC_Wallet(Item):
     pass
@@ -243,10 +253,11 @@ class Stalker():
                  phone=False, email=False,
                  btc_wallet=False, eth_wallet=False,
                  tor=False, i2p=False, ipfs=False,
-                 freenet=False, zeronet=False, bitname=False,
+                 freenet=False, zeronet=False, zeronet_ctxt=False, bitname=False,
                  paste=False, twitter=False,
                  username=False, password=False,
-                 location=False, organization=False,
+                 location=False, organization=False, keyphrase=False,
+                 keywords=[],
                  base64=False, own_name=False,
                  whatsapp=False, telegram=False, skype=False,
                  md5=False, sha1=False, sha256=False,
@@ -256,6 +267,9 @@ class Stalker():
         self.own_name = own_name or all
         self.location = location or all
         self.organization = organization or all
+
+        self.keyphrase = keyphrase or all
+        self.keywords = []
 
         self.phone = phone or all
         self.email = email or all
@@ -267,7 +281,8 @@ class Stalker():
         self.tor = tor or all
         self.i2p = i2p or all
         self.freenet = freenet or all
-        self.zeronet = zeronet or all
+        self.zeronet_ctxt = zeronet_ctxt
+        self.zeronet = zeronet or all or zeronet_ctxt
         self.bitname = bitname or all
 
         self.ipfs = ipfs or all
@@ -330,13 +345,12 @@ class Stalker():
 
         return text
 
+
     def parse(self, body, origin=None):
 
         text = self.body_text(body)
 
         if self.ner:
-
-            import nltk
 
             tokens = nltk.tokenize.word_tokenize(text)
             pos = nltk.pos_tag(tokens)
@@ -357,6 +371,16 @@ class Stalker():
                 for subtree in sentt.subtrees(filter=lambda t: t.label() == 'LOCATION'):
                     for leave in subtree.leaves():
                         yield Location(value=leave[0])
+
+        ta = TextAnalysis(body)
+
+        for k in self.keywords:
+            if ta.is_keyword_present(k) > 0:
+                yield Keyword(value=k)
+
+        if self.keyphrase:
+            for k in ta.extract_top_keyphrases(body):
+                yield Keyphrase(value=k)
 
         # TODO Test si el valor es None
         # TODO Refactor para iterar
@@ -419,6 +443,11 @@ class Stalker():
                 yield Freenet_URL(value=link)
 
         if self.zeronet:
+            # TODO Experimental
+            if self.zeronet_ctxt and False:
+                if body.find('zeronet') < 0:
+                    pass
+
             zeronet_links = re.findall(zeronet_hidden_url, body, re.DOTALL)
             zeronet_links = extract_elements(zeronet_links)
 
