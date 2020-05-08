@@ -383,7 +383,8 @@ class Stalker():
 
         for k in self.keywords:
             # TODO Generate k variations 
-            if ta.is_keyword_present(k) > 0 or body.find(k) >= 0:
+            k = k.lower()
+            if ta.is_keyword_present(k) > 0 or body.lower().find(k) >= 0:
                 yield Keyword(value=k)
 
         if self.keyphrase:
