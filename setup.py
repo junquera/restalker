@@ -79,7 +79,7 @@ elements = s.parse(input_text)
 '''
 
 setup(name='stalker',
-      version='0.4.2.3',
+      version='0.4.2.4',
       description=readme,
       url='https://gitlab.com/junquera/stalker',
       author='Javier Junquera Sánchez',
@@ -89,6 +89,7 @@ setup(name='stalker',
       install_requires=[
         'bs4',
         'nltk',
-        'numpy'
+        'numpy',
+        'rake-nltk'
       ],
       zip_safe=False)
