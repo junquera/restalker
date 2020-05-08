@@ -53,6 +53,10 @@ readme='''
 
 - SHA256
 
+- Keywords
+
+And more.
+
 ## Install
 
 In `requeriments.txt`:
@@ -75,7 +79,7 @@ elements = s.parse(input_text)
 '''
 
 setup(name='stalker',
-      version='0.4.2.2',
+      version='0.4.2.3',
       description=readme,
       url='https://gitlab.com/junquera/stalker',
       author='Javier Junquera Sánchez',
