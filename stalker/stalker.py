@@ -227,6 +227,7 @@ pastes = [
     'hastebin.com',
     'snipt.org',
     'gist.github.com',
+    'telegra.ph',
     'ghostbin.com'
 ]
 

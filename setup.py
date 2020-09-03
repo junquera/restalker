@@ -79,7 +79,7 @@ elements = s.parse(input_text)
 '''
 
 setup(name='stalker',
-      version='0.4.2.6',
+      version='0.4.2.7',
       description=readme,
       url='https://gitlab.com/junquera/stalker',
       author='Javier Junquera Sánchez',
