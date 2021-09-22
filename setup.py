@@ -79,7 +79,7 @@ elements = s.parse(input_text)
 '''
 
 setup(name='stalker',
-      version='0.4.2.7',
+      version='0.4.2.8',
       description=readme,
       url='https://gitlab.com/junquera/stalker',
       author='Javier Junquera Sánchez',
@@ -93,3 +93,9 @@ setup(name='stalker',
         'rake-nltk'
       ],
       zip_safe=False)
+
+
+import nltk
+nltk.download('stopwords')
+nltk.download('punkt')
+

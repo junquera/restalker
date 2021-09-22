@@ -389,7 +389,7 @@ class Stalker():
                 yield Keyword(value=k)
 
         if self.keyphrase:
-            for k in ta.extract_top_keyphrases(body):
+            for k in ta.extract_top_keyphrases():
                 yield Keyphrase(value=k)
 
         # TODO Test si el valor es None
