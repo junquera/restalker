@@ -90,12 +90,20 @@ setup(name='stalker',
         'bs4',
         'nltk',
         'numpy',
+        'nltk',
         'rake-nltk'
       ],
-      zip_safe=False)
+      entry_points=dict(
+        console_scripts= [
+            'stalker=stalker.stalker:main'
+        ]
+      ),
+      zip_safe=False
+)
 
 
-import nltk
-nltk.download('stopwords')
-nltk.download('punkt')
+# TODO Post-install script:
+# import nltk
+# nltk.download('stopwords')
+# nltk.download('punkt')
 

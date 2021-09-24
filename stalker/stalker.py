@@ -544,3 +544,16 @@ class Stalker():
 # import stalker
 # s = stalker.Stalker(zeronet=True)
 # print([str(x) for x in s.parse('http://abc.bit')])
+
+
+def main():
+    import sys
+    parse_file = sys.argv[1]
+    s = Stalker(all=True)
+    with open(parse_file) as f:
+        parser = s.parse(f.read())
+    for element in parser:
+        print(type(element), element)
+
+if __name__ == '__main__':
+    main()
