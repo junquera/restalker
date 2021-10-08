@@ -248,7 +248,7 @@ def extract_elements(x):
     else:
         return [x]
 
-class Stalker():
+class reStalker():
 
     def __init__(self,
                  phone=False, email=False,
@@ -549,7 +549,7 @@ class Stalker():
 def main():
     import sys
     parse_file = sys.argv[1]
-    s = Stalker(all=True)
+    s = reStalker(all=True)
     with open(parse_file) as f:
         parser = s.parse(f.read())
     for element in parser:

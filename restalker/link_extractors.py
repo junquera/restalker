@@ -1,10 +1,10 @@
 from urllib.parse import urlparse
 from hashlib import md5
-from . import stalker
+from . import restalker
 import re
 
 def looks_like_link(l):
-    if re.match(stalker.any_url, l):
+    if re.match(restalker.any_url, l):
         return True
     else:
         proto = l.split('://')

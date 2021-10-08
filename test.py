@@ -1,6 +1,6 @@
-import stalker
+import restalker
 
-s = stalker.Stalker(all=True)
+s = restalker.reStalker(all=True)
 
 parse = s.parse('jaja')
 

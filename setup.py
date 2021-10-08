@@ -4,7 +4,7 @@ readme='''
 
 ![doc/img/icon.png](doc/img/icon.png)
 
-# Stalker
+# reStalker
 
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/junquera/stalker.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/junquera/stalker/alerts/)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/junquera/stalker.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/junquera/stalker/context:python)
@@ -68,24 +68,24 @@ git+https://gitlab.com/junquera/stalker.git#egg=stalker
 ## Usage
 
 ```python
-import stalker
+import restalker
 
 # Define which elements we desire
 # for example Tor URLs
-s = stalker.Stalker(tor=True)
+s = restalker.reStalker(tor=True)
 
 elements = s.parse(input_text)
 ```
 '''
 
-setup(name='stalker',
-      version='0.4.2.8',
+setup(name='restalker',
+      version='1.0.0.0',
       description=readme,
       url='https://gitlab.com/junquera/stalker',
       author='Javier Junquera Sánchez',
       author_email='javier@junquera.io',
       license='MIT',
-      packages=['stalker'],
+      packages=['restalker'],
       install_requires=[
         'bs4',
         'nltk',
@@ -95,7 +95,7 @@ setup(name='stalker',
       ],
       entry_points=dict(
         console_scripts= [
-            'stalker=stalker.stalker:main'
+            'restalker=restalker.restalker:main'
         ]
       ),
       zip_safe=False
