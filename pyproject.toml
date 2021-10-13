@@ -1,0 +1,9 @@
+requires=[
+  'bs4',
+  'nltk',
+  'numpy',
+  'nltk',
+  'rake-nltk'
+]
+
+build-backend = "setuptools.build_meta"

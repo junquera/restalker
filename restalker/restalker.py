@@ -15,7 +15,10 @@ class Item():
         self.value = value
 
     def __str__(self):
-        return self.value
+        return f"{type(self).__name__}({self.value[:128]})"
+
+    def __repr__(self):
+        return f"{type(self).__name__}({self.value[:128]})"
 
 
 class Phone(Item):
@@ -354,7 +357,7 @@ class reStalker():
         return text
 
 
-    def parse(self, body, origin=None):
+    def _analyze_chunk(self, body, origin=None):
 
         text = self.body_text(body)
 
@@ -540,6 +543,23 @@ class reStalker():
             sha256s = re.findall(sha256_regex, text)
             for sha256 in sha256s:
                 yield SHA256(value=sha256)
+
+
+    def parse(self, body, origin=None, buff_size=20480):
+        i = 0
+
+        chunk_size = buff_size//2
+        
+        while i*buff_size <= len(body):
+            
+            chunk = body[i*buff_size:(i+2)*buff_size]
+            chunk_analysis = self._analyze_chunk(body, origin=origin)
+            
+            for result in chunk_analysis:
+                yield result
+
+            i += 1
+            
 
 # import stalker
 # s = stalker.Stalker(zeronet=True)
