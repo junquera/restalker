@@ -321,16 +321,19 @@ class reStalker():
             except Exception as e:
                 pass
 
-        soup = BeautifulSoup(body, "html.parser")
-        if soup:
-            links = soup.findAll('a')
-            if links:
-                for url in links:
-                    try:
-                        urls.add(UUF(urljoin(origin, url.get('href'))).rebuild())
-                    except Exception as e:
-                        pass
-
+        try:
+            soup = BeautifulSoup(body, "html.parser")
+            if soup:
+                links = soup.findAll('a')
+                if links:
+                    for url in links:
+                        try:
+                            urls.add(UUF(urljoin(origin, url.get('href'))).rebuild())
+                        except Exception as e:
+                            pass
+        except:
+            print("[*] Error with HTML parsing")
+            
         for url in urls:
             if url:
                 parsed_url = UUF(url)
