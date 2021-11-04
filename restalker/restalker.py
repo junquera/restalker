@@ -1,3 +1,4 @@
+from os import stat
 from .link_extractors import UUF
 from urllib.parse import urljoin
 
@@ -341,7 +342,8 @@ class reStalker():
                 if re.match(domain_format, parsed_url.domain, re.DOTALL):
                     yield parsed_url.rebuild()
 
-    def body_text(self, body):
+    @staticmethod
+    def body_text(body):
         try:
             # TODO ¿Esto se puede hacer con el response de scrapy?
             soup = BeautifulSoup(body, "lxml")
@@ -362,11 +364,9 @@ class reStalker():
 
     def _analyze_chunk(self, body, origin=None):
 
-        text = self.body_text(body)
-
         if self.ner:
-
-            tokens = nltk.tokenize.word_tokenize(text)
+            
+            tokens = nltk.tokenize.word_tokenize(body)
             pos = nltk.pos_tag(tokens)
             sentt = nltk.ne_chunk(pos, binary = False)
 
@@ -425,7 +425,7 @@ class reStalker():
                 yield ETH_Wallet(value=eth_wallet)
 
         if self.twitter:
-            tw_accounts = re.findall(tw_account_regex, text)
+            tw_accounts = re.findall(tw_account_regex, body)
             for tw_account in tw_accounts:
                 yield TW_Account(value=tw_account)
 
@@ -513,17 +513,17 @@ class reStalker():
                 yield Skype_URL(value=link_item)
 
         if self.username:
-            usernames = re.findall(username_regex, text)
+            usernames = re.findall(username_regex, body)
             for username in usernames:
                 yield Username(value=username)
 
         if self.paste:
-            pastes = re.findall(paste_url_regex, text)
+            pastes = re.findall(paste_url_regex, body)
             for pst in pastes:
                 yield Paste(value=pst)
 
         if self.password:
-            passwords = re.findall(password_regex, text)
+            passwords = re.findall(password_regex, body)
             for password in passwords:
                 yield Password(value=password)
 
@@ -533,22 +533,23 @@ class reStalker():
                 yield Base64(value=b64)
 
         if self.md5:
-            md5s = re.findall(md5_regex, text)
+            md5s = re.findall(md5_regex, body)
             for md5 in md5s:
                 yield MD5(value=md5)
 
         if self.sha1:
-            sha1s = re.findall(sha1_regex, text)
+            sha1s = re.findall(sha1_regex, body)
             for sha1 in sha1s:
                 yield SHA1(value=sha1)
 
         if self.sha256:
-            sha256s = re.findall(sha256_regex, text)
+            sha256s = re.findall(sha256_regex, body)
             for sha256 in sha256s:
                 yield SHA256(value=sha256)
 
 
     def parse(self, body, origin=None, buff_size=20480):
+
         i = 0
 
         chunk_size = buff_size//2
