@@ -1,8 +1,11 @@
 import restalker
+import sys
 
-s = restalker.reStalker(all=True)
-
-parse = s.parse(''''
+if len(sys.argv) > 1:
+    with open(sys.argv[1]) as f:
+        target = f.read()
+else:
+    target = ''''
 logo
 Wallet
 Intercambiar
@@ -3176,7 +3179,11 @@ Contact emails:
 MckinnisKamariyah91@mail.com
 ThomassenVallen1999@mail.com
 Man is the master of everything and decides everything.
-''')
+'''
 
-for p in parse:
+s = restalker.reStalker(all=True)
+# s = restalker.reStalker(tor=True)
+
+for p in s.parse(target):
     print(p)
+    

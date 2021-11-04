@@ -99,6 +99,10 @@ class Whatsapp_URL(Item):
 class Skype_URL(Item):
     pass
 
+
+class Discord_URL(Item):
+    pass
+
 class Paste(Item):
     pass
 
@@ -139,6 +143,8 @@ tw_account_regex = r"[^a-zA-Z0-9]@([a-zA-Z0-9_]{3,15})"
 telegram_url_regex = r'((?:https?\:\/\/)?(?:t\.me|telegram\.me)(?:\/[a-zA-Z0-9_-]+)+)'
 
 whatsapp_url_regex = r'((?:https?\:\/\/)?chat\.whatsapp\.com(?:\/[a-zA-Z0-9_-]+)+)'
+
+discord_url_regex = r'((?:https?\:\/\/)?discord(?:app)?\.(?:gg|com|net)(?:\/[a-zA-Z0-9_-]+)+)'
 
 skype_url_regex = r'((?:https?\:\/\/)?join\.skype\.com(?:\/[a-zA-Z0-9]+)+)'
 
@@ -264,7 +270,7 @@ class reStalker():
                  location=False, organization=False, keyphrase=False,
                  keywords=[],
                  base64=False, own_name=False,
-                 whatsapp=False, telegram=False, skype=False,
+                 whatsapp=False, discord=False, telegram=False, skype=False,
                  md5=False, sha1=False, sha256=False,
                  all=False):
 
@@ -298,6 +304,7 @@ class reStalker():
         self.password = password or all
         self.base64 = base64 or all
         self.whatsapp = whatsapp or all
+        self.discord = discord or all
         self.telegram = telegram or all
         self.skype = skype or all
 
@@ -387,17 +394,18 @@ class reStalker():
                     for leave in subtree.leaves():
                         yield Location(value=leave[0])
 
-        ta = TextAnalysis(body)
 
-        for k in self.keywords:
-            # TODO Generate k variations 
-            k = k.lower()
-            if ta.is_keyword_present(k) > 0 or body.lower().find(k) >= 0:
-                yield Keyword(value=k)
+        if len(self.keywords) > 0 or self.keyphrase:
+            ta = TextAnalysis(body)
+            for k in self.keywords:
+                # TODO Generate k variations 
+                k = k.lower()
+                if ta.is_keyword_present(k) > 0 or body.lower().find(k) >= 0:
+                    yield Keyword(value=k)
 
-        if self.keyphrase:
-            for k in ta.extract_top_keyphrases():
-                yield Keyphrase(value=k)
+            if self.keyphrase:
+                for k in ta.extract_top_keyphrases():
+                    yield Keyphrase(value=k)
 
         # TODO Test si el valor es None
         # TODO Refactor para iterar
@@ -495,6 +503,16 @@ class reStalker():
                     link_item = link
                 yield Whatsapp_URL(value=link_item)
 
+        if self.discord:
+            discord_links = re.findall(discord_url_regex, body)
+            discord_links = extract_elements(discord_links)
+            for link in discord_links:
+                try:
+                    link_item = UUF(link).full_url
+                except Exception as e:
+                    link_item = link
+                yield Discord_URL(value=link_item)
+
         if self.telegram:
             telegram_links = re.findall(telegram_url_regex, body)
             for link in telegram_links:
@@ -554,8 +572,10 @@ class reStalker():
         i = 0
 
         chunk_size = buff_size//2
+
+        # print("Chunks", len(body)//chunk_size)
         
-        while i*buff_size <= len(body):
+        while i*chunk_size <= len(body):
             
             chunk = body[i*chunk_size:(i+2)*chunk_size]
             chunk_analysis = self._analyze_chunk(chunk, origin=origin)
@@ -564,6 +584,7 @@ class reStalker():
                 yield result
 
             i += 1
+            # print("Chunk", i)
             
 
 # import stalker
