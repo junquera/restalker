@@ -323,7 +323,8 @@ class reStalker():
                 pass
 
         try:
-            soup = BeautifulSoup(body, "html.parser")
+            # soup = BeautifulSoup(body, "html.parser")
+            soup = BeautifulSoup(body, "lxml")
             if soup:
                 links = soup.findAll('a')
                 if links:
@@ -556,8 +557,8 @@ class reStalker():
         
         while i*buff_size <= len(body):
             
-            chunk = body[i*buff_size:(i+2)*buff_size]
-            chunk_analysis = self._analyze_chunk(body, origin=origin)
+            chunk = body[i*chunk_size:(i+2)*chunk_size]
+            chunk_analysis = self._analyze_chunk(chunk, origin=origin)
             
             for result in chunk_analysis:
                 yield result
