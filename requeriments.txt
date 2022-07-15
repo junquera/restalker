@@ -1,4 +1,5 @@
+based58
+bech32ref
 bs4
 nltk
-numpy
 rake-nltk
