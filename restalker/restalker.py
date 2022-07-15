@@ -1,15 +1,13 @@
 from os import stat
+import based58
+from hashlib import sha256
+from bech32ref import segwit_addr
 from .link_extractors import UUF
 from urllib.parse import urljoin
-
 from bs4 import BeautifulSoup
-
 import re
-
 import nltk
-
 from .textan import TextAnalysis
-
 
 class Item():
     def __init__(self, value=None):
@@ -37,8 +35,16 @@ class Keyword(Item):
     pass
 
 class BTC_Wallet(Item):
-    pass
-
+    @staticmethod
+    def isValid(address: str) -> bool:
+        if address[0] in ['1', '3']:
+            decode_address = based58.b58decode(address.encode('utf-8'))
+            return decode_address[-4:] == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
+        elif address.startswith("bc"):
+            hrpgot, data, spec = segwit_addr.bech32_decode(address)
+            return (hrpgot is not None) and (data is not None) and (spec is not None) 
+        else:
+            return False
 
 class ETH_Wallet(Item):
     pass
@@ -133,6 +139,8 @@ phone_regex = r"(\(?\+[0-9]{1,3}\)? ?-?[0-9]{1,3} ?-?[0-9]{3,5} ?-?[0-9]{4}( ?-?
 email_regex = r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]{2,6})"
 
 btc_wallet_regex = r"([13][a-km-zA-HJ-NP-Z1-9]{25,34})"
+
+btc_wallet_bech32_regex = r"(bc1[qp][qpzry9x8gf2tvdw0s3jn54khce6mua7l]{38,58})"
 
 eth_wallet_regex = r"0x([0-9a-f]{40})"
 
@@ -424,9 +432,13 @@ class reStalker():
                     yield Username(value=email.split('@')[0])
 
         if self.btc_wallet:
-            btc_wallets = re.findall(btc_wallet_regex, body)
-            for btc_wallet in btc_wallets:
-                yield BTC_Wallet(value=btc_wallet)
+            for btc_wallet in re.findall(btc_wallet_regex, body):
+                if BTC_Wallet.isValid(address=btc_wallet):
+                    yield BTC_Wallet(value=btc_wallet)
+                    
+            for btc_wallet in re.findall(btc_wallet_bech32_regex, body):
+                if BTC_Wallet.isValid(address=btc_wallet):
+                    yield BTC_Wallet(value=btc_wallet)        
 
         if self.eth_wallet:
             eth_wallets = re.findall(eth_wallet_regex, body)

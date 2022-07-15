@@ -1,4 +1,12 @@
-bs4
-nltk
-numpy
-rake-nltk
+based58==0.1.1
+beautifulsoup4==4.11.1
+bech32ref==0.0.1
+bs4==0.0.1
+click==8.1.3
+joblib==1.1.0
+nltk==3.7
+numpy==1.23.1
+rake-nltk==1.0.6
+regex==2022.7.9
+soupsieve==2.3.2.post1
+tqdm==4.64.0
