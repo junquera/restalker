@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='restalker',
-      version='1.1.2.0',
+      version='1.2.0',
       description="Text analyzer package",
       long_description=long_description,
       long_description_content_type="text/markdown",
@@ -15,9 +15,9 @@ setup(name='restalker',
       license='MIT',
       packages=['restalker'],
       install_requires=[
+        'based58',
+        'bech32ref',
         'bs4',
-        'nltk',
-        'numpy',
         'nltk',
         'rake-nltk'
       ],
