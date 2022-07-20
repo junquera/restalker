@@ -36,16 +36,21 @@ class Keyword(Item):
 
 class BTC_Wallet(Item):
     @staticmethod
-    def isValid(address: str) -> bool:
-        if address[0] in ['1', '3']:
-            decode_address = based58.b58decode(address.encode('utf-8'))
-            return decode_address[-4:] == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
-        elif address.startswith("bc"):
-            hrpgot, data, spec = segwit_addr.bech32_decode(address)
-            return (hrpgot is not None) and (data is not None) and (spec is not None) 
-        else:
-            return False
-
+    def isvalid(address: str) -> bool:
+        ret = None
+        try:
+            if address[0] in ['1', '3']:
+                decode_address = based58.b58decode(address.encode('utf-8'))
+                ret = decode_address[-4:] == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
+            elif address.startswith("bc"):
+                hrpgot, data, spec = segwit_addr.bech32_decode(address)
+                ret = (hrpgot is not None) and (data is not None) and (spec is not None) 
+            else:
+                ret = False
+        except:
+            ret = False
+        return ret
+        
 class ETH_Wallet(Item):
     pass
 
@@ -432,13 +437,11 @@ class reStalker():
                     yield Username(value=email.split('@')[0])
 
         if self.btc_wallet:
-            for btc_wallet in re.findall(btc_wallet_regex, body):
-                if BTC_Wallet.isValid(address=btc_wallet):
-                    yield BTC_Wallet(value=btc_wallet)
-                    
-            for btc_wallet in re.findall(btc_wallet_bech32_regex, body):
-                if BTC_Wallet.isValid(address=btc_wallet):
-                    yield BTC_Wallet(value=btc_wallet)        
+            btc_wallets = re.findall(btc_wallet_regex, body)
+            btc_wallets.extend(re.findall(btc_wallet_bech32_regex, body))
+            for btc_wallet in btc_wallets:
+                if BTC_Wallet.isvalid(address=btc_wallet):
+                    yield BTC_Wallet(value=btc_wallet)       
 
         if self.eth_wallet:
             eth_wallets = re.findall(eth_wallet_regex, body)
