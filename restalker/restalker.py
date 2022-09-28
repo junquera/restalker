@@ -2,6 +2,7 @@ from os import stat
 import based58
 from hashlib import sha256
 from bech32ref import segwit_addr
+from web3 import Web3
 from .link_extractors import UUF
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
@@ -9,7 +10,8 @@ import re
 import nltk
 from .textan import TextAnalysis
 
-class Item():
+
+class Item:
     def __init__(self, value=None):
         self.value = value
 
@@ -31,28 +33,44 @@ class Email(Item):
 class Keyphrase(Item):
     pass
 
+
 class Keyword(Item):
     pass
+
 
 class BTC_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
         ret = None
         try:
-            if address[0] in ['1', '3']:
-                decode_address = based58.b58decode(address.encode('utf-8'))
-                ret = decode_address[-4:] == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
+            if address[0] in ["1", "3"]:
+                decode_address = based58.b58decode(address.encode("utf-8"))
+                ret = (
+                    decode_address[-4:]
+                    == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
+                )
             elif address.startswith("bc"):
                 hrpgot, data, spec = segwit_addr.bech32_decode(address)
-                ret = (hrpgot is not None) and (data is not None) and (spec is not None) 
+                ret = (hrpgot is not None) and (data is not None) and (spec is not None)
             else:
                 ret = False
         except:
             ret = False
         return ret
-        
+
+
 class ETH_Wallet(Item):
-    pass
+    @staticmethod
+    def isvalid(address: str) -> bool:
+        ret = None
+        try:
+            if any(c.isupper() for c in address):
+                ret = Web3.isChecksumAddress(address)
+            else:
+                ret = Web3.isAddress(address)
+        except:
+            ret = False
+        return ret
 
 
 class TW_Account(Item):
@@ -114,30 +132,36 @@ class Skype_URL(Item):
 class Discord_URL(Item):
     pass
 
+
 class Paste(Item):
     pass
+
 
 class MD5(Item):
     pass
 
+
 class SHA1(Item):
     pass
+
 
 class SHA256(Item):
     pass
 
+
 class Organization(Item):
     pass
+
 
 class Location(Item):
     pass
 
 
-number_regex = r'[0-9]+'
+number_regex = r"[0-9]+"
 
-alnum_join = r'[a-zA-Z0-9\-\~]+'
+alnum_join = r"[a-zA-Z0-9\-\~]+"
 
-file_name = r'(?:[a-zA-Z0-9\_]+\.)+\.[a-zA-Z0-9]{2,4}'
+file_name = r"(?:[a-zA-Z0-9\_]+\.)+\.[a-zA-Z0-9]{2,4}"
 
 phone_regex = r"(\(?\+[0-9]{1,3}\)? ?-?[0-9]{1,3} ?-?[0-9]{3,5} ?-?[0-9]{4}( ?-?[0-9]{3})? ?(\w{1,10}\s?\d{1,6})?)"
 
@@ -147,54 +171,70 @@ btc_wallet_regex = r"([13][a-km-zA-HJ-NP-Z1-9]{25,34})"
 
 btc_wallet_bech32_regex = r"(bc1[qp][qpzry9x8gf2tvdw0s3jn54khce6mua7l]{38,58})"
 
-eth_wallet_regex = r"0x([0-9a-f]{40})"
+eth_wallet_regex = r"(0x[0-9a-fA-F]{40})"
 
-bitname_domain_regex = r'(?:[a-zA-Z0-9]+\.)+bit'
+bitname_domain_regex = r"(?:[a-zA-Z0-9]+\.)+bit"
 
 tw_account_regex = r"[^a-zA-Z0-9]@([a-zA-Z0-9_]{3,15})"
 
-telegram_url_regex = r'((?:https?\:\/\/)?(?:t\.me|telegram\.me)(?:\/[a-zA-Z0-9_-]+)+)'
+telegram_url_regex = r"((?:https?\:\/\/)?(?:t\.me|telegram\.me)(?:\/[a-zA-Z0-9_-]+)+)"
 
-whatsapp_url_regex = r'((?:https?\:\/\/)?chat\.whatsapp\.com(?:\/[a-zA-Z0-9_-]+)+)'
+whatsapp_url_regex = r"((?:https?\:\/\/)?chat\.whatsapp\.com(?:\/[a-zA-Z0-9_-]+)+)"
 
-discord_url_regex = r'((?:https?\:\/\/)?discord(?:app)?\.(?:gg|com|net)(?:\/[a-zA-Z0-9_-]+)+)'
+discord_url_regex = (
+    r"((?:https?\:\/\/)?discord(?:app)?\.(?:gg|com|net)(?:\/[a-zA-Z0-9_-]+)+)"
+)
 
-skype_url_regex = r'((?:https?\:\/\/)?join\.skype\.com(?:\/[a-zA-Z0-9]+)+)'
+skype_url_regex = r"((?:https?\:\/\/)?join\.skype\.com(?:\/[a-zA-Z0-9]+)+)"
 
 username_regex = r"([a-zA-Z0-9\$\.,;_-]{8,20})[^a-zA-Z0-9]"
 
 password_regex = r"(?:[Pp]ass(?:word)?.|[a-zA-Z0-9_-]\:)([a-zA-Z0-9$,;_-]{4,16})"
 
-base64_regex = r"((?:[a-zA-Z0-9\+\/]{4})+(?:[a-zA-Z0-9\+\/]{3}[=]|[a-zA-Z0-9\+\/]{2}[=]{2}))"
+base64_regex = (
+    r"((?:[a-zA-Z0-9\+\/]{4})+(?:[a-zA-Z0-9\+\/]{3}[=]|[a-zA-Z0-9\+\/]{2}[=]{2}))"
+)
 
 own_name_regex = r"([A-Z][a-z]{2,10} [A-Z][a-z]{2,10})"
 
-domain_regex = r'(?:[a-z0-9]+\.){0,4}[a-z0-9]+\.?(?:\:[0-9]{2,5})?$'
-any_url = r'((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)' % domain_regex[:-1]
+domain_regex = r"(?:[a-z0-9]+\.){0,4}[a-z0-9]+\.?(?:\:[0-9]{2,5})?$"
+any_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % domain_regex[:-1]
 
-tor_hidden_domain = r'(?:[a-z0-9]+\.){0,4}(?:[a-z0-9]{16}|[a-z0-9]{56})\.onion(?:\:[0-9]{2,5})?$'
-tor_hidden_url = r'((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)' % tor_hidden_domain[:-1]
+tor_hidden_domain = (
+    r"(?:[a-z0-9]+\.){0,4}(?:[a-z0-9]{16}|[a-z0-9]{56})\.onion(?:\:[0-9]{2,5})?$"
+)
+tor_hidden_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % tor_hidden_domain[:-1]
 
-i2p_hidden_domain = r'(?:[a-z0-9]+\.){1,5}i2p(?:\:[0-9]{2,5})?$'
-i2p_hidden_url = r'((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)' % i2p_hidden_domain[:-1]
+i2p_hidden_domain = r"(?:[a-z0-9]+\.){1,5}i2p(?:\:[0-9]{2,5})?$"
+i2p_hidden_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % i2p_hidden_domain[:-1]
 
 
-
-http_regex = r'(?:https?\:\/\/)'
-localhost_regex = r'(?:localhost|127\.0\.0\.1)'
-port_regex = lambda p: r'(?:\:%d)?' % (p)
+http_regex = r"(?:https?\:\/\/)"
+localhost_regex = r"(?:localhost|127\.0\.0\.1)"
+port_regex = lambda p: r"(?:\:%d)?" % (p)
 # TODO Add query parameters
-path_regex = r'(?:\/[a-zA-Z0-9_-]+)*'
+path_regex = r"(?:\/[a-zA-Z0-9_-]+)*"
 
-zeronet_params=dict(http=http_regex, localhost=localhost_regex, port=port_regex(43110), path=path_regex, bitcoin=btc_wallet_regex, bitname=bitname_domain_regex)
+zeronet_params = dict(
+    http=http_regex,
+    localhost=localhost_regex,
+    port=port_regex(43110),
+    path=path_regex,
+    bitcoin=btc_wallet_regex,
+    bitname=bitname_domain_regex,
+)
 
-bitname_url = r'((?:{http})?(?:{bitcoin}|{bitname})(?:{port})?(?:{path})?)'.format(**zeronet_params)
+bitname_url = r"((?:{http})?(?:{bitcoin}|{bitname})(?:{port})?(?:{path})?)".format(
+    **zeronet_params
+)
 
-zeronet_params['bitname_url'] = bitname_url
-zeronet_hidden_url = r'(?:(?:{http}?{localhost}{port}\/)?({bitname_url}))'.format(**zeronet_params)
+zeronet_params["bitname_url"] = bitname_url
+zeronet_hidden_url = r"(?:(?:{http}?{localhost}{port}\/)?({bitname_url}))".format(
+    **zeronet_params
+)
 
 
-'''
+"""
 Freenet URL spec:
     - CHK@file hash,decryption key,crypto settings
     CHK@SVbD9~HM5nzf3AX4yFCBc-A4dhNUF5DPJZLL5NX5Brs,bA7qLNJR7IXRKn6uS5PAySjIM6azPFvK~18kSi6bbNQ,AAEA--8
@@ -208,57 +248,75 @@ Freenet URL spec:
 Crear sitios de freenet:
 
     http://localhost:8888/freenet:USK@spOnEa2YvAoNfreZPfoy0tVNCzQghLdWaaNM10GEiEM,QRKjyaBkOX5Qw~aEml19WIDaJJo2X3hU9mGz8GcUuKc,AQACAAE/freesite_es/11/
-'''
+"""
 
 freenet_terms = dict(
-    file_hash = alnum_join,
-    decryption_key = alnum_join,
-    crypto_settings = r'[A-Z]+(?:\-\-[0-9]+)?',
-    public_key = alnum_join,
-    user_selected_name = '[a-zA-Z0-9\_]+',
-    version = number_regex,
-    file_name = file_name
+    file_hash=alnum_join,
+    decryption_key=alnum_join,
+    crypto_settings=r"[A-Z]+(?:\-\-[0-9]+)?",
+    public_key=alnum_join,
+    user_selected_name="[a-zA-Z0-9\_]+",
+    version=number_regex,
+    file_name=file_name,
 )
 
 freenet_keys = dict(
-    chk = 'CHK@{file_hash},{decryption_key},{crypto_settings}',
-    ssk = 'SSK@{public_key},{decryption_key},{crypto_settings}\/{user_selected_name}\-{version}',
-    usk = 'USK@{public_key},{decryption_key},{crypto_settings}\/{user_selected_name}\/{version}',
-    ksk = 'KSK@{file_name}'
+    chk="CHK@{file_hash},{decryption_key},{crypto_settings}",
+    ssk="SSK@{public_key},{decryption_key},{crypto_settings}\/{user_selected_name}\-{version}",
+    usk="USK@{public_key},{decryption_key},{crypto_settings}\/{user_selected_name}\/{version}",
+    ksk="KSK@{file_name}",
 )
 
 for k in freenet_keys:
     freenet_keys[k] = freenet_keys[k].format(**freenet_terms)
 
-freenet_hash = r'(?:{chk}|{ssk}|{usk}|{ksk})'.format(**freenet_keys)
+freenet_hash = r"(?:{chk}|{ssk}|{usk}|{ksk})".format(**freenet_keys)
 
-freenet_params=dict(http=http_regex, localhost=localhost_regex, port=port_regex(8888), path=path_regex, freenet_hash=freenet_hash)
-freenet_hidden_url = r'(?:(?:{http}?{localhost}{port})\/)?(?:freenet\:)?((?:{freenet_hash})(?:{path}))'.format(**freenet_params)
+freenet_params = dict(
+    http=http_regex,
+    localhost=localhost_regex,
+    port=port_regex(8888),
+    path=path_regex,
+    freenet_hash=freenet_hash,
+)
+freenet_hidden_url = r"(?:(?:{http}?{localhost}{port})\/)?(?:freenet\:)?((?:{freenet_hash})(?:{path}))".format(
+    **freenet_params
+)
 
-'''
+"""
 http://localhost:8080/ipfs/QmW2WQi7j6c7UgJTarActp7tDNikE4B2qXtFCfLPdsgaTQ
-'''
+"""
 # TODO Evitar len44 (hay problemas con las llaves para formatear después domain)
-ipfs_hash = r'(?:ipfs\/Qm[a-zA-Z0-9]{len44}|ipns\/{domain})'.format(**dict(len44="{44}", domain=domain_regex))
-ipfs_params=dict(ipfs_hash=ipfs_hash, http=http_regex, localhost=localhost_regex, port=port_regex(8080), path=path_regex)
-ipfs_url = r'((?:{http}?{localhost}{port}(?:\/)?){ipfs_hash}{path})'.format(**ipfs_params)
+ipfs_hash = r"(?:ipfs\/Qm[a-zA-Z0-9]{len44}|ipns\/{domain})".format(
+    **dict(len44="{44}", domain=domain_regex)
+)
+ipfs_params = dict(
+    ipfs_hash=ipfs_hash,
+    http=http_regex,
+    localhost=localhost_regex,
+    port=port_regex(8080),
+    path=path_regex,
+)
+ipfs_url = r"((?:{http}?{localhost}{port}(?:\/)?){ipfs_hash}{path})".format(
+    **ipfs_params
+)
 
 pastes = [
-    'justpaste.it',
-    'pastebin.com',
-    'pasted.co',
-    'hastebin.com',
-    'snipt.org',
-    'gist.github.com',
-    'telegra.ph',
-    'ghostbin.com'
+    "justpaste.it",
+    "pastebin.com",
+    "pasted.co",
+    "hastebin.com",
+    "snipt.org",
+    "gist.github.com",
+    "telegra.ph",
+    "ghostbin.com",
 ]
 
-paste_url_regex = r'((?:https?\:\/\/)?(?:%s)(?:\/[a-zA-Z0-9_-]+)+)' % ("|".join(pastes))
+paste_url_regex = r"((?:https?\:\/\/)?(?:%s)(?:\/[a-zA-Z0-9_-]+)+)" % ("|".join(pastes))
 
-md5_regex = r'[a-f0-9]{32}'
-sha1_regex = r'[a-f0-9]{40}'
-sha256_regex = r'[a-f0-9]{64}'
+md5_regex = r"[a-f0-9]{32}"
+sha1_regex = r"[a-f0-9]{40}"
+sha256_regex = r"[a-f0-9]{64}"
 
 # Method for avoid lists of lists
 def extract_elements(x):
@@ -271,23 +329,42 @@ def extract_elements(x):
     else:
         return [x]
 
-class reStalker():
 
-    def __init__(self,
-                 phone=False, email=False,
-                 btc_wallet=False, eth_wallet=False,
-                 tor=False, i2p=False, ipfs=False,
-                 freenet=False, zeronet=False, zeronet_ctxt=False, bitname=False,
-                 paste=False, twitter=False,
-                 username=False, password=False,
-                 location=False, organization=False, keyphrase=False,
-                 keywords=[],
-                 base64=False, own_name=False,
-                 whatsapp=False, discord=False, telegram=False, skype=False,
-                 md5=False, sha1=False, sha256=False,
-                 all=False):
+class reStalker:
+    def __init__(
+        self,
+        phone=False,
+        email=False,
+        btc_wallet=False,
+        eth_wallet=False,
+        tor=False,
+        i2p=False,
+        ipfs=False,
+        freenet=False,
+        zeronet=False,
+        zeronet_ctxt=False,
+        bitname=False,
+        paste=False,
+        twitter=False,
+        username=False,
+        password=False,
+        location=False,
+        organization=False,
+        keyphrase=False,
+        keywords=[],
+        base64=False,
+        own_name=False,
+        whatsapp=False,
+        discord=False,
+        telegram=False,
+        skype=False,
+        md5=False,
+        sha1=False,
+        sha256=False,
+        all=False,
+    ):
 
-        self.ner =  own_name or location or organization
+        self.ner = own_name or location or organization
         self.own_name = own_name or all
         self.location = location or all
         self.organization = organization or all
@@ -332,7 +409,9 @@ class reStalker():
         while keyword in self.keywords:
             self.keywords.remove(keyword)
 
-    def extract_links(self, body, origin=None, url_format=any_url, domain_format=domain_regex):
+    def extract_links(
+        self, body, origin=None, url_format=any_url, domain_format=domain_regex
+    ):
 
         urls = set()
 
@@ -346,16 +425,16 @@ class reStalker():
             # soup = BeautifulSoup(body, "html.parser")
             soup = BeautifulSoup(body, "lxml")
             if soup:
-                links = soup.findAll('a')
+                links = soup.findAll("a")
                 if links:
                     for url in links:
                         try:
-                            urls.add(UUF(urljoin(origin, url.get('href'))).rebuild())
+                            urls.add(UUF(urljoin(origin, url.get("href"))).rebuild())
                         except Exception as e:
                             pass
         except:
             print("[*] Error with HTML parsing")
-            
+
         for url in urls:
             if url:
                 parsed_url = UUF(url)
@@ -370,48 +449,47 @@ class reStalker():
             soup = BeautifulSoup(body, "lxml")
 
             for script in soup(["script", "style"]):
-                script.extract()    # rip it out
+                script.extract()  # rip it out
 
             text = soup.get_text()
 
             lines = (line.strip() for line in text.splitlines())
             chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-            text = '\n'.join(chunk for chunk in chunks if chunk)
+            text = "\n".join(chunk for chunk in chunks if chunk)
         except Exception as e:
             text = body
 
         return text
 
-
     def _analyze_chunk(self, body, origin=None):
 
         if self.ner:
-            
+
             tokens = nltk.tokenize.word_tokenize(body)
             pos = nltk.pos_tag(tokens)
-            sentt = nltk.ne_chunk(pos, binary = False)
-
+            sentt = nltk.ne_chunk(pos, binary=False)
 
             if self.own_name:
-                for subtree in sentt.subtrees(filter=lambda t: t.label() == 'PERSON'):
+                for subtree in sentt.subtrees(filter=lambda t: t.label() == "PERSON"):
                     for leave in subtree.leaves():
                         yield OwnName(value=leave[0])
 
             if self.organization:
-                for subtree in sentt.subtrees(filter=lambda t: t.label() == 'ORGANIZATION'):
+                for subtree in sentt.subtrees(
+                    filter=lambda t: t.label() == "ORGANIZATION"
+                ):
                     for leave in subtree.leaves():
                         yield Organization(value=leave[0])
 
             if self.location:
-                for subtree in sentt.subtrees(filter=lambda t: t.label() == 'LOCATION'):
+                for subtree in sentt.subtrees(filter=lambda t: t.label() == "LOCATION"):
                     for leave in subtree.leaves():
                         yield Location(value=leave[0])
-
 
         if len(self.keywords) > 0 or self.keyphrase:
             ta = TextAnalysis(body)
             for k in self.keywords:
-                # TODO Generate k variations 
+                # TODO Generate k variations
                 k = k.lower()
                 if ta.is_keyword_present(k) > 0 or body.lower().find(k) >= 0:
                     yield Keyword(value=k)
@@ -434,19 +512,20 @@ class reStalker():
             for email in emails:
                 yield Email(value=email)
                 if self.username:
-                    yield Username(value=email.split('@')[0])
+                    yield Username(value=email.split("@")[0])
 
         if self.btc_wallet:
             btc_wallets = re.findall(btc_wallet_regex, body)
             btc_wallets.extend(re.findall(btc_wallet_bech32_regex, body))
             for btc_wallet in btc_wallets:
                 if BTC_Wallet.isvalid(address=btc_wallet):
-                    yield BTC_Wallet(value=btc_wallet)       
+                    yield BTC_Wallet(value=btc_wallet)
 
         if self.eth_wallet:
             eth_wallets = re.findall(eth_wallet_regex, body)
             for eth_wallet in eth_wallets:
-                yield ETH_Wallet(value=eth_wallet)
+                if ETH_Wallet.isvalid(address=eth_wallet):
+                    yield ETH_Wallet(value=eth_wallet)
 
         if self.twitter:
             tw_accounts = re.findall(tw_account_regex, body)
@@ -454,10 +533,12 @@ class reStalker():
                 yield TW_Account(value=tw_account)
 
         if self.i2p:
-            i2p_links = self.extract_links(body,
-                                           url_format=i2p_hidden_url,
-                                           domain_format=i2p_hidden_domain,
-                                           origin=origin)
+            i2p_links = self.extract_links(
+                body,
+                url_format=i2p_hidden_url,
+                domain_format=i2p_hidden_domain,
+                origin=origin,
+            )
             for link in i2p_links:
                 try:
                     link_item = UUF(link).full_url
@@ -466,10 +547,12 @@ class reStalker():
                 yield I2P_URL(value=link_item)
 
         if self.tor:
-            tor_links = self.extract_links(body,
-                                           url_format=tor_hidden_url,
-                                           domain_format=tor_hidden_domain,
-                                           origin=origin)
+            tor_links = self.extract_links(
+                body,
+                url_format=tor_hidden_url,
+                domain_format=tor_hidden_domain,
+                origin=origin,
+            )
             for link in tor_links:
                 try:
                     link_item = UUF(link).full_url
@@ -485,7 +568,7 @@ class reStalker():
         if self.zeronet:
             # TODO Experimental
             if self.zeronet_ctxt and False:
-                if body.find('zeronet') < 0:
+                if body.find("zeronet") < 0:
                     pass
 
             zeronet_links = re.findall(zeronet_hidden_url, body, re.DOTALL)
@@ -581,26 +664,25 @@ class reStalker():
             for sha256 in sha256s:
                 yield SHA256(value=sha256)
 
-
     def parse(self, body, origin=None, buff_size=20480):
 
         i = 0
 
-        chunk_size = buff_size//2
+        chunk_size = buff_size // 2
 
         # print("Chunks", len(body)//chunk_size)
-        
-        while i*chunk_size <= len(body):
-            
-            chunk = body[i*chunk_size:(i+2)*chunk_size]
+
+        while i * chunk_size <= len(body):
+
+            chunk = body[i * chunk_size : (i + 2) * chunk_size]
             chunk_analysis = self._analyze_chunk(chunk, origin=origin)
-            
+
             for result in chunk_analysis:
                 yield result
 
             i += 1
             # print("Chunk", i)
-            
+
 
 # import stalker
 # s = stalker.Stalker(zeronet=True)
@@ -609,6 +691,7 @@ class reStalker():
 
 def main():
     import sys
+
     parse_file = sys.argv[1]
     s = reStalker(all=True)
     with open(parse_file) as f:
@@ -616,5 +699,6 @@ def main():
     for element in parser:
         print(type(element), element)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
