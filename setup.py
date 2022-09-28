@@ -20,7 +20,8 @@ setup(name='restalker',
         'bs4',
         'nltk',
         'numpy', 
-        'rake-nltk'
+        'rake-nltk',
+        'web3'
       ],
       entry_points=dict(
         console_scripts= [

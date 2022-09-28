@@ -5,7 +5,7 @@ if len(sys.argv) > 1:
     with open(sys.argv[1]) as f:
         target = f.read()
 else:
-    target = ''''
+    target = """'
 logo
 Wallet
 Intercambiar
@@ -128,6 +128,11 @@ bc1pxdenc9m4sqe9hluasrvxkkdqgkydrk5ctxre5nkk4qwdvefn0sdsc6eqxe
 4
 5
 +10
+0x12ae66cdc592e10b60f9097a7b0d3c59fce29876
+0x12AE66CDc592e10B60f9097a7b0D3C59fce29876
+0x111111111111111111111aaaaaaaaaaaaaaaaaaa
+0x111111111111111111111AAAAAAAAAAAAAAAAAAA
+0x1111111111xxxxxxxxxxxxxxAAAAAAAAAAAAAAAA
 
 Comprar criptomonedas
 Ya lo has pensado, es hora de actuar.
@@ -3182,11 +3187,10 @@ Contact emails:
 MckinnisKamariyah91@mail.com
 ThomassenVallen1999@mail.com
 Man is the master of everything and decides everything.
-'''
+"""
 
 s = restalker.reStalker(all=True)
 # s = restalker.reStalker(tor=True)
 
 for p in s.parse(target):
     print(p)
-    
