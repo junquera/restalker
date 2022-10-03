@@ -1,9 +1,12 @@
 requires=[
-  'bs4',
-  'nltk',
-  'numpy',
-  'nltk',
-  'rake-nltk'
+  "based58",
+  "bech32ref",
+  "bs4",
+  "nltk",
+  "numpy",
+  "monero",
+  "rake-nltk",
+  "web3",
 ]
 
 build-backend = "setuptools.build_meta"
