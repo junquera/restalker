@@ -21,6 +21,7 @@ setup(
         "bs4",
         "nltk",
         "numpy",
+        "monero",
         "rake-nltk",
         "web3",
     ],

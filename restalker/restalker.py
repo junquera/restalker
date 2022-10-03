@@ -3,6 +3,7 @@ import based58
 from hashlib import sha256
 from bech32ref import segwit_addr
 from web3 import Web3
+from monero.address import address as xmr_address
 from .link_extractors import UUF
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
@@ -68,6 +69,17 @@ class ETH_Wallet(Item):
                 ret = Web3.isChecksumAddress(address)
             else:
                 ret = Web3.isAddress(address)
+        except:
+            ret = False
+        return ret
+
+
+class XMR_Wallet(Item):
+    @staticmethod
+    def isvalid(address: str) -> bool:
+        ret = None
+        try:
+            ret = xmr_address(address) is not None
         except:
             ret = False
         return ret
@@ -172,6 +184,8 @@ btc_wallet_regex = r"([13][a-km-zA-HJ-NP-Z1-9]{25,34})"
 btc_wallet_bech32_regex = r"(bc1[qp][qpzry9x8gf2tvdw0s3jn54khce6mua7l]{38,58})"
 
 eth_wallet_regex = r"(0x[0-9a-fA-F]{40})"
+
+xmr_wallet_regex = r"([48][a-km-zA-HJ-NP-Z1-9]{94,105})"
 
 bitname_domain_regex = r"(?:[a-zA-Z0-9]+\.)+bit"
 
@@ -337,6 +351,7 @@ class reStalker:
         email=False,
         btc_wallet=False,
         eth_wallet=False,
+        xmr_wallet=False,
         tor=False,
         i2p=False,
         ipfs=False,
@@ -378,6 +393,7 @@ class reStalker:
 
         self.btc_wallet = btc_wallet or all
         self.eth_wallet = eth_wallet or all
+        self.xmr_wallet = xmr_wallet or all
 
         self.tor = tor or all
         self.i2p = i2p or all
@@ -526,6 +542,12 @@ class reStalker:
             for eth_wallet in eth_wallets:
                 if ETH_Wallet.isvalid(address=eth_wallet):
                     yield ETH_Wallet(value=eth_wallet)
+
+        if self.xmr_wallet:
+            xmr_wallets = re.findall(xmr_wallet_regex, body)
+            for xmr_wallet in xmr_wallets:
+                if XMR_Wallet.isvalid(address=xmr_wallet):
+                    yield XMR_Wallet(value=xmr_wallet)
 
         if self.twitter:
             tw_accounts = re.findall(tw_account_regex, body)
