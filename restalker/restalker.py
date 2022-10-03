@@ -108,6 +108,24 @@ class ZEC_Wallet(Item):
         return ret
 
 
+class DASH_Wallet(Item):
+    @staticmethod
+    def isvalid(address: str) -> bool:
+        ret = None
+        try:
+            if re.search(dash_wallet_regex, address)[0] == address:
+                decode_address = based58.b58decode(address.encode("utf-8"))
+                ret = (
+                    decode_address[-4:]
+                    == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
+                )
+            else:
+                ret = False
+        except:
+            ret = False
+        return ret
+
+
 class TW_Account(Item):
     pass
 
@@ -215,6 +233,8 @@ zec_wallet_transparent_regex = r"(t[13][a-km-zA-HJ-NP-Z1-9]{33})"
 zec_wallet_private_regex = r"(zc[a-km-zA-HJ-NP-Z1-9]{93})"
 
 zec_wallet_private_sapling_regex = r"(zs1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{75})"
+
+dash_wallet_regex = r"(X[a-km-zA-HJ-NP-Z1-9]{33})"
 
 bitname_domain_regex = r"(?:[a-zA-Z0-9]+\.)+bit"
 
@@ -382,6 +402,7 @@ class reStalker:
         eth_wallet=False,
         xmr_wallet=False,
         zec_wallet=False,
+        dash_wallet=False,
         tor=False,
         i2p=False,
         ipfs=False,
@@ -425,6 +446,7 @@ class reStalker:
         self.eth_wallet = eth_wallet or all
         self.xmr_wallet = xmr_wallet or all
         self.zec_wallet = zec_wallet or all
+        self.dash_wallet = dash_wallet or all
 
         self.tor = tor or all
         self.i2p = i2p or all
@@ -587,6 +609,12 @@ class reStalker:
             for zec_wallet in zec_wallets:
                 if ZEC_Wallet.isvalid(address=zec_wallet):
                     yield ZEC_Wallet(value=zec_wallet)
+
+        if self.dash_wallet:
+            dash_wallets = re.findall(dash_wallet_regex, body)
+            for dash_wallet in dash_wallets:
+                if DASH_Wallet.isvalid(address=dash_wallet):
+                    yield DASH_Wallet(value=dash_wallet)
 
         if self.twitter:
             tw_accounts = re.findall(tw_account_regex, body)
