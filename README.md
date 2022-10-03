@@ -17,6 +17,10 @@
 
 - XMR Wallet
 
+- ZEC Wallet
+
+- DASH Wallet
+
 - TW Account
 
 - Tor URL
