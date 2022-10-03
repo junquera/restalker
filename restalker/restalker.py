@@ -85,6 +85,29 @@ class XMR_Wallet(Item):
         return ret
 
 
+class ZEC_Wallet(Item):
+    @staticmethod
+    def isvalid(address: str) -> bool:
+        ret = None
+        try:
+            if (address[0] == "t" and address[1] in ["1", "3"]) or address.startswith(
+                "zc"
+            ):
+                decode_address = based58.b58decode(address.encode("utf-8"))
+                ret = (
+                    decode_address[-4:]
+                    == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
+                )
+            elif address.startswith("zs"):
+                hrpgot, data, spec = segwit_addr.bech32_decode(address)
+                ret = (hrpgot is not None) and (data is not None) and (spec is not None)
+            else:
+                ret = False
+        except:
+            ret = False
+        return ret
+
+
 class TW_Account(Item):
     pass
 
@@ -186,6 +209,12 @@ btc_wallet_bech32_regex = r"(bc1[qp][qpzry9x8gf2tvdw0s3jn54khce6mua7l]{38,58})"
 eth_wallet_regex = r"(0x[0-9a-fA-F]{40})"
 
 xmr_wallet_regex = r"([48][a-km-zA-HJ-NP-Z1-9]{94,105})"
+
+zec_wallet_transparent_regex = r"(t[13][a-km-zA-HJ-NP-Z1-9]{33})"
+
+zec_wallet_private_regex = r"(zc[a-km-zA-HJ-NP-Z1-9]{93})"
+
+zec_wallet_private_sapling_regex = r"(zs1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{75})"
 
 bitname_domain_regex = r"(?:[a-zA-Z0-9]+\.)+bit"
 
@@ -352,6 +381,7 @@ class reStalker:
         btc_wallet=False,
         eth_wallet=False,
         xmr_wallet=False,
+        zec_wallet=False,
         tor=False,
         i2p=False,
         ipfs=False,
@@ -394,6 +424,7 @@ class reStalker:
         self.btc_wallet = btc_wallet or all
         self.eth_wallet = eth_wallet or all
         self.xmr_wallet = xmr_wallet or all
+        self.zec_wallet = zec_wallet or all
 
         self.tor = tor or all
         self.i2p = i2p or all
@@ -548,6 +579,14 @@ class reStalker:
             for xmr_wallet in xmr_wallets:
                 if XMR_Wallet.isvalid(address=xmr_wallet):
                     yield XMR_Wallet(value=xmr_wallet)
+
+        if self.zec_wallet:
+            zec_wallets = re.findall(zec_wallet_transparent_regex, body)
+            zec_wallets.extend(re.findall(zec_wallet_private_regex, body))
+            zec_wallets.extend(re.findall(zec_wallet_private_sapling_regex, body))
+            for zec_wallet in zec_wallets:
+                if ZEC_Wallet.isvalid(address=zec_wallet):
+                    yield ZEC_Wallet(value=zec_wallet)
 
         if self.twitter:
             tw_accounts = re.findall(tw_account_regex, body)
