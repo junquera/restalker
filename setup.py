@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="restalker",
-    version="1.2.2",
+    version="1.2.5",
     description="Text analyzer package",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -21,6 +21,7 @@ setup(
         "bs4",
         "nltk",
         "numpy",
+        "monero",
         "rake-nltk",
         "web3",
     ],

@@ -1,5 +1,4 @@
-
-![doc/img/icon.png](doc/img/icon.png)
+![doc/img/icon.png](https://gitlab.com/junquera/restalker/-/raw/master/doc/img/icon.png)
 
 # Stalker
 
@@ -15,6 +14,12 @@
 - BTC Wallet
 
 - ETH Wallet
+
+- XMR Wallet
+
+- ZEC Wallet
+
+- DASH Wallet
 
 - TW Account
 
