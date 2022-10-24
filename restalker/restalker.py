@@ -252,7 +252,7 @@ zec_wallet_private_sapling_regex = r"(zs1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{75})
 
 dash_wallet_regex = r"(X[a-km-zA-HJ-NP-Z1-9]{33})"
 
-dot_wallet_regex = r"([1CDFGHJ5]{1}[a-km-zA-HJ-NP-Z1-9]{39,63})"
+dot_wallet_regex = r"([1CDFGHJ5]{1}[a-km-zA-HJ-NP-Z1-9]{46,47})"
 
 bitname_domain_regex = r"(?:[a-zA-Z0-9]+\.)+bit"
 
