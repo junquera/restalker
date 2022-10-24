@@ -4,6 +4,7 @@ from hashlib import sha256
 from bech32ref import segwit_addr
 from web3 import Web3
 from monero.address import address as xmr_address
+from bip_utils import SS58Decoder
 from .link_extractors import UUF
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
@@ -126,6 +127,21 @@ class DASH_Wallet(Item):
         return ret
 
 
+class DOT_Wallet(Item):
+    @staticmethod
+    def isvalid(address: str) -> bool:
+        ret = None
+        try:
+            if re.search(dot_wallet_regex, address)[0] == address:
+                SS58Decoder.Decode(address)
+                ret = True
+            else:
+                ret = False
+        except:
+            ret = False
+        return ret
+
+
 class TW_Account(Item):
     pass
 
@@ -235,6 +251,8 @@ zec_wallet_private_regex = r"(zc[a-km-zA-HJ-NP-Z1-9]{93})"
 zec_wallet_private_sapling_regex = r"(zs1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{75})"
 
 dash_wallet_regex = r"(X[a-km-zA-HJ-NP-Z1-9]{33})"
+
+dot_wallet_regex = r"([1CDFGHJ5]{1}[a-km-zA-HJ-NP-Z1-9]{39,63})"
 
 bitname_domain_regex = r"(?:[a-zA-Z0-9]+\.)+bit"
 
@@ -403,6 +421,7 @@ class reStalker:
         xmr_wallet=False,
         zec_wallet=False,
         dash_wallet=False,
+        dot_wallet=False,
         tor=False,
         i2p=False,
         ipfs=False,
@@ -447,6 +466,7 @@ class reStalker:
         self.xmr_wallet = xmr_wallet or all
         self.zec_wallet = zec_wallet or all
         self.dash_wallet = dash_wallet or all
+        self.dot_wallet = dot_wallet or all
 
         self.tor = tor or all
         self.i2p = i2p or all
@@ -615,6 +635,12 @@ class reStalker:
             for dash_wallet in dash_wallets:
                 if DASH_Wallet.isvalid(address=dash_wallet):
                     yield DASH_Wallet(value=dash_wallet)
+
+        if self.dot_wallet:
+            dot_wallets = re.findall(dot_wallet_regex, body)
+            for dot_wallet in dot_wallets:
+                if DOT_Wallet.isvalid(address=dot_wallet):
+                    yield DOT_Wallet(value=dot_wallet)
 
         if self.twitter:
             tw_accounts = re.findall(tw_account_regex, body)

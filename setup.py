@@ -18,6 +18,7 @@ setup(
     install_requires=[
         "based58",
         "bech32ref",
+        "bip-utils",
         "bs4",
         "nltk",
         "numpy",
