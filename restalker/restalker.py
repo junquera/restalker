@@ -292,7 +292,7 @@ bitname_url = r"((?:{http})?(?:{bitcoin}|{bitname})(?:{port})?(?:{path})?)".form
 )
 
 zeronet_params["bitname_url"] = bitname_url
-zeronet_hidden_url = r"(?:(?:{http}?{localhost}{port}\/)?({bitname_url}))".format(
+zeronet_hidden_url = r"(?:(?:{http}?{localhost}{port}\/)({bitname_url}))".format(
     **zeronet_params
 )
 
