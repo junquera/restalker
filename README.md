@@ -21,6 +21,8 @@
 
 - DASH Wallet
 
+- DOT Wallet
+
 - TW Account
 
 - Tor URL
