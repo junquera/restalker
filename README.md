@@ -25,6 +25,8 @@
 
 - XRP Wallet
 
+- BNB Wallet
+
 - TW Account
 
 - Tor URL
