@@ -23,6 +23,8 @@
 
 - DOT Wallet
 
+- XRP Wallet
+
 - TW Account
 
 - Tor URL
