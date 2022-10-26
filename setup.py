@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="restalker",
-    version="1.2.5",
+    version="1.2.9",
     description="Text analyzer package",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -18,6 +18,7 @@ setup(
     install_requires=[
         "based58",
         "bech32ref",
+        "bip-utils",
         "bs4",
         "nltk",
         "numpy",

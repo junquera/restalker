@@ -21,6 +21,12 @@
 
 - DASH Wallet
 
+- DOT Wallet
+
+- XRP Wallet
+
+- BNB Wallet
+
 - TW Account
 
 - Tor URL

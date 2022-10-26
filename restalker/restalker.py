@@ -4,6 +4,7 @@ from hashlib import sha256
 from bech32ref import segwit_addr
 from web3 import Web3
 from monero.address import address as xmr_address
+from bip_utils import SS58Decoder
 from .link_extractors import UUF
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
@@ -126,6 +127,54 @@ class DASH_Wallet(Item):
         return ret
 
 
+class DOT_Wallet(Item):
+    @staticmethod
+    def isvalid(address: str) -> bool:
+        ret = None
+        try:
+            if re.search(dot_wallet_regex, address)[0] == address:
+                SS58Decoder.Decode(address)
+                ret = True
+            else:
+                ret = False
+        except:
+            ret = False
+        return ret
+
+
+class XRP_Wallet(Item):
+    @staticmethod
+    def isvalid(address: str) -> bool:
+        ret = None
+        try:
+            if re.search(xrp_wallet_regex, address)[0] == address:
+                decode_address = based58.b58decode_check(
+                    address.encode("utf-8"),
+                    alphabet=based58.Alphabet.RIPPLE,
+                )
+                ret = True
+            else:
+                ret = False
+        except:
+            ret = False
+        return ret
+
+
+class BNB_Wallet(Item):
+    @staticmethod
+    def isvalid(address: str) -> bool:
+        ret = None
+        try:
+            if re.search(bnb_wallet_regex, address)[0] == address:
+                hrpgot, data, spec = segwit_addr.bech32_decode(address)
+                ret = hrpgot == "bnb"
+            else:
+                ret = False
+        except:
+            ret = False
+        return ret
+
+
 class TW_Account(Item):
     pass
 
@@ -236,6 +285,14 @@ zec_wallet_private_sapling_regex = r"(zs1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{75})
 
 dash_wallet_regex = r"(X[a-km-zA-HJ-NP-Z1-9]{33})"
 
+dot_wallet_regex = r"([1CDFGHJ5][a-km-zA-HJ-NP-Z1-9]{46,47})"
+
+xrp_wallet_regex = (
+    r"([rX][rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz]{26,46})"
+)
+
+bnb_wallet_regex = r"(bnb[a-zA-Z0-9]{39})"
+
 bitname_domain_regex = r"(?:[a-zA-Z0-9]+\.)+bit"
 
 tw_account_regex = r"[^a-zA-Z0-9]@([a-zA-Z0-9_]{3,15})"
@@ -292,7 +349,7 @@ bitname_url = r"((?:{http})?(?:{bitcoin}|{bitname})(?:{port})?(?:{path})?)".form
 )
 
 zeronet_params["bitname_url"] = bitname_url
-zeronet_hidden_url = r"(?:(?:{http}?{localhost}{port}\/)?({bitname_url}))".format(
+zeronet_hidden_url = r"(?:(?:{http}?{localhost}{port}\/)({bitname_url}))".format(
     **zeronet_params
 )
 
@@ -403,6 +460,9 @@ class reStalker:
         xmr_wallet=False,
         zec_wallet=False,
         dash_wallet=False,
+        dot_wallet=False,
+        xrp_wallet=False,
+        bnb_wallet=False,
         tor=False,
         i2p=False,
         ipfs=False,
@@ -447,6 +507,9 @@ class reStalker:
         self.xmr_wallet = xmr_wallet or all
         self.zec_wallet = zec_wallet or all
         self.dash_wallet = dash_wallet or all
+        self.dot_wallet = dot_wallet or all
+        self.xrp_wallet = xrp_wallet or all
+        self.bnb_wallet = bnb_wallet or all
 
         self.tor = tor or all
         self.i2p = i2p or all
@@ -615,6 +678,24 @@ class reStalker:
             for dash_wallet in dash_wallets:
                 if DASH_Wallet.isvalid(address=dash_wallet):
                     yield DASH_Wallet(value=dash_wallet)
+
+        if self.dot_wallet:
+            dot_wallets = re.findall(dot_wallet_regex, body)
+            for dot_wallet in dot_wallets:
+                if DOT_Wallet.isvalid(address=dot_wallet):
+                    yield DOT_Wallet(value=dot_wallet)
+
+        if self.xrp_wallet:
+            xrp_wallets = re.findall(xrp_wallet_regex, body)
+            for xrp_wallet in xrp_wallets:
+                if XRP_Wallet.isvalid(address=xrp_wallet):
+                    yield XRP_Wallet(value=xrp_wallet)
+
+        if self.bnb_wallet:
+            bnb_wallets = re.findall(bnb_wallet_regex, body)
+            for bnb_wallet in bnb_wallets:
+                if BNB_Wallet.isvalid(address=bnb_wallet):
+                    yield BNB_Wallet(value=bnb_wallet)
 
         if self.twitter:
             tw_accounts = re.findall(tw_account_regex, body)
