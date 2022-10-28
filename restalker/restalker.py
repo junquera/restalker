@@ -134,10 +134,7 @@ class DOT_Wallet(Item):
         try:
             if re.search(dot_wallet_regex, address)[0] == address:
                 prefix, decode = SS58Decoder.Decode(address)
-                # Polkadot prefix: 0
-                # Kusama (Polkadot Canary) prefix: 2
-                # Generic Substrate prefix: 42
-                ret = prefix in [0, 2, 42]
+                ret = prefix == 0
             else:
                 ret = False
         except:
@@ -288,7 +285,7 @@ zec_wallet_private_sapling_regex = r"(zs1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{75})
 
 dash_wallet_regex = r"(X[a-km-zA-HJ-NP-Z1-9]{33})"
 
-dot_wallet_regex = r"([1CDFGHJ5][a-km-zA-HJ-NP-Z1-9]{46,47})"
+dot_wallet_regex = r"(1[a-km-zA-HJ-NP-Z1-9]{46,47})"
 
 xrp_wallet_regex = (
     r"([rX][rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz]{26,46})"
