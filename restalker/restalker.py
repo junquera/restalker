@@ -133,8 +133,11 @@ class DOT_Wallet(Item):
         ret = None
         try:
             if re.search(dot_wallet_regex, address)[0] == address:
-                SS58Decoder.Decode(address)
-                ret = True
+                prefix, decode = SS58Decoder.Decode(address)
+                # Polkadot prefix: 0
+                # Kusama (Polkadot Canary) prefix: 2
+                # Generic Substrate prefix: 42
+                ret = prefix in [0, 2, 42]
             else:
                 ret = False
         except:
