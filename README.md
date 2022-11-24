@@ -1,31 +1,37 @@
 ![doc/img/icon.png](https://gitlab.com/junquera/restalker/-/raw/master/doc/img/icon.png)
 
-# Stalker
+# reStalker
 
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/junquera/stalker.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/junquera/stalker/alerts/)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/junquera/stalker.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/junquera/stalker/context:python)
 
+IOC and entities extractor.
+
 ## Detection
+
+`reStalker` can extract these entities from any binary or text source:
 
 - Phone
 
 - Email
 
-- BTC Wallet
+- Digital assets
 
-- ETH Wallet
+    - BTC Wallet
 
-- XMR Wallet
+    - ETH Wallet
 
-- ZEC Wallet
+    - XMR Wallet
 
-- DASH Wallet
+    - ZEC Wallet
 
-- DOT Wallet
+    - DASH Wallet
 
-- XRP Wallet
+    - DOT Wallet
 
-- BNB Wallet
+    - XRP Wallet
+
+    - BNB Wallet
 
 - TW Account
 
@@ -76,7 +82,16 @@ import stalker
 
 # Define which elements we desire
 # for example Tor URLs
-s = stalker.Stalker(tor=True)
+s = stalker.Stalker(tor=True, i2p=True)
 
 elements = s.parse(input_text)
+
+for element in elements:
+    print("[*] Darknet IOC found:", element)
 ```
+
+# Acknowledgements
+
+[Byron Labs](https://byronlabs.io/) is an active supporter of the `reStalker` development.
+
+![](https://gitlab.com/junquera/restalker/-/raw/master/doc/img/byronlabs-300x142.png)
