@@ -39,6 +39,8 @@ class Keyphrase(Item):
 class Keyword(Item):
     pass
 
+class PGP(Item):
+    pass
 
 class BTC_Wallet(Item):
     @staticmethod
@@ -353,6 +355,10 @@ zeronet_hidden_url = r"(?:(?:{http}?{localhost}{port}\/)({bitname_url}))".format
     **zeronet_params
 )
 
+gpg_header = '-----BEGIN PGP (PUBLIC|PRIVATE) KEY BLOCK-----'
+gpg_footer = '-----END PGP (PUBLIC|PRIVATE) KEY BLOCK-----'
+
+gpg_key = "(%s\n(?:.{,64}\n){,128}%s)\n" % (gpg_header, gpg_footer)
 
 """
 Freenet URL spec:
@@ -478,6 +484,7 @@ class reStalker:
         organization=False,
         keyphrase=False,
         keywords=[],
+        gpg=False,
         base64=False,
         own_name=False,
         whatsapp=False,
@@ -517,6 +524,8 @@ class reStalker:
         self.zeronet_ctxt = zeronet_ctxt
         self.zeronet = zeronet or all or zeronet_ctxt
         self.bitname = bitname or all
+
+        self.gpg = gpg or all
 
         self.ipfs = ipfs or all
 
@@ -734,6 +743,7 @@ class reStalker:
             freenet_links = re.findall(freenet_hidden_url, body, re.DOTALL)
             for link in freenet_links:
                 yield Freenet_URL(value=link)
+                
 
         if self.zeronet:
             # TODO Experimental
@@ -753,6 +763,12 @@ class reStalker:
 
             for link in bitname_links:
                 yield Bitname_URL(value=link)
+
+        if self.gpg:
+            gpg_keys = re.findall(gpg_key, body, re.DOTALL)
+
+            for k in gpg_keys:
+                yield PGP(value=k)
 
         if self.ipfs:
 
