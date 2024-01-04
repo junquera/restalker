@@ -1,13 +1,29 @@
 requires=[
-  "based58",
-  "bech32ref",
-  "bip-utils",
-  "bs4",
-  "nltk",
-  "numpy",
-  "monero",
-  "rake-nltk",
+  'bs4',
+  'nltk',
+  'numpy',
+  'nltk',
+  'rake-nltk',
+  'based58'
   "web3",
+  "monero",
+  "bip-utils",
+  "bech32ref",
 ]
 
 build-backend = "setuptools.build_meta"
+
+[tool.poetry]
+name = "restalker"
+version = "2.0.0"
+description = ""
+authors = ["Javier Junquera-Sánchez <javier@junquera.io>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
