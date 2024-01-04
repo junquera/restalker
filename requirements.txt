@@ -2,8 +2,9 @@ based58
 bech32ref
 bip-utils
 bs4
+monero
 nltk
 numpy
-monero
 rake-nltk
 web3
+web3bs4

@@ -355,10 +355,10 @@ zeronet_hidden_url = r"(?:(?:{http}?{localhost}{port}\/)({bitname_url}))".format
     **zeronet_params
 )
 
-gpg_header = '-----BEGIN PGP (PUBLIC|PRIVATE) KEY BLOCK-----'
-gpg_footer = '-----END PGP (PUBLIC|PRIVATE) KEY BLOCK-----'
+gpg_header = r'-----BEGIN PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----'
+gpg_footer = r'-----END PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----'
 
-gpg_key = "(%s\n(?:.{,64}\n){,128}%s)\n" % (gpg_header, gpg_footer)
+gpg_key = r"(%s\n(?:.{,64}\n){,128}%s)\n" % (gpg_header, gpg_footer)
 
 """
 Freenet URL spec:
