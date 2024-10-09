@@ -1,5 +1,6 @@
 import restalker
 import sys
+import nltk
 
 if len(sys.argv) > 1:
     with open(sys.argv[1]) as f:
@@ -3246,7 +3247,19 @@ Contact emails:
 MckinnisKamariyah91@mail.com
 ThomassenVallen1999@mail.com
 Man is the master of everything and decides everything.
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-12345678-9"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-12345678-9');
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-9876543210"></script>
 """
+
+nltk.download('punkt_tab')
+nltk.download('stopwords')
 
 s = restalker.reStalker(all=True)
 # s = restalker.reStalker(tor=True)
