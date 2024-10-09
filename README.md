@@ -1,4 +1,4 @@
-![doc/img/icon.png](https://gitlab.com/junquera/restalker/-/raw/master/doc/img/icon.png)
+![doc/img/icon.png](doc/img/icon.png)
 
 # reStalker
 

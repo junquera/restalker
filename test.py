@@ -1,5 +1,6 @@
 import restalker
 import sys
+import nltk
 
 if len(sys.argv) > 1:
     with open(sys.argv[1]) as f:
@@ -167,6 +168,22 @@ rUqqN1XXXXxxxxxUXrLX48vtnNdpvaqsZ7
 XV5sbjUmgPpvXv4ixFWZ5ptAYZ6PD2q1qM6owqNbug8W6KV
 XV5sbjUmgPpvXv4ixFWZ5ptAYZ6PD2gYsjNFQLKYW33DzBm
 XV5sbjUmgPpvXv4ixFWZ5ptAYZ6PD2m4Er6SnvjVLpMWPjR
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: OpenPGP.js v4.10.10
+Comment: https://openpgpjs.org
+
+xjMEXZNO6hYJKwYBBAHaRw8BAQdA88tb7cBPLHnHQUffjAX2zi/2YVzXbKFN
+MelSwW9zVyzNJ2phdmllckBqdW5xdWVyYS5pbyA8amF2aWVyQGp1bnF1ZXJh
+LmlvPsJ3BBAWCgAfBQJdk07qBgsJBwgDAgQVCAoCAxYCAQIZAQIbAwIeAQAK
+CRCruS5mMrHGiKJ3AQC+BoJM3WxDF0egUKzQONkeniRcAaj+6H/wwCG/hRGs
+0QD/dbAqhJ8zLsCXjpbUJ3kiwC0sxqoXNqkoSxEL3ussnALOOARdk07qEgor
+BgEEAZdVAQUBAQdAx8UrusJR+LO5PacT+VQGBSBHl5BUIs3qWgIgZJ5u4DED
+AQgHwmEEGBYIAAkFAl2TTuoCGwwACgkQq7kuZjKxxogVrAEAzTz3tEeHckeH
+f66oXp3+7mkByue6sOAsPTO1q9cEzV8BALLe/3t7UOkCmisVlQ+ONuhko+yo
+tZO/Nk0MH1tX+c0M
+=Qj/6
+-----END PGP PUBLIC KEY BLOCK-----
+
 XV5sbjUmgPpvXv4ixFWZ5ptAYZ6PD2m4Er6XXXxxxXMWPjR
 bnb1qx8u39hqcykjy5puv582gvqy5520dsz7fdh9ak
 bnb10af52w77pkehgxhnwgeca50q2t2354q4xamz5y
@@ -3230,7 +3247,19 @@ Contact emails:
 MckinnisKamariyah91@mail.com
 ThomassenVallen1999@mail.com
 Man is the master of everything and decides everything.
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-12345678-9"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-12345678-9');
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-9876543210"></script>
 """
+
+nltk.download('punkt_tab')
+nltk.download('stopwords')
 
 s = restalker.reStalker(all=True)
 # s = restalker.reStalker(tor=True)

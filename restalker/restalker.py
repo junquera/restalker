@@ -261,6 +261,21 @@ class Location(Item):
     pass
 
 
+class PGP(Item):
+    def __init__(self, key_data):
+        self.key_data = key_data
+
+    def is_public_key(self):
+        return "PUBLIC KEY" in self.key_data
+
+    def is_private_key(self):
+        return "PRIVATE KEY" in self.key_data
+
+
+class GA_Tracking_Code(Item):
+    pass
+
+
 number_regex = r"[0-9]+"
 
 alnum_join = r"[a-zA-Z0-9\-\~]+"
@@ -355,10 +370,12 @@ zeronet_hidden_url = r"(?:(?:{http}?{localhost}{port}\/)({bitname_url}))".format
     **zeronet_params
 )
 
-gpg_header = '-----BEGIN PGP (PUBLIC|PRIVATE) KEY BLOCK-----'
-gpg_footer = '-----END PGP (PUBLIC|PRIVATE) KEY BLOCK-----'
+gpg_header = r'-----BEGIN PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----'
+gpg_footer = r'-----END PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----'
 
-gpg_key = "(%s\n(?:.{,64}\n){,128}%s)\n" % (gpg_header, gpg_footer)
+gpg_key = r"(%s\n(?:.{,64}\n){,128}%s)\n" % (gpg_header, gpg_footer)
+
+ga_tracking_code_regex = r"(UA-\d{4,10}-\d|G-\d{10})"
 
 """
 Freenet URL spec:
@@ -485,6 +502,7 @@ class reStalker:
         keyphrase=False,
         keywords=[],
         gpg=False,
+        gatc=False,
         base64=False,
         own_name=False,
         whatsapp=False,
@@ -526,6 +544,7 @@ class reStalker:
         self.bitname = bitname or all
 
         self.gpg = gpg or all
+        self.gatc = gatc or all
 
         self.ipfs = ipfs or all
 
@@ -766,7 +785,6 @@ class reStalker:
 
         if self.gpg:
             gpg_keys = re.findall(gpg_key, body, re.DOTALL)
-
             for k in gpg_keys:
                 yield PGP(value=k)
 
@@ -849,6 +867,11 @@ class reStalker:
             sha256s = re.findall(sha256_regex, body)
             for sha256 in sha256s:
                 yield SHA256(value=sha256)
+        
+        if self.gatc:
+            gatc = re.findall(ga_tracking_code_regex, body)
+            for g in gatc:
+                yield GA_Tracking_Code(value=g)
 
     def parse(self, body, origin=None, buff_size=20480):
 
