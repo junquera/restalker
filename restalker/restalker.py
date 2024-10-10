@@ -39,9 +39,6 @@ class Keyphrase(Item):
 class Keyword(Item):
     pass
 
-class PGP(Item):
-    pass
-
 class BTC_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
@@ -262,14 +259,20 @@ class Location(Item):
 
 
 class PGP(Item):
-    def __init__(self, key_data):
-        self.key_data = key_data
+    def __init__(self, value):
+        self.value = self.clean_pgp_key(value)
 
     def is_public_key(self):
-        return "PUBLIC KEY" in self.key_data
+        return "PUBLIC KEY" in self.value
 
     def is_private_key(self):
-        return "PRIVATE KEY" in self.key_data
+        return "PRIVATE KEY" in self.value
+    
+    @staticmethod
+    def clean_pgp_key(pgp_key):
+        cleaned_key = re.sub(r'<br\s*/?>', '', pgp_key)
+        cleaned_key = cleaned_key.strip()
+        return cleaned_key
 
 
 class GA_Tracking_Code(Item):
@@ -373,9 +376,10 @@ zeronet_hidden_url = r"(?:(?:{http}?{localhost}{port}\/)({bitname_url}))".format
 gpg_header = r'-----BEGIN PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----'
 gpg_footer = r'-----END PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----'
 
-gpg_key = r"(%s\n(?:.{,64}\n){,128}%s)\n" % (gpg_header, gpg_footer)
+gpg_key = r"(%s[\s\S]{175,5000}%s)" % (gpg_header, gpg_footer)
 
-ga_tracking_code_regex = r"(UA-\d{4,10}-\d|G-\d{10})"
+
+ga_tracking_code_regex = r"(UA-\d{4,10}-\d|G-\w{10})"
 
 """
 Freenet URL spec:
@@ -763,7 +767,6 @@ class reStalker:
             for link in freenet_links:
                 yield Freenet_URL(value=link)
                 
-
         if self.zeronet:
             # TODO Experimental
             if self.zeronet_ctxt and False:
