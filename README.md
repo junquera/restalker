@@ -5,7 +5,6 @@
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
 
-
 IOC and entities extractor.
 
 ## Detection
@@ -70,7 +69,21 @@ IOC and entities extractor.
 
 ## Install
 
+Console:
+
+```sh
+pip3 install "restalker<3"
+```
+
 In `requeriments.txt`:
+
+* Production
+
+```
+restalker<3
+```
+
+* Development
 
 ```
 git+https://github.com/junquera/restalker.git#egg=restalker
@@ -83,7 +96,7 @@ import restalker
 
 # Define which elements we desire
 # for example Tor URLs
-s = restalker.restalker(tor=True, i2p=True)
+s = restalker.reStalker(tor=True, i2p=True)
 
 elements = s.parse(input_text)
 
