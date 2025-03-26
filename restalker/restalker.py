@@ -317,7 +317,10 @@ bitname_domain_regex = r"(?:[a-zA-Z0-9]+\.)+bit"
 
 tw_account_regex = r"[^a-zA-Z0-9]@([a-zA-Z0-9_]{3,15})"
 
-telegram_url_regex = r"((?:https?\:\/\/)?(?:t\.me|telegram\.me)(?:\/[a-zA-Z0-9_-]+)+)"
+telegram_url_regex = re.compile(
+    r"((?:https?:\/\/)?(?:t\.me|telegram\.me|teleg\.one|tgclick\.com)(?:\/[a-zA-Z0-9_-]+)+)|"
+    r"((?:tg:\/\/)(?:[a-zA-Z0-9_-]+\?[a-zA-Z0-9_-]+=[a-zA-Z0-9_-]+)+)"
+)
 
 whatsapp_url_regex = r"((?:https?\:\/\/)?chat\.whatsapp\.com(?:\/[a-zA-Z0-9_-]+)+)"
 
@@ -471,7 +474,8 @@ def extract_elements(x):
         result = list()
         for piece in x:
             for element in extract_elements(piece):
-                result.append(element)
+                if element != "":
+                    result.append(element)
         return set(result)
     else:
         return [x]
@@ -820,6 +824,7 @@ class reStalker:
 
         if self.telegram:
             telegram_links = re.findall(telegram_url_regex, body)
+            telegram_links = extract_elements(telegram_links)
             for link in telegram_links:
                 try:
                     link_item = UUF(link).full_url
@@ -883,10 +888,10 @@ class reStalker:
         chunk_size = buff_size // 2
 
         # print("Chunks", len(body)//chunk_size)
-
+        
         while i * chunk_size <= len(body):
 
-            chunk = body[i * chunk_size : (i + 2) * chunk_size]
+            chunk = body[i * chunk_size : (i + 1) * chunk_size]
             chunk_analysis = self._analyze_chunk(chunk, origin=origin)
 
             for result in chunk_analysis:
