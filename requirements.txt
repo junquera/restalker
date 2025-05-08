@@ -7,4 +7,4 @@ nltk
 numpy
 rake-nltk
 web3
-web3bs4
+bs4
