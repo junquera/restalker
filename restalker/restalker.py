@@ -65,10 +65,7 @@ class ETH_Wallet(Item):
     def isvalid(address: str) -> bool:
         ret = None
         try:
-            if any(c.isupper() for c in address):
-                ret = Web3.isChecksumAddress(address)
-            else:
-                ret = Web3.isAddress(address)
+            ret = Web3.isAddress(address)
         except:
             ret = False
         return ret
@@ -373,10 +370,10 @@ zeronet_hidden_url = r"(?:(?:{http}?{localhost}{port}\/)({bitname_url}))".format
     **zeronet_params
 )
 
-gpg_header = r'-----BEGIN PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----'
-gpg_footer = r'-----END PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----'
+pgp_header = r'-----BEGIN PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----'
+pgp_footer = r'-----END PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----'
 
-gpg_key = r"(%s[\s\S]{175,5000}%s)" % (gpg_header, gpg_footer)
+pgp_key = r"(%s[\s\S]{175,5000}%s)" % (pgp_header, pgp_footer)
 
 
 ga_tracking_code_regex = r"(UA-\d{4,10}-\d|G-\w{10})"
@@ -505,7 +502,7 @@ class reStalker:
         organization=False,
         keyphrase=False,
         keywords=[],
-        gpg=False,
+        pgp=False,
         gatc=False,
         base64=False,
         own_name=False,
@@ -547,7 +544,7 @@ class reStalker:
         self.zeronet = zeronet or all or zeronet_ctxt
         self.bitname = bitname or all
 
-        self.gpg = gpg or all
+        self.pgp = pgp or all
         self.gatc = gatc or all
 
         self.ipfs = ipfs or all
@@ -626,29 +623,64 @@ class reStalker:
         return text
 
     def _analyze_chunk(self, body, origin=None):
-
         if self.ner:
+            # Pre-procesamiento del texto para eliminar etiquetas y mejorar la detección
+            cleaned_text = re.sub(r'(?:Location|Organization|Person|Keyphrase|BitName):\s*', '', body)
+            sentences = nltk.sent_tokenize(cleaned_text)
+            
+            for sentence in sentences:
+                # Pre-procesar para manejar nombres de organizaciones con múltiples palabras
+                sentence = re.sub(r'\s+Ltd\.?$', ' Limited', sentence)
+                sentence = re.sub(r'\s+Inc\.?$', ' Incorporated', sentence)
+                sentence = re.sub(r'\s+Corp\.?$', ' Corporation', sentence)
+                
+                tokens = nltk.word_tokenize(sentence)
+                pos = nltk.pos_tag(tokens)
+                sentt = nltk.ne_chunk(pos, binary=False)
 
-            tokens = nltk.tokenize.word_tokenize(body)
-            pos = nltk.pos_tag(tokens)
-            sentt = nltk.ne_chunk(pos, binary=False)
+                if self.own_name:
+                    for subtree in sentt.subtrees(filter=lambda t: t.label() == "PERSON"):
+                        person_name = ' '.join([leave[0] for leave in subtree.leaves()])
+                        if person_name:
+                            yield OwnName(value=person_name)
 
-            if self.own_name:
-                for subtree in sentt.subtrees(filter=lambda t: t.label() == "PERSON"):
-                    for leave in subtree.leaves():
-                        yield OwnName(value=leave[0])
+                if self.organization:
+                    # Buscar organizaciones usando NER
+                    for subtree in sentt.subtrees(filter=lambda t: t.label() == "ORGANIZATION"):
+                        org_name = ' '.join([leave[0] for leave in subtree.leaves()])
+                        if org_name and not org_name.lower().startswith('organization'):
+                            yield Organization(value=org_name)
+                    
+                    # Buscar organizaciones usando patrones comunes
+                    org_patterns = [
+                        r'([A-Z][a-zA-Z0-9\s]+(?:Corporation|Corp\.?|Limited|Ltd\.?|Inc\.?|LLC|LLP))',
+                        r'([A-Z][a-zA-Z0-9\s]+\s+(?:Group|Systems|Technologies|Solutions|Services))'
+                    ]
+                    
+                    for pattern in org_patterns:
+                        matches = re.finditer(pattern, sentence)
+                        for match in matches:
+                            org_name = match.group(1).strip()
+                            if org_name and not org_name.lower().startswith('organization'):
+                                yield Organization(value=org_name)
 
-            if self.organization:
-                for subtree in sentt.subtrees(
-                    filter=lambda t: t.label() == "ORGANIZATION"
-                ):
-                    for leave in subtree.leaves():
-                        yield Organization(value=leave[0])
-
-            if self.location:
-                for subtree in sentt.subtrees(filter=lambda t: t.label() == "LOCATION"):
-                    for leave in subtree.leaves():
-                        yield Location(value=leave[0])
+                if self.location:
+                    # Procesar el texto para encontrar ubicaciones
+                    for subtree in sentt.subtrees(filter=lambda t: t.label() in ["GPE", "LOCATION"]):
+                        location_text = ' '.join([leave[0] for leave in subtree.leaves()])
+                        if location_text and not location_text.lower().startswith('location'):
+                            yield Location(value=location_text)
+                    
+                    # Buscar ubicaciones en el texto usando comas como separadores
+                    potential_locations = [loc.strip() for loc in sentence.split(',')]
+                    for loc in potential_locations:
+                        tokens = nltk.word_tokenize(loc)
+                        pos = nltk.pos_tag(tokens)
+                        chunk = nltk.ne_chunk(pos, binary=False)
+                        for subtree in chunk.subtrees(filter=lambda t: t.label() in ["GPE", "LOCATION"]):
+                            location_text = ' '.join([leave[0] for leave in subtree.leaves()])
+                            if location_text and not location_text.lower().startswith('location'):
+                                yield Location(value=location_text)
 
         if len(self.keywords) > 0 or self.keyphrase:
             ta = TextAnalysis(body)
@@ -786,9 +818,9 @@ class reStalker:
             for link in bitname_links:
                 yield Bitname_URL(value=link)
 
-        if self.gpg:
-            gpg_keys = re.findall(gpg_key, body, re.DOTALL)
-            for k in gpg_keys:
+        if self.pgp:
+            pgp_keys = re.findall(pgp_key, body, re.DOTALL)
+            for k in pgp_keys:
                 yield PGP(value=k)
 
         if self.ipfs:
