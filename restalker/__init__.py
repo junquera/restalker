@@ -1,5 +1,5 @@
-from .restalker import *
-from . import link_extractors
+from .restalker import reStalker as reStalker
+from . import link_extractors as link_extractors
 
 import nltk
 nltk.download('stopwords')

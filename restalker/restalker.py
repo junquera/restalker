@@ -1,4 +1,3 @@
-from os import stat
 import based58
 from hashlib import sha256
 from bech32ref import segwit_addr
@@ -39,139 +38,117 @@ class Keyphrase(Item):
 class Keyword(Item):
     pass
 
+
 class BTC_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if address[0] in ["1", "3"]:
                 decode_address = based58.b58decode(address.encode("utf-8"))
                 ret = (
-                    decode_address[-4:]
-                    == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
+                    decode_address[-4:] == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
                 )
             elif address.startswith("bc"):
                 hrpgot, data, spec = segwit_addr.bech32_decode(address)
                 ret = (hrpgot is not None) and (data is not None) and (spec is not None)
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class ETH_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if any(c.isupper() for c in address):
                 ret = Web3.isChecksumAddress(address)
             else:
                 ret = Web3.isAddress(address)
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class XMR_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             ret = xmr_address(address) is not None
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class ZEC_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if (address[0] == "t" and address[1] in ["1", "3"]) or address.startswith(
                 "zc"
             ):
                 decode_address = based58.b58decode(address.encode("utf-8"))
                 ret = (
-                    decode_address[-4:]
-                    == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
+                    decode_address[-4:] == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
                 )
             elif address.startswith("zs"):
                 hrpgot, data, spec = segwit_addr.bech32_decode(address)
                 ret = (hrpgot is not None) and (data is not None) and (spec is not None)
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class DASH_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if re.search(dash_wallet_regex, address)[0] == address:
                 decode_address = based58.b58decode(address.encode("utf-8"))
                 ret = (
-                    decode_address[-4:]
-                    == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
+                    decode_address[-4:] == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
                 )
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class DOT_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if re.search(dot_wallet_regex, address)[0] == address:
                 prefix, decode = SS58Decoder.Decode(address)
                 ret = prefix == 0
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class XRP_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if re.search(xrp_wallet_regex, address)[0] == address:
-                decode_address = based58.b58decode_check(
+                based58.b58decode_check(
                     address.encode("utf-8"),
                     alphabet=based58.Alphabet.RIPPLE,
                 )
                 ret = True
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class BNB_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if re.search(bnb_wallet_regex, address)[0] == address:
                 hrpgot, data, spec = segwit_addr.bech32_decode(address)
                 ret = hrpgot == "bnb"
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class TW_Account(Item):
@@ -267,7 +244,7 @@ class PGP(Item):
 
     def is_private_key(self):
         return "PRIVATE KEY" in self.value
-    
+
     @staticmethod
     def clean_pgp_key(pgp_key):
         cleaned_key = re.sub(r'<br\s*/?>', '', pgp_key)
@@ -354,9 +331,13 @@ i2p_hidden_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % i2p_hidden_domai
 
 http_regex = r"(?:https?\:\/\/)"
 localhost_regex = r"(?:localhost|127\.0\.0\.1)"
-port_regex = lambda p: r"(?:\:%d)?" % (p)
 # TODO Add query parameters
 path_regex = r"(?:\/[a-zA-Z0-9_-]+)*"
+
+
+def port_regex(p):
+    return r"(?:\:%d)?" % (p)
+
 
 zeronet_params = dict(
     http=http_regex,
@@ -366,6 +347,7 @@ zeronet_params = dict(
     bitcoin=btc_wallet_regex,
     bitname=bitname_domain_regex,
 )
+
 
 bitname_url = r"((?:{http})?(?:{bitcoin}|{bitname})(?:{port})?(?:{path})?)".format(
     **zeronet_params
@@ -467,6 +449,7 @@ paste_url_regex = r"((?:https?\:\/\/)?(?:%s)(?:\/[a-zA-Z0-9_-]+)+)" % ("|".join(
 md5_regex = r"[a-f0-9]{32}"
 sha1_regex = r"[a-f0-9]{40}"
 sha256_regex = r"[a-f0-9]{64}"
+
 
 # Method for avoid lists of lists
 def extract_elements(x):
@@ -577,17 +560,24 @@ class reStalker:
         while keyword in self.keywords:
             self.keywords.remove(keyword)
 
-    def extract_links(
-        self, body, origin=None, url_format=any_url, domain_format=domain_regex
-    ):
-
+    def extract_links(self, body, origin=None, url_format=any_url, domain_format=domain_regex):
         urls = set()
 
-        for url in re.findall(url_format, body, re.DOTALL):
+        def add_url_safely(url_str):
+            """Helper function to safely add URLs to the set"""
             try:
-                urls.add(UUF(url).rebuild())
+                if url_str and isinstance(url_str, str):
+                    cleaned_url = UUF(url_str).rebuild()
+                    if cleaned_url:
+                        urls.add(cleaned_url)
+            except (ValueError, AttributeError) as e:
+                print(f"[*] Error processing URL {url_str}: {e}")
             except Exception as e:
-                pass
+                print(f"[*] Unexpected error with URL {url_str}: {e}")
+
+        # Process URLs found with regex
+        for url in re.findall(url_format, body, re.DOTALL):
+            add_url_safely(url)
 
         try:
             # soup = BeautifulSoup(body, "html.parser")
@@ -598,10 +588,16 @@ class reStalker:
                     for url in links:
                         try:
                             urls.add(UUF(urljoin(origin, url.get("href"))).rebuild())
+                        except AttributeError:
+                            print("[*] AttributeError: Invalid attribute in URL")
+                        except ValueError:
+                            print("[*] ValueError: Invalid URL format")
                         except Exception as e:
-                            pass
-        except:
-            print("[*] Error with HTML parsing")
+                            print(f"[*] Unexpected error: {e}")
+        except TypeError:
+            print("[*] TypeError: Invalid input type for BeautifulSoup")
+        except Exception as e:
+            print(f"[*] Error with HTML parsing: {e}")
 
         for url in urls:
             if url:
@@ -624,7 +620,7 @@ class reStalker:
             lines = (line.strip() for line in text.splitlines())
             chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
             text = "\n".join(chunk for chunk in chunks if chunk)
-        except Exception as e:
+        except Exception:
             text = body
 
         return text
@@ -748,7 +744,7 @@ class reStalker:
             for link in i2p_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield I2P_URL(value=link_item)
 
@@ -762,7 +758,7 @@ class reStalker:
             for link in tor_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield Tor_URL(value=link_item)
 
@@ -770,7 +766,6 @@ class reStalker:
             freenet_links = re.findall(freenet_hidden_url, body, re.DOTALL)
             for link in freenet_links:
                 yield Freenet_URL(value=link)
-                
         if self.zeronet:
             # TODO Experimental
             if self.zeronet_ctxt and False:
@@ -808,7 +803,7 @@ class reStalker:
             for link in whatsapp_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield Whatsapp_URL(value=link_item)
 
@@ -818,7 +813,7 @@ class reStalker:
             for link in discord_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield Discord_URL(value=link_item)
 
@@ -828,7 +823,7 @@ class reStalker:
             for link in telegram_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield Telegram_URL(value=link_item)
 
@@ -837,7 +832,7 @@ class reStalker:
             for link in skype_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield Skype_URL(value=link_item)
 
@@ -873,9 +868,9 @@ class reStalker:
 
         if self.sha256:
             sha256s = re.findall(sha256_regex, body)
-            for sha256 in sha256s:
-                yield SHA256(value=sha256)
-        
+            for sha256_hash in sha256s:
+                yield SHA256(value=sha256_hash)
+
         if self.gatc:
             gatc = re.findall(ga_tracking_code_regex, body)
             for g in gatc:
@@ -891,7 +886,8 @@ class reStalker:
         
         while i * chunk_size <= len(body):
 
-            chunk = body[i * chunk_size : (i + 1) * chunk_size]
+            chunk = body[i * chunk_size: (i + 2) * chunk_size]
+            
             chunk_analysis = self._analyze_chunk(chunk, origin=origin)
 
             for result in chunk_analysis:
