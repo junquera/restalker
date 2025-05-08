@@ -24,7 +24,7 @@ class Item:
         return self.value == other.value and type(self).__name__ == type(other).__name__
 
     def __hash__(self):
-        return hash(type(self).__name__ + self.value)
+        return hash(type(self).__name__ + str(self.value))
 
     def __str__(self):
         return f"{type(self).__name__}({self.value[:128]})"
