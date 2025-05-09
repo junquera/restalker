@@ -376,7 +376,7 @@ def test_ethereum_address_case_sensitivity(sample_eth_addresses):
     results = list(stalker.parse(sample_eth_addresses))
     
     eth_wallets = [r for r in results if isinstance(r, ETH_Wallet)]
-    # Verificar que las direcciones case-insensitive se detecten como la misma
+    # Verify that case-insensitive addresses are detected as the same
     unique_addresses = set(str(w) for w in eth_wallets)
     assert len(unique_addresses) == 2
 
@@ -386,7 +386,7 @@ def test_monero_address_validation(sample_monero_addresses):
     
     xmr_wallets = [r for r in results if isinstance(r, XMR_Wallet)]
     assert len(xmr_wallets) == 3
-    # Verificar longitud estándar de direcciones Monero
+    # Verify standard length of Monero addresses
     assert all(len(str(wallet).split('(')[1][:-1]) >= 95 for wallet in xmr_wallets)
 
 def test_i2p_url_detection(sample_i2p_addresses):
@@ -448,7 +448,6 @@ def test_contextual_information(sample_contextual_data):
     keyphrases = [r for r in results if isinstance(r, Keyphrase)]
     names = [r for r in results if isinstance(r, OwnName)]
     
-    # Verificar que se encontraron localizaciones y que Michigan está entre ellas
     assert len(locations) > 0 and "Michigan" in str([x.value for x in locations])
     assert len(orgs) > 0 and "Example Corp" in str([x.value for x in orgs])
     assert len(keyphrases) > 0 and "confidential" in str([x.value for x in keyphrases])
