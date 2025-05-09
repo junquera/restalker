@@ -19,11 +19,11 @@ def looks_like_link(link: str):
                 return False
 
 
-# TODO Heredar de urlparse
+# TODO Inherit from urlparse
 # Unique URL Former
 class UUF():
 
-    # TODO ¿Cómo tratar el '#' en la URL?
+    # TODO How to handle '#' in the URL?
 
     service_port = {
         'http': 80,
@@ -59,7 +59,7 @@ class UUF():
                     self.netloc = self.path.split('/')[0]
                     self.path = "/" + "/".join(self.path.split('/')[1:])
 
-            # TODO Hay que replantearse cómo hacer el análisis de dominio/protocolo
+            # TODO Need to rethink how to do domain/protocol analysis
             if len(domain_port) > 1:
                 self.port = self.service_port.get(domain_port[1], self.service_port.get(self.scheme))
             else:
