@@ -16,6 +16,15 @@ class Item:
     def __init__(self, value=None):
         self.value = value
 
+    def __eq__(self, other):
+        if not isinstance(other, Item):
+            return False
+        
+        return self.value == other.value and type(self).__name__ == type(other).__name__
+
+    def __hash__(self):
+        return hash(type(self).__name__ + str(self.value))
+
     def __str__(self):
         return f"{type(self).__name__}({self.value[:128]})"
 
@@ -254,6 +263,21 @@ class PGP(Item):
 class GA_Tracking_Code(Item):
     pass
 
+class Card_Number(Item):
+
+    @staticmethod
+    def isvalid(number: str) -> bool:
+
+        def luhn_check(card_number: str) -> bool:
+            digits = [int(d) for d in str(card_number)]
+            odd_digits = digits[-1::-2]
+            even_digits = digits[-2::-2]
+            checksum = sum(odd_digits)
+            for d in even_digits:
+                checksum += sum(divmod(d * 2, 10))
+            return checksum % 10 == 0
+
+        return luhn_check(number)
 
 number_regex = r"[0-9]+"
 
@@ -327,6 +351,94 @@ tor_hidden_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % tor_hidden_domai
 i2p_hidden_domain = r"(?:[a-z0-9]+\.){1,5}i2p(?:\:[0-9]{2,5})?$"
 i2p_hidden_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % i2p_hidden_domain[:-1]
 
+card_regex = {
+    # American Express - 34, 37 - length 15
+    "American_Express": r"3[47][0-9]{13}",
+    
+    # China T-Union - 31 - length 19
+    "China_T_Union": r"31[0-9]{17}",
+    
+    # China UnionPay - 62 - length 16-19
+    "China_UnionPay": r"62[0-9]{14,17}",
+    
+    # Diners Club enRoute - 2014, 2149 - length 15
+    "Diners_Club_enRoute": r"2014[0-9]{11}|2149[0-9]{11}",
+    
+    # Diners Club International - 30, 36, 38, 39 - length 14-19
+    "Diners_Club_International": r"3(?:0[0-5]|[68][0-9]|9)[0-9]{11,16}",
+    
+    # Diners Club United States & Canada - 54, 55 - length 16
+    "Diners_Club_US_CA": r"5[45][0-9]{14}",
+    
+    # Discover - 6011, 644-649, 65, 622126-622925 - length 16-19
+    "Discover": r"6011[0-9]{12,15}|64[4-9][0-9]{13,16}|65[0-9]{14,17}|622(?:12[6-9]|1[3-9][0-9]|[2-8][0-9][0-9]|9[0-1][0-9]|92[0-5])[0-9]{10,13}",
+    
+    # UkrCard - 60400100-60420099 - length 16-19
+    "UkrCard": r"6042[0-9]{12,15}|6040[0-9]{12,15}|6041[0-9]{12,15}",
+    
+    # RuPay - 60, 65, 81, 82, 508, 353, 356 - length 16
+    "RuPay": r"(?:508|6[05]|8[12])[0-9]{14}|35[36][0-9]{13}",
+    
+    # InterPayment - 636 - length 16-19
+    "InterPayment": r"636[0-9]{13,16}",
+    
+    # InstaPayment - 637-639 - length 16
+    "InstaPayment": r"63[7-9][0-9]{13}",
+    
+    # JCB - 3528-3589 - length 16-19
+    "JCB": r"(?:352[8-9]|35[3-8][0-9])[0-9]{12,15}",
+    
+    # Maestro - 5018, 5020, 5038, 5893, 6304, 6759, 6761-6763 - length 12-19
+    "Maestro": r"(?:5018|5020|5038|5893|6304|6759|676[1-3])[0-9]{8,15}",
+    
+    # Maestro UK - 6759, 676770, 676774 - length 12-19
+    "Maestro_UK": r"(?:6759|676770|676774)[0-9]{8,15}",
+    
+    # Dankort - 5019, 4571 - length 16
+    "Dankort": r"5019[0-9]{12}|4571[0-9]{12}",
+    
+    # Mir - 2200-2204 - length 16-19
+    "Mir": r"220[0-4][0-9]{12,15}",
+    
+    # BORICA - 2205 - length 16
+    "BORICA": r"2205[0-9]{12}",
+    
+    # Mastercard - 2221-2720, 51-55 - length 16
+    "Mastercard": r"(?:222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[0-1][0-9]|2720|5[1-5][0-9]{2})[0-9]{12}",
+    
+    # Troy - 65, 9792 - length 16
+    "Troy": r"(?:65|9792)[0-9]{14}",
+    
+    # Visa - 4 - length 13,16,19
+    "Visa": r"4[0-9]{12}(?:[0-9]{3,6})?",
+    
+    # Visa Electron - 4026, 417500, 4844, 4913, 4917 - length 16
+    "Visa_Electron": r"(?:4026|417500|4844|4913|4917)[0-9]{10}",
+    
+    # UATP - 1 - length 15
+    "UATP": r"1[0-9]{14}",
+    
+    # Verve - 506099-506198, 650002-650027, 507865-507964 - length 16,18,19
+    "Verve": r"(?:506(?:0[9][9]|1[0-8][0-9])|650(?:0[0-1][0-9]|02[0-7])|507(?:8[6-9][0-9]|9[0-6][0-9]))[0-9]{10}(?:[0-9]{2,3})?",
+    
+    # LankaPay - 357111 - length 16
+    "LankaPay": r"357111[0-9]{10}",
+    
+    # Uzcard - 8600, 5614 - length 16
+    "Uzcard": r"(?:8600|5614)[0-9]{12}",
+    
+    # HUMO - 9860 - length 16
+    "HUMO": r"9860[0-9]{12}",
+    
+    # GPN - 1946, 50, 56, 58, 60-63 - length 16,18,19
+    "GPN": r"(?:1946|5[068]|6[0-3])[0-9]{12}(?:[0-9]{2,3})?",
+    
+    # Napas - 9704 - length 16,19
+    "Napas": r"9704[0-9]{12}(?:[0-9]{3})?"
+}
+
+# Regex combinada para todas las tarjetas
+all_card_regex = r"(?:" + "|".join(card_regex.values()) + r")"
 
 http_regex = r"(?:https?\:\/\/)"
 localhost_regex = r"(?:localhost|127\.0\.0\.1)"
@@ -476,6 +588,7 @@ class reStalker:
         dot_wallet=False,
         xrp_wallet=False,
         bnb_wallet=False,
+        credit_card=False,
         tor=False,
         i2p=False,
         ipfs=False,
@@ -525,6 +638,8 @@ class reStalker:
         self.dot_wallet = dot_wallet or all
         self.xrp_wallet = xrp_wallet or all
         self.bnb_wallet = bnb_wallet or all
+
+        self.credit_card = credit_card or all
 
         self.tor = tor or all
         self.i2p = i2p or all
@@ -762,6 +877,16 @@ class reStalker:
             for bnb_wallet in bnb_wallets:
                 if BNB_Wallet.isvalid(address=bnb_wallet):
                     yield BNB_Wallet(value=bnb_wallet)
+
+        if self.credit_card:
+            card_numbers = re.findall(all_card_regex, body)
+            for card_number in card_numbers:
+                if Card_Number.isvalid(card_number):
+                    companies = []
+                    for company, regex in card_regex.items():
+                        if re.match(regex, card_number):
+                            companies.append(company)
+                    yield Card_Number(value=f"Companies=[{','.join(companies)}] Number={card_number}")
 
         if self.twitter:
             tw_accounts = re.findall(tw_account_regex, body)
