@@ -1,4 +1,3 @@
-from os import stat
 import based58
 from hashlib import sha256
 from bech32ref import segwit_addr
@@ -48,139 +47,116 @@ class Keyphrase(Item):
 class Keyword(Item):
     pass
 
+
 class BTC_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if address[0] in ["1", "3"]:
                 decode_address = based58.b58decode(address.encode("utf-8"))
                 ret = (
-                    decode_address[-4:]
-                    == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
+                    decode_address[-4:] == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
                 )
             elif address.startswith("bc"):
                 hrpgot, data, spec = segwit_addr.bech32_decode(address)
                 ret = (hrpgot is not None) and (data is not None) and (spec is not None)
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class ETH_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
-            if any(c.isupper() for c in address):
-                ret = Web3.isChecksumAddress(address)
-            else:
-                ret = Web3.isAddress(address)
+            ret = Web3.isAddress(address)
         except:
             ret = False
         return ret
+
 
 
 class XMR_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             ret = xmr_address(address) is not None
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class ZEC_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if (address[0] == "t" and address[1] in ["1", "3"]) or address.startswith(
                 "zc"
             ):
                 decode_address = based58.b58decode(address.encode("utf-8"))
                 ret = (
-                    decode_address[-4:]
-                    == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
+                    decode_address[-4:] == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
                 )
             elif address.startswith("zs"):
                 hrpgot, data, spec = segwit_addr.bech32_decode(address)
                 ret = (hrpgot is not None) and (data is not None) and (spec is not None)
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class DASH_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if re.search(dash_wallet_regex, address)[0] == address:
                 decode_address = based58.b58decode(address.encode("utf-8"))
                 ret = (
-                    decode_address[-4:]
-                    == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
+                    decode_address[-4:] == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
                 )
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class DOT_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if re.search(dot_wallet_regex, address)[0] == address:
                 prefix, decode = SS58Decoder.Decode(address)
                 ret = prefix == 0
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class XRP_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if re.search(xrp_wallet_regex, address)[0] == address:
-                decode_address = based58.b58decode_check(
+                based58.b58decode_check(
                     address.encode("utf-8"),
                     alphabet=based58.Alphabet.RIPPLE,
                 )
                 ret = True
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class BNB_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if re.search(bnb_wallet_regex, address)[0] == address:
                 hrpgot, data, spec = segwit_addr.bech32_decode(address)
                 ret = hrpgot == "bnb"
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class TW_Account(Item):
@@ -276,7 +252,7 @@ class PGP(Item):
 
     def is_private_key(self):
         return "PRIVATE KEY" in self.value
-    
+
     @staticmethod
     def clean_pgp_key(pgp_key):
         cleaned_key = re.sub(r'<br\s*/?>', '', pgp_key)
@@ -341,7 +317,10 @@ bitname_domain_regex = r"(?:[a-zA-Z0-9]+\.)+bit"
 
 tw_account_regex = r"[^a-zA-Z0-9]@([a-zA-Z0-9_]{3,15})"
 
-telegram_url_regex = r"((?:https?\:\/\/)?(?:t\.me|telegram\.me)(?:\/[a-zA-Z0-9_-]+)+)"
+telegram_url_regex = re.compile(
+    r"((?:https?:\/\/)?(?:t\.me|telegram\.me|teleg\.one|tgclick\.com)(?:\/[a-zA-Z0-9_-]+)+)|"
+    r"((?:tg:\/\/)(?:[a-zA-Z0-9_-]+\?[a-zA-Z0-9_-]+=[a-zA-Z0-9_-]+)+)"
+)
 
 whatsapp_url_regex = r"((?:https?\:\/\/)?chat\.whatsapp\.com(?:\/[a-zA-Z0-9_-]+)+)"
 
@@ -463,9 +442,13 @@ all_card_regex = r"(?:" + "|".join(card_regex.values()) + r")"
 
 http_regex = r"(?:https?\:\/\/)"
 localhost_regex = r"(?:localhost|127\.0\.0\.1)"
-port_regex = lambda p: r"(?:\:%d)?" % (p)
 # TODO Add query parameters
 path_regex = r"(?:\/[a-zA-Z0-9_-]+)*"
+
+
+def port_regex(p):
+    return r"(?:\:%d)?" % (p)
+
 
 zeronet_params = dict(
     http=http_regex,
@@ -476,6 +459,7 @@ zeronet_params = dict(
     bitname=bitname_domain_regex,
 )
 
+
 bitname_url = r"((?:{http})?(?:{bitcoin}|{bitname})(?:{port})?(?:{path})?)".format(
     **zeronet_params
 )
@@ -485,10 +469,10 @@ zeronet_hidden_url = r"(?:(?:{http}?{localhost}{port}\/)({bitname_url}))".format
     **zeronet_params
 )
 
-gpg_header = r'-----BEGIN PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----'
-gpg_footer = r'-----END PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----'
+pgp_header = r'-----BEGIN PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----'
+pgp_footer = r'-----END PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----'
 
-gpg_key = r"(%s[\s\S]{175,5000}%s)" % (gpg_header, gpg_footer)
+pgp_key = r"(%s[\s\S]{175,5000}%s)" % (pgp_header, pgp_footer)
 
 
 ga_tracking_code_regex = r"(UA-\d{4,10}-\d|G-\w{10})"
@@ -504,7 +488,7 @@ Freenet URL spec:
     - KSK@filename
     KSK@myfile.txt
 
-Crear sitios de freenet:
+Create freenet sites:
 
     http://localhost:8888/freenet:USK@spOnEa2YvAoNfreZPfoy0tVNCzQghLdWaaNM10GEiEM,QRKjyaBkOX5Qw~aEml19WIDaJJo2X3hU9mGz8GcUuKc,AQACAAE/freesite_es/11/
 """
@@ -577,13 +561,15 @@ md5_regex = r"[a-f0-9]{32}"
 sha1_regex = r"[a-f0-9]{40}"
 sha256_regex = r"[a-f0-9]{64}"
 
+
 # Method for avoid lists of lists
 def extract_elements(x):
     if type(x) in [tuple, list, set]:
         result = list()
         for piece in x:
             for element in extract_elements(piece):
-                result.append(element)
+                if element != "":
+                    result.append(element)
         return set(result)
     else:
         return [x]
@@ -618,7 +604,7 @@ class reStalker:
         organization=False,
         keyphrase=False,
         keywords=[],
-        gpg=False,
+        pgp=False,
         gatc=False,
         base64=False,
         own_name=False,
@@ -662,7 +648,7 @@ class reStalker:
         self.zeronet = zeronet or all or zeronet_ctxt
         self.bitname = bitname or all
 
-        self.gpg = gpg or all
+        self.pgp = pgp or all
         self.gatc = gatc or all
 
         self.ipfs = ipfs or all
@@ -688,17 +674,24 @@ class reStalker:
         while keyword in self.keywords:
             self.keywords.remove(keyword)
 
-    def extract_links(
-        self, body, origin=None, url_format=any_url, domain_format=domain_regex
-    ):
-
+    def extract_links(self, body, origin=None, url_format=any_url, domain_format=domain_regex):
         urls = set()
 
-        for url in re.findall(url_format, body, re.DOTALL):
+        def add_url_safely(url_str):
+            """Helper function to safely add URLs to the set"""
             try:
-                urls.add(UUF(url).rebuild())
+                if url_str and isinstance(url_str, str):
+                    cleaned_url = UUF(url_str).rebuild()
+                    if cleaned_url:
+                        urls.add(cleaned_url)
+            except (ValueError, AttributeError) as e:
+                print(f"[*] Error processing URL {url_str}: {e}")
             except Exception as e:
-                pass
+                print(f"[*] Unexpected error with URL {url_str}: {e}")
+
+        # Process URLs found with regex
+        for url in re.findall(url_format, body, re.DOTALL):
+            add_url_safely(url)
 
         try:
             # soup = BeautifulSoup(body, "html.parser")
@@ -709,22 +702,28 @@ class reStalker:
                     for url in links:
                         try:
                             urls.add(UUF(urljoin(origin, url.get("href"))).rebuild())
+                        except AttributeError:
+                            print("[*] AttributeError: Invalid attribute in URL")
+                        except ValueError:
+                            print("[*] ValueError: Invalid URL format")
                         except Exception as e:
-                            pass
-        except:
-            print("[*] Error with HTML parsing")
+                            print(f"[*] Unexpected error: {e}")
+        except TypeError:
+            print("[*] TypeError: Invalid input type for BeautifulSoup")
+        except Exception as e:
+            print(f"[*] Error with HTML parsing: {e}")
 
         for url in urls:
             if url:
                 parsed_url = UUF(url)
-                # TODO Usar la regex completa en lugar de sólo el dominio?
+                # TODO Use complete regex instead of just the domain?
                 if re.match(domain_format, parsed_url.domain, re.DOTALL):
                     yield parsed_url.rebuild()
 
     @staticmethod
     def body_text(body):
         try:
-            # TODO ¿Esto se puede hacer con el response de scrapy?
+            # TODO Can this be done with the scrapy response?
             soup = BeautifulSoup(body, "lxml")
 
             for script in soup(["script", "style"]):
@@ -735,35 +734,70 @@ class reStalker:
             lines = (line.strip() for line in text.splitlines())
             chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
             text = "\n".join(chunk for chunk in chunks if chunk)
-        except Exception as e:
+        except Exception:
             text = body
 
         return text
 
     def _analyze_chunk(self, body, origin=None):
-
         if self.ner:
+            # Text pre-processing to remove tags and improve detection
+            cleaned_text = re.sub(r'(?:Location|Organization|Person|Keyphrase|BitName):\s*', '', body)
+            sentences = nltk.sent_tokenize(cleaned_text)
+            
+            for sentence in sentences:
+                # Pre-process to handle organization names with multiple words
+                sentence = re.sub(r'\s+Ltd\.?$', ' Limited', sentence)
+                sentence = re.sub(r'\s+Inc\.?$', ' Incorporated', sentence)
+                sentence = re.sub(r'\s+Corp\.?$', ' Corporation', sentence)
+                
+                tokens = nltk.word_tokenize(sentence)
+                pos = nltk.pos_tag(tokens)
+                sentt = nltk.ne_chunk(pos, binary=False)
 
-            tokens = nltk.tokenize.word_tokenize(body)
-            pos = nltk.pos_tag(tokens)
-            sentt = nltk.ne_chunk(pos, binary=False)
+                if self.own_name:
+                    for subtree in sentt.subtrees(filter=lambda t: t.label() == "PERSON"):
+                        person_name = ' '.join([leave[0] for leave in subtree.leaves()])
+                        if person_name:
+                            yield OwnName(value=person_name)
 
-            if self.own_name:
-                for subtree in sentt.subtrees(filter=lambda t: t.label() == "PERSON"):
-                    for leave in subtree.leaves():
-                        yield OwnName(value=leave[0])
+                if self.organization:
+                    # Search for organizations using NER
+                    for subtree in sentt.subtrees(filter=lambda t: t.label() == "ORGANIZATION"):
+                        org_name = ' '.join([leave[0] for leave in subtree.leaves()])
+                        if org_name and not org_name.lower().startswith('organization'):
+                            yield Organization(value=org_name)
+                    
+                    # Search for organizations using common patterns
+                    org_patterns = [
+                        r'([A-Z][a-zA-Z0-9\s]+(?:Corporation|Corp\.?|Limited|Ltd\.?|Inc\.?|LLC|LLP))',
+                        r'([A-Z][a-zA-Z0-9\s]+\s+(?:Group|Systems|Technologies|Solutions|Services))'
+                    ]
+                    
+                    for pattern in org_patterns:
+                        matches = re.finditer(pattern, sentence)
+                        for match in matches:
+                            org_name = match.group(1).strip()
+                            if org_name and not org_name.lower().startswith('organization'):
+                                yield Organization(value=org_name)
 
-            if self.organization:
-                for subtree in sentt.subtrees(
-                    filter=lambda t: t.label() == "ORGANIZATION"
-                ):
-                    for leave in subtree.leaves():
-                        yield Organization(value=leave[0])
-
-            if self.location:
-                for subtree in sentt.subtrees(filter=lambda t: t.label() == "LOCATION"):
-                    for leave in subtree.leaves():
-                        yield Location(value=leave[0])
+                if self.location:
+                    # Process the text to find locations
+                    for subtree in sentt.subtrees(filter=lambda t: t.label() in ["GPE", "LOCATION"]):
+                        location_text = ' '.join([leave[0] for leave in subtree.leaves()])
+                        if location_text and not location_text.lower().startswith('location'):
+                            yield Location(value=location_text)
+                    
+                    # Search for locations in the text using commas as separators
+                    potential_locations = [loc.strip() for loc in sentence.split(',')]
+                    for loc in potential_locations:
+                        tokens = nltk.word_tokenize(loc)
+                        pos = nltk.pos_tag(tokens)
+                        chunk = nltk.ne_chunk(pos, binary=False)
+                        for subtree in chunk.subtrees(filter=lambda t: t.label() in ["GPE", "LOCATION"]):
+                            location_text = ' '.join([leave[0] for leave in subtree.leaves()])
+                            if location_text and not location_text.lower().startswith('location'):
+                                yield Location(value=location_text)
 
         if len(self.keywords) > 0 or self.keyphrase:
             ta = TextAnalysis(body)
@@ -777,9 +811,9 @@ class reStalker:
                 for k in ta.extract_top_keyphrases():
                     yield Keyphrase(value=k)
 
-        # TODO Test si el valor es None
-        # TODO Refactor para iterar
-        # TODO "".join() para evitar tuplas de la regex
+        # TODO Test if the value is None
+        # TODO Refactor to iterate
+        # TODO "".join() to avoid regex tuples
         if self.phone:
             # TODO Reformat result number
             phones = re.findall(phone_regex, body)
@@ -869,7 +903,7 @@ class reStalker:
             for link in i2p_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield I2P_URL(value=link_item)
 
@@ -883,7 +917,7 @@ class reStalker:
             for link in tor_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield Tor_URL(value=link_item)
 
@@ -891,7 +925,6 @@ class reStalker:
             freenet_links = re.findall(freenet_hidden_url, body, re.DOTALL)
             for link in freenet_links:
                 yield Freenet_URL(value=link)
-                
         if self.zeronet:
             # TODO Experimental
             if self.zeronet_ctxt and False:
@@ -911,9 +944,9 @@ class reStalker:
             for link in bitname_links:
                 yield Bitname_URL(value=link)
 
-        if self.gpg:
-            gpg_keys = re.findall(gpg_key, body, re.DOTALL)
-            for k in gpg_keys:
+        if self.pgp:
+            pgp_keys = re.findall(pgp_key, body, re.DOTALL)
+            for k in pgp_keys:
                 yield PGP(value=k)
 
         if self.ipfs:
@@ -929,7 +962,7 @@ class reStalker:
             for link in whatsapp_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield Whatsapp_URL(value=link_item)
 
@@ -939,16 +972,17 @@ class reStalker:
             for link in discord_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield Discord_URL(value=link_item)
 
         if self.telegram:
             telegram_links = re.findall(telegram_url_regex, body)
+            telegram_links = extract_elements(telegram_links)
             for link in telegram_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield Telegram_URL(value=link_item)
 
@@ -957,7 +991,7 @@ class reStalker:
             for link in skype_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield Skype_URL(value=link_item)
 
@@ -993,9 +1027,9 @@ class reStalker:
 
         if self.sha256:
             sha256s = re.findall(sha256_regex, body)
-            for sha256 in sha256s:
-                yield SHA256(value=sha256)
-        
+            for sha256_hash in sha256s:
+                yield SHA256(value=sha256_hash)
+
         if self.gatc:
             gatc = re.findall(ga_tracking_code_regex, body)
             for g in gatc:
@@ -1008,10 +1042,11 @@ class reStalker:
         chunk_size = buff_size // 2
 
         # print("Chunks", len(body)//chunk_size)
-
+        
         while i * chunk_size <= len(body):
 
-            chunk = body[i * chunk_size : (i + 2) * chunk_size]
+            chunk = body[i * chunk_size: (i + 2) * chunk_size]
+            
             chunk_analysis = self._analyze_chunk(chunk, origin=origin)
 
             for result in chunk_analysis:

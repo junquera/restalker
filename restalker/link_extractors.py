@@ -3,11 +3,12 @@ from hashlib import md5
 from . import restalker
 import re
 
-def looks_like_link(l):
-    if re.match(restalker.any_url, l):
+
+def looks_like_link(link: str):
+    if re.match(restalker.any_url, link):
         return True
     else:
-        proto = l.split('://')
+        proto = link.split('://')
         if len(proto) > 1:
             return len(proto[1].split('.')) > 1
         else:
@@ -18,11 +19,11 @@ def looks_like_link(l):
                 return False
 
 
-# TODO Heredar de urlparse
+# TODO Inherit from urlparse
 # Unique URL Former
 class UUF():
 
-    # TODO ¿Cómo tratar el '#' en la URL?
+    # TODO How to handle '#' in the URL?
 
     service_port = {
         'http': 80,
@@ -58,7 +59,7 @@ class UUF():
                     self.netloc = self.path.split('/')[0]
                     self.path = "/" + "/".join(self.path.split('/')[1:])
 
-            # TODO Hay que replantearse cómo hacer el análisis de dominio/protocolo
+            # TODO Need to rethink how to do domain/protocol analysis
             if len(domain_port) > 1:
                 self.port = self.service_port.get(domain_port[1], self.service_port.get(self.scheme))
             else:
@@ -71,7 +72,6 @@ class UUF():
                         self.protocol = service
                         break
                 self.scheme = self.protocol
-
 
             if len(self.query) > 0:
                 query_args = {a[0]: (a[1] if len(a) > 1 else None) for a in (arg.split('=') for arg in self.query.split('&'))}
@@ -92,13 +92,12 @@ class UUF():
 
         self.rebuild()
 
-
     def end_build(self):
         self.built += 1
         return '%s://%s%s' % (self.protocol, self.netloc, self.full_path)
 
     def rebuild(self):
         self.full_url = '%s://%s%s' % (self.protocol, self.netloc, self.full_path)
-        self.signature = md5(self.full_url.encode('utf8')).hexdigest()
+        self.signature = md5(self.full_url.encode('utf8'), usedforsecurity=False).hexdigest()
 
         return self.full_url
