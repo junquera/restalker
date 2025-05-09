@@ -3,11 +3,12 @@ from hashlib import md5
 from . import restalker
 import re
 
-def looks_like_link(l):
-    if re.match(restalker.any_url, l):
+
+def looks_like_link(link: str):
+    if re.match(restalker.any_url, link):
         return True
     else:
-        proto = l.split('://')
+        proto = link.split('://')
         if len(proto) > 1:
             return len(proto[1].split('.')) > 1
         else:
@@ -72,7 +73,6 @@ class UUF():
                         break
                 self.scheme = self.protocol
 
-
             if len(self.query) > 0:
                 query_args = {a[0]: (a[1] if len(a) > 1 else None) for a in (arg.split('=') for arg in self.query.split('&'))}
 
@@ -92,13 +92,12 @@ class UUF():
 
         self.rebuild()
 
-
     def end_build(self):
         self.built += 1
         return '%s://%s%s' % (self.protocol, self.netloc, self.full_path)
 
     def rebuild(self):
         self.full_url = '%s://%s%s' % (self.protocol, self.netloc, self.full_path)
-        self.signature = md5(self.full_url.encode('utf8')).hexdigest()
+        self.signature = md5(self.full_url.encode('utf8'), usedforsecurity=False).hexdigest()
 
         return self.full_url

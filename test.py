@@ -3256,13 +3256,38 @@ Man is the master of everything and decides everything.
   gtag('config', 'UA-12345678-9');
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-9876543210"></script>
+
+https://t.me/resource
+https://telegram.me/resource
+https://teleg.one/resource
+https://tgclick.com/resource
+
+t.me/resource
+telegram.me/resource
+teleg.one/resource
+tgclick.com/resource
+
+t.me/secret_resource
+telegram.me/secret_resource
+teleg.one/secret_resource
+tgclick.com/secret_resource
+
+t.me/secret-resource
+telegram.me/secret-resource
+teleg.one/secret-resource
+tgclick.com/secret-resource
+
+tg://resource?id=007
+tg://resource?id=blablabla
 """
 
 nltk.download('punkt_tab')
 nltk.download('stopwords')
 
-s = restalker.reStalker(all=True)
+s = restalker.reStalker(telegram=True)
 # s = restalker.reStalker(tor=True)
-
-for p in s.parse(target):
+ 
+result = list(s.parse(target))
+print(f"Len: {len(result)}")
+for p in result:
     print(p)
