@@ -336,7 +336,7 @@ def test_url_detection(sample_url_data):
     assert len(ipfs) > 0
 
 def test_analytics_code_detection():
-    data = "Google Analytics: UA-12345678-9 and G-ABCDEFGHIJ"
+    data = "Google Analytics: UA-12345678-9 and G-ABCDEFGHIJ www.website.com/UXF8qo74PzHxW3oSkcJt2DG-nqZGb38pCiYTIHyDa0[/HIDEREACT]"
     stalker = reStalker(gatc=True)
     results = list(stalker.parse(data))
     codes = [r for r in results if isinstance(r, GA_Tracking_Code)]
