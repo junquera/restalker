@@ -273,7 +273,10 @@ class PGP(Item):
 
 
 class GA_Tracking_Code(Item):
-    pass
+    @staticmethod
+    def isvalid(code: str) -> bool:
+        # Validate that the code is not part of a larger string
+        return bool(re.match(r'^(?:UA-\d{4,10}-\d|G-[A-Za-z0-9]{10})$', code))
 
 
 number_regex = r"[0-9]+"
@@ -376,7 +379,7 @@ pgp_footer = r'-----END PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----'
 pgp_key = r"(%s[\s\S]{175,5000}%s)" % (pgp_header, pgp_footer)
 
 
-ga_tracking_code_regex = r"(UA-\d{4,10}-\d|G-\w{10})"
+ga_tracking_code_regex = r"\b(UA-\d{4,10}-\d|G-[A-Za-z0-9]{10})\b"
 
 """
 Freenet URL spec:
@@ -906,7 +909,8 @@ class reStalker:
         if self.gatc:
             gatc = re.findall(ga_tracking_code_regex, body)
             for g in gatc:
-                yield GA_Tracking_Code(value=g)
+                if GA_Tracking_Code.isvalid(g):
+                    yield GA_Tracking_Code(value=g)
 
     def parse(self, body, origin=None, buff_size=20480):
 
