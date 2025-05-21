@@ -276,7 +276,7 @@ class GA_Tracking_Code(Item):
     @staticmethod
     def isvalid(code: str) -> bool:
         # Validate that the code is not part of a larger string
-        return bool(re.match(r'^(?:UA-\d{4,10}-\d|G-[A-Za-z0-9]{10})$', code))
+        return bool(re.fullmatch(r'(?:UA-\d{4,10}-\d|G-[A-Za-z0-9]{10})', code))
 
 
 number_regex = r"[0-9]+"
