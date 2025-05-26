@@ -14,7 +14,8 @@ from restalker import (
     Email, Phone, PGP, GA_Tracking_Code, Tor_URL, I2P_URL,
     IPFS_URL, Base64, Username, Password, Zeronet_URL, Bitname_URL,
     Paste, TW_Account, Location, Organization, Keyphrase,
-    OwnName, Whatsapp_URL, Discord_URL, Telegram_URL, Skype_URL, MD5, SHA1, SHA256
+    OwnName, Whatsapp_URL, Discord_URL, Telegram_URL, Skype_URL, 
+    MD5, SHA1, SHA256, Tox_ID
 )
 
 @pytest.fixture
@@ -215,6 +216,16 @@ def sample_hashes():
     MD5: d41d8cd98f00b204e9800998ecf8427e
     SHA1: da39a3ee5e6b4b0d3255bfef95601890afd80709
     SHA256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    """
+
+@pytest.fixture
+def sample_tox_ids():
+    # Frist is valid, the rest are invalid examples (incorrect format, non-hex characters, checksum mismatch)
+    return """
+    F24FA39D41F53ABF80FD3A32B05B8340E15A4128B3ED77E09B556EE6BDB7D6138321BA2D6028
+    56A1ADE4B65B86BCD51CC73E2CD4E542179F47959FE3E0E21B4B0ACDADE51855
+    56A1ADE4B65B86BCD51CC73E2CD4E542179F47959FE3E0E21B4B0ACDADE51855D34D34D37XYZ
+    56A1ADE4B65B86BCD51CC73E2CD4E542179F47959FE3E0E21B4B0ACDADE51855D34D34D37CB0
     """
 
 @pytest.fixture
@@ -479,3 +490,22 @@ def test_hash_detection(sample_hashes):
     assert len(md5_hashes) > 0 and len(str(md5_hashes[0])) == 32 + 5 #len + wrapper
     assert len(sha1_hashes) > 0 and len(str(sha1_hashes[0])) == 40 + 6 #len + wrapper
     assert len(sha256_hashes) > 0 and len(str(sha256_hashes[0])) == 64 + 8 #len + wrapper
+
+def test_tox_id_detection(sample_tox_ids):
+    stalker = reStalker(tox=True)
+    results = list(stalker.parse(sample_tox_ids))
+    
+    tox_ids = [r for r in results if isinstance(r, Tox_ID)]
+    
+    # Verify that we found the expected number of Tox IDs
+    assert len(tox_ids) == 1
+
+    # Split by new line and strip each line to remove leading/trailing whitespace
+    ids = [line.strip() for line in sample_tox_ids.split('\n') if line.strip()]
+    valid_id = ids[0]  # First is valid
+    invalid_ids = ids[1:4]  # Last 3 are invalid examples
+
+    assert Tox_ID.isvalid(valid_id) == True
+    
+    for invalid_id in invalid_ids:
+        assert Tox_ID.isvalid(invalid_id) == False

@@ -276,6 +276,35 @@ class GA_Tracking_Code(Item):
     pass
 
 
+class Tox_ID(Item):
+    @staticmethod
+    def isvalid(tox_id: str) -> bool:
+        """Verify if the string is a valid Tox ID - 76 hexadecimal chars (64 public key + 4 NoSpam + 2 checksum)"""
+        ret = None
+        try:
+            # Check if it's a valid 76-character hexadecimal string
+            if len(tox_id) == 76 and all(c in '0123456789ABCDEFabcdef' for c in tox_id):
+                # Convert the Tox ID from hexadecimal to bytes
+                tox_id_bytes = bytes.fromhex(tox_id)
+                
+                # The ID is 38 bytes: 32 bytes public key + 4 bytes NoSpam + 2 bytes checksum
+                # Extract the checksum (last 2 bytes)
+                actual_checksum = tox_id_bytes[36:38]
+                
+                # Calculate the checksum by XORing pairs of bytes
+                calculated_checksum = bytearray(2)
+                for i in range(0, 36, 2):
+                    calculated_checksum[0] ^= tox_id_bytes[i]
+                    calculated_checksum[1] ^= tox_id_bytes[i+1]
+                
+                # Verify that the calculated checksum matches the actual checksum
+                ret = (actual_checksum == calculated_checksum)
+            else:
+                ret = False
+        except Exception as e:
+            ret = False
+        return ret
+
 number_regex = r"[0-9]+"
 
 alnum_join = r"[a-zA-Z0-9\-\~]+"
@@ -377,6 +406,8 @@ pgp_key = r"(%s[\s\S]{175,5000}%s)" % (pgp_header, pgp_footer)
 
 
 ga_tracking_code_regex = r"(UA-\d{4,10}-\d|G-\w{10})"
+
+tox_id_regex = r"([a-fA-F0-9]{76})"
 
 """
 Freenet URL spec:
@@ -513,6 +544,7 @@ class reStalker:
         md5=False,
         sha1=False,
         sha256=False,
+        tox=False,
         all=False,
     ):
 
@@ -562,6 +594,7 @@ class reStalker:
         self.md5 = md5 or all
         self.sha1 = sha1 or all
         self.sha256 = sha256 or all
+        self.tox = tox or all
 
     def add_keyword(self, keyword):
         self.keywords.append(keyword)
@@ -902,6 +935,12 @@ class reStalker:
             sha256s = re.findall(sha256_regex, body)
             for sha256 in sha256s:
                 yield SHA256(value=sha256)
+        
+        if self.tox:
+            tox_ids = re.findall(tox_id_regex, body)
+            for tox_id in tox_ids:
+                if Tox_ID.isvalid(tox_id):
+                    yield Tox_ID(value=tox_id)
         
         if self.gatc:
             gatc = re.findall(ga_tracking_code_regex, body)
