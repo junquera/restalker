@@ -7,25 +7,37 @@ from PyPDF2 import PdfFileReader
 import olefile
 from hashlib import sha256
 
+
 def contains_metadata(byte_array):
     with magic.Magic(flags=magic.MAGIC_MIME_TYPE) as m:
         t = m.id_buffer(byte_array)
 
     return t.find('image') == 0 or t.find('application/pdf') == 0
 
+
 def is_bin(b):
-
-    if type(b) != bytes:
+    """
+    Determine if the input is binary data.
+    
+    Args:
+        b: Input to check, expected to be bytes or str
+        
+    Returns:
+        bool: True if input is binary data, False otherwise
+    """
+    if isinstance(b, bytes):
         return False
-    else:
-        try:
-            # If its "decodeable", its not a file
-            b.decode('utf8')
-            return False
-        except Exception as e:
-            pass
+    
+    try:
+        b.decode('utf8')
+        return False
+    except UnicodeDecodeError:
+        # If can't be decoded as UTF-8, is probably binary
+        return True
+    except AttributeError:
+        # If there isn't a decode() method, we asume its not binary
+        return False
 
-    return True
 
 class Metadata():
 
@@ -35,6 +47,7 @@ class Metadata():
 
     def __str__(self):
         return ("%s: %s" % (self.signature, self.tags))
+
 
 def get_metadata(byte_array):
 
@@ -49,7 +62,7 @@ def get_metadata(byte_array):
             tags = get_image_metadata(byte_array)
         elif t.find('application/pdf') == 0:
             tags = get_pdf_metadata(byte_array)
-    except Exception as e:
+    except Exception:
         tags = {}
     signature = sha256(byte_array).hexdigest()
 
@@ -57,15 +70,17 @@ def get_metadata(byte_array):
 
     return m
 
+
 def get_video_metadata(byte_array):
     pass
+
 
 def get_ofimatica_metadata(byte_array):
 
     try:
-        ole = olefile.OleFileIO(sys.argv[1])
-    except IndexError as ie:
-        tags = {}
+        ole = olefile.OleFileIO(byte_array)
+    except IndexError:
+        pass
 
     # parse and display metadata:
     meta = ole.get_metadata()
@@ -89,7 +104,7 @@ class TmpFile():
         block_size = 1024
         to_delete = self._size
         while to_delete % block_size > 0:
-            to_delete+=1
+            to_delete += 1
 
         with open(self._filename, 'wb+') as f:
             while to_delete > 0:
@@ -102,16 +117,16 @@ class TmpFile():
     def delete(self):
         try:
             os.remove(self._filename)
-        except Exception as e:
+        except Exception:
             print("Error deleting %s" % self._filename)
 
 
 def get_image_metadata(byte_array):
 
     try:
-        exif_json = p.get_json(filename)
+        exif_json = p.get_json(byte_array)
         tags = exif_json[0]
-    except Exception as e:
+    except Exception:
         tags = {}
 
     return tags
@@ -124,7 +139,7 @@ def get_pdf_metadata(byte_array):
     try:
         pdf = PdfFileReader(v)
         tags = pdf.getDocumentInfo()
-    except Exception as e:
+    except Exception:
         tags = {}
     return tags
 
