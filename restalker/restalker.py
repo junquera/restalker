@@ -443,6 +443,10 @@ card_regex = {
 # Regex combinada para todas las tarjetas
 all_card_regex = r"(?:" + "|".join(card_regex.values()) + r")"
 
+# Add BIN and generic credit card number regex
+bin_regex = r"\b\d{6,8}\b"  # BIN/IIN: 6 or 8 digits
+ccn_regex = r"\b\d{8,19}\b"  # Payment card number: 8-19 digits
+
 http_regex = r"(?:https?\:\/\/)"
 localhost_regex = r"(?:localhost|127\.0\.0\.1)"
 # TODO Add query parameters
@@ -592,6 +596,8 @@ class reStalker:
         xrp_wallet=False,
         bnb_wallet=False,
         credit_card=False,
+        bin_number=False,
+        ccn_number=False,
         tor=False,
         i2p=False,
         ipfs=False,
@@ -643,6 +649,8 @@ class reStalker:
         self.bnb_wallet = bnb_wallet or all
 
         self.credit_card = credit_card or all
+        self.bin_number = bin_number or all
+        self.ccn_number = ccn_number or all
 
         self.tor = tor or all
         self.i2p = i2p or all
@@ -890,6 +898,18 @@ class reStalker:
                         if re.match(regex, card_number):
                             companies.append(company)
                     yield Card_Number(value=f"Companies=[{','.join(companies)}] Number={card_number}")
+
+        # Add BIN/IIN extraction
+        if self.bin_number:
+            for bin_candidate in re.findall(bin_regex, body):
+                yield Item(value=f"BIN/IIN={bin_candidate}")
+
+        # Add generic CCN extraction
+        if self.ccn_number:
+            for ccn_candidate in re.findall(ccn_regex, body):
+                # Avoid duplicates with card_numbers
+                if not (self.credit_card and re.match(all_card_regex, ccn_candidate)):
+                    yield Item(value=f"CCN={ccn_candidate}")
 
         if self.twitter:
             tw_accounts = re.findall(tw_account_regex, body)
