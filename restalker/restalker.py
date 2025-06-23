@@ -932,7 +932,7 @@ class reStalker:
         if self.session_id:
             session_ids = re.findall(session_id_regex, body)
             for sid in session_ids:
-                session_id_value = sid[0] if isinstance(sid, tuple) else sid
+                session_id_value = sid
                 if Session_ID.isvalid(session_id_value):
                     yield Session_ID(value=session_id_value)
 
