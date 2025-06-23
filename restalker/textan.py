@@ -1,5 +1,6 @@
 from rake_nltk import Rake
 
+
 class TextAnalysis():
 
     def __init__(self, body):

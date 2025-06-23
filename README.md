@@ -1,4 +1,4 @@
-![doc/img/icon.png](doc/img/icon.png)
+![reStalker logo](https://github.com/junquera/restalker/blob/develop/doc/img/icon.png?raw=true)
 
 # reStalker
 
