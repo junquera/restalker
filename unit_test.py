@@ -220,7 +220,7 @@ def sample_hashes():
 
 @pytest.fixture
 def sample_tox_ids():
-    # Frist is valid, the rest are invalid examples (incorrect format, non-hex characters, checksum mismatch)
+    # First is valid, the rest are invalid examples (incorrect format, non-hex characters, checksum mismatch)
     return """
     F24FA39D41F53ABF80FD3A32B05B8340E15A4128B3ED77E09B556EE6BDB7D6138321BA2D6028
     56A1ADE4B65B86BCD51CC73E2CD4E542179F47959FE3E0E21B4B0ACDADE51855
