@@ -282,6 +282,23 @@ class Card_Number(Item):
 
         return luhn_check(number)
 
+class Session_ID(Item):
+    @staticmethod
+    def isvalid(session_id: str) -> bool:
+
+        if not isinstance(session_id, str):
+            return False
+            
+        if len(session_id) != 66:
+            return False
+
+        try:
+            int(session_id, 16)  # Esto falla si no es hexadecimal válido
+            return True
+        except ValueError:
+            return False
+
+
 number_regex = r"[0-9]+"
 
 alnum_join = r"[a-zA-Z0-9\-\~]+"
@@ -480,6 +497,8 @@ pgp_key = r"(%s[\s\S]{175,5000}%s)" % (pgp_header, pgp_footer)
 
 ga_tracking_code_regex = r"\b(UA-\d{4,10}-\d|G-[A-Za-z0-9]{10})\b"
 
+session_id_regex = r"(?<![0-9a-fA-F])[0-9a-fA-F]{66}(?![0-9a-fA-F])"
+
 """
 Freenet URL spec:
     - CHK@file hash,decryption key,crypto settings
@@ -618,6 +637,7 @@ class reStalker:
         md5=False,
         sha1=False,
         sha256=False,
+        session_id=False,
         all=False,
     ):
 
@@ -669,6 +689,7 @@ class reStalker:
         self.md5 = md5 or all
         self.sha1 = sha1 or all
         self.sha256 = sha256 or all
+        self.session_id = session_id or all
 
     def add_keyword(self, keyword):
         self.keywords.append(keyword)
@@ -1038,6 +1059,13 @@ class reStalker:
             for g in gatc:
                 if GA_Tracking_Code.isvalid(g):
                     yield GA_Tracking_Code(value=g)
+
+        if self.session_id:
+            session_ids = re.findall(session_id_regex, body)
+            for sid in session_ids:
+                session_id_value = sid
+                if Session_ID.isvalid(session_id_value):
+                    yield Session_ID(value=session_id_value)
 
     def parse(self, body, origin=None, buff_size=20480):
 
