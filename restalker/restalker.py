@@ -70,21 +70,22 @@ class ETH_Wallet(Item):
     def isvalid(address: str) -> bool:
         ret = False
         try:
-            ret = Web3.isAddress(address)
+            ret = Web3.is_address(address)
         except:
             ret = False
         return ret
-
-
 
 class XMR_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
         ret = False
         try:
-            ret = xmr_address(address) is not None
-        finally:
-            return ret
+            # Remove any whitespace from the address
+            clean_address = ''.join(address.split())
+            ret = xmr_address(clean_address) is not None
+        except:
+            ret = False
+        return ret
 
 
 class ZEC_Wallet(Item):
@@ -366,22 +367,19 @@ bitname_domain_regex = r"(?:[a-zA-Z0-9]+\.)+bit"
 
 tw_account_regex = r"[^a-zA-Z0-9]@([a-zA-Z0-9_]{3,15})"
 
-telegram_url_regex = re.compile(
-    r"((?:https?:\/\/)?(?:t\.me|telegram\.me|teleg\.one|tgclick\.com)(?:\/[a-zA-Z0-9_-]+)+)|"
-    r"((?:tg:\/\/)(?:[a-zA-Z0-9_-]+\?[a-zA-Z0-9_-]+=[a-zA-Z0-9_-]+)+)"
-)
+telegram_url_regex = r"((?:https?\:\/\/)?(?:t\.me|telegram\.me|telegram\.dog)(?:\/(?:joinchat|c|\+)?[a-zA-Z0-9_-]+(?:\/[0-9]+)?)+)"
 
-whatsapp_url_regex = r"((?:https?\:\/\/)?chat\.whatsapp\.com(?:\/[a-zA-Z0-9_-]+)+)"
+whatsapp_url_regex = r"((?:https?\:\/\/)?(?:wa\.me|api\.whatsapp\.com\/send|chat\.whatsapp\.com)(?:\/(?:invite\/)?[a-zA-Z0-9_-]+)*(?:\?(?:[^=]+=[^&\s]+)(?:&[^=]+=[^&\s]+)*)?)"
 
 discord_url_regex = (
-    r"((?:https?\:\/\/)?discord(?:app)?\.(?:gg|com|net)(?:\/[a-zA-Z0-9_-]+)+)"
+    r"((?:https?\:\/\/)?(?:discord(?:app)?\.(?:gg|com|io|me)|discord\.(?:com\/invite))(?:\/[a-zA-Z0-9_-]+)+)"
 )
 
-skype_url_regex = r"((?:https?\:\/\/)?join\.skype\.com(?:\/[a-zA-Z0-9]+)+)"
+skype_url_regex = r"((?:skype\:\/\/join\?id=[a-zA-Z0-9_-]+|skype\:([^?\s]+)(?:\?(?:call|chat|add))?|(?:https?\:\/\/)?join\.skype\.com(?:\/invite)?(?:\/[a-zA-Z0-9_-]+)+))"
 
 username_regex = r"([a-zA-Z0-9\$\.,;_-]{8,20})[^a-zA-Z0-9]"
 
-password_regex = r"(?:[Pp]ass(?:word)?.|[a-zA-Z0-9_-]\:)([a-zA-Z0-9$,;_-]{4,16})"
+password_regex = r"(?:[Pp]ass(?:word)?.|[a-zA-Z0-9_-]\:\s?)([a-zA-Z0-9$,;_-]{4,16})"
 
 base64_regex = (
     r"((?:[a-zA-Z0-9\+\/]{4})+(?:[a-zA-Z0-9\+\/]{3}[=]|[a-zA-Z0-9\+\/]{2}[=]{2}))"
@@ -555,15 +553,15 @@ freenet_terms = dict(
     decryption_key=alnum_join,
     crypto_settings=r"[A-Z]+(?:\-\-[0-9]+)?",
     public_key=alnum_join,
-    user_selected_name="[a-zA-Z0-9\_]+",
+    user_selected_name=r"[a-zA-Z0-9\\_]+",
     version=number_regex,
     file_name=file_name,
 )
 
 freenet_keys = dict(
     chk="CHK@{file_hash},{decryption_key},{crypto_settings}",
-    ssk="SSK@{public_key},{decryption_key},{crypto_settings}\/{user_selected_name}\-{version}",
-    usk="USK@{public_key},{decryption_key},{crypto_settings}\/{user_selected_name}\/{version}",
+    ssk="SSK@{public_key},{decryption_key},{crypto_settings}\\/{user_selected_name}\\-{version}",
+    usk="USK@{public_key},{decryption_key},{crypto_settings}\\/{user_selected_name}\\/{version}",
     ksk="KSK@{file_name}",
 )
 
@@ -586,19 +584,38 @@ freenet_hidden_url = r"(?:(?:{http}?{localhost}{port})\/)?(?:freenet\:)?((?:{fre
 """
 http://localhost:8080/ipfs/QmW2WQi7j6c7UgJTarActp7tDNikE4B2qXtFCfLPdsgaTQ
 """
-# TODO Evitar len44 (hay problemas con las llaves para formatear después domain)
-ipfs_hash = r"(?:ipfs\/Qm[a-zA-Z0-9]{len44}|ipns\/{domain})".format(
-    **dict(len44="{44}", domain=domain_regex)
-)
-ipfs_params = dict(
-    ipfs_hash=ipfs_hash,
-    http=http_regex,
-    localhost=localhost_regex,
-    port=port_regex(8080),
-    path=path_regex,
-)
-ipfs_url = r"((?:{http}?{localhost}{port}(?:\/)?){ipfs_hash}{path})".format(
-    **ipfs_params
+# Regular expressions for IPFS
+# CIDv0 starts with Qm 
+# CIDv1 usually starts with baf... and uses base32
+# Rule of thumb: use len >= 46 for both v0 and v1 to avoid false positives
+ipfs_cid = r"(?:Qm[a-zA-Z0-9]{44}|b[a-z2-7]{45,})"
+ipns_name = r"(?:k[a-z2-7]{45,}|[a-z0-9]+(?:\.[a-z0-9]+)*)"
+ipfs_path = r"(?:\/[^\/\s\?#]+)*"
+ipfs_params = r"(?:\?[^\s#]*)?"
+ipfs_fragment = r"(?:#[^\s]*)?"
+
+# Native IPFS protocol format
+ipfs_native_url = r"(?:ipfs:\/\/%s%s%s%s)" % (ipfs_cid, ipfs_path, ipfs_params, ipfs_fragment)
+ipns_native_url = r"(?:ipns:\/\/%s%s%s%s)" % (ipns_name, ipfs_path, ipfs_params, ipfs_fragment)
+
+# Path gateway format
+ipfs_gateway = r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}"
+ipfs_gateway_port = r"(?::[0-9]{1,5})?"
+ipfs_gateway_url = r"(?:https?:\/\/%s%s\/ipfs\/%s%s%s%s)" % (ipfs_gateway, ipfs_gateway_port, ipfs_cid, ipfs_path, ipfs_params, ipfs_fragment)
+ipns_gateway_url = r"(?:https?:\/\/%s%s\/ipns\/%s%s%s%s)" % (ipfs_gateway, ipfs_gateway_port, ipns_name, ipfs_path, ipfs_params, ipfs_fragment)
+
+# Subdomain gateway format
+ipfs_subdomain_url = r"(?:https?:\/\/%s\.ipfs\.%s%s%s%s%s)" % (ipfs_cid, ipfs_gateway, ipfs_gateway_port, ipfs_path, ipfs_params, ipfs_fragment)
+ipns_subdomain_url = r"(?:https?:\/\/%s\.ipns\.%s%s%s%s%s)" % (ipns_name, ipfs_gateway, ipfs_gateway_port, ipfs_path, ipfs_params, ipfs_fragment)
+
+# Combined regex for any IPFS URL
+ipfs_url = r"(%s|%s|%s|%s|%s|%s)" % (
+    ipfs_native_url, 
+    ipns_native_url,
+    ipfs_gateway_url,
+    ipns_gateway_url, 
+    ipfs_subdomain_url,
+    ipns_subdomain_url
 )
 
 pastes = [
@@ -619,17 +636,19 @@ sha1_regex = r"[a-f0-9]{40}"
 sha256_regex = r"[a-f0-9]{64}"
 
 
-# Method for avoid lists of lists
+# Method for avoid lists of lists and empty elements
 def extract_elements(x):
+    if x is None:
+        return []
     if type(x) in [tuple, list, set]:
-        result = list()
+        result = []
         for piece in x:
             for element in extract_elements(piece):
-                if element != "":
+                if element is not None and element != '':
                     result.append(element)
-        return set(result)
+        return set(el for el in result if el)  # Filters out empty elements
     else:
-        return [x]
+        return [x] if x is not None and x != '' else []
 
 
 class reStalker:

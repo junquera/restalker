@@ -24,7 +24,12 @@ def sample_crypto_data():
     return """
     BTC: 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa
     ETH: 0x742d35Cc6634C0532925a3b844Bc454e4438f44e
-    XMR: 888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkRxbANsAnjyPbb3Y7Rfg5Rm9qL5Hti4UzEO deIfoABLYFfQPlFmhqc2tYS
+    XMR: 888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkRxbANsAnjyPbb3Y7Rfg5Rm9qL5Hti4UzEOdeIfoABLYFfQPlFmhqc2tYS
+    ZEC: t1XnYgN7RDahXGvPn4dqkGHocaZPvoCZhG9
+    DASH: XpESxaUmonkq8RaLLp46Brx2K39ggQe226
+    DOT: 1FRMM8PEiWXYax7rpS6X4XZX1aAAxSWx1CrKTyrVYhV24fg
+    XRP: rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh
+    BNB: bnb1u89pj9xfwzc08zuh9gne6t8zr8q8staztrl6gt
     """
 
 @pytest.fixture
@@ -237,7 +242,22 @@ def sample_social_media():
     https://twitter.com/username
     https://twitter.com/@username
     twitter.com/username
+    
+    # ZeroNet Bitcoin-style addresses
     ZeroNet: 1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D
+    http://localhost:43110/1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D
+    http://127.0.0.1:43110/1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D
+    1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D/blog
+    http://localhost:43110/1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D/blog
+    
+    # ZeroNet Bitname addresses
+    example.bit
+    blog.example.bit
+    http://localhost:43110/example.bit
+    http://127.0.0.1:43110/example.bit
+    example.bit/blog
+    http://localhost:43110/example.bit/blog
+    
     Paste: https://pastebin.com/abc123
     """
 
@@ -270,7 +290,7 @@ def test_btc_wallet_validation():
     assert BTC_Wallet.isvalid(invalid_btc) == False
 
 def test_eth_wallet_validation():
-    valid_eth = "0x0f52bdd5c7d3d7bca3bd78d7e1a5563e15530e24cd2f8db8a44c88dd93125514"
+    valid_eth = "0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97"
     invalid_eth = "0xinvalid"
     
     assert ETH_Wallet.isvalid(valid_eth) == True
@@ -362,10 +382,37 @@ def test_credentials_detection(sample_communication_data):
     usernames = [r for r in results if isinstance(r, Username)]
     passwords = [r for r in results if isinstance(r, Password)]
     
-    assert len(usernames) > 0
-    assert len(passwords) > 0
-    assert "test_user_123" in str(usernames[0])
-    assert "SecretPass123" in str(passwords[0])
+    # Test presence of credentials
+    assert len(usernames) > 0, "Should find at least one username"
+    assert len(passwords) > 0, "Should find at least one password"
+    
+    # Test specific username
+    assert "test_user_123" in [x.value for x in usernames], "Should find the test username"
+    
+    # Test different password formats
+    password_values = [x.value for x in passwords]
+    
+    # Test basic passwords
+    assert "myP4ssw0rd" in password_values, "Should find basic password format"
+    assert "Secr3t123" in password_values, "Should find basic password with numbers"
+    
+    # Test full password format
+    assert "TestP4ss" in password_values, "Should find full password format"
+    assert "Secr3t456" in password_values, "Should find alternate full password"
+    
+    # Test custom prefixes
+    assert "Adm1n123" in password_values, "Should find admin prefixed password"
+    assert "MyPwd123" in password_values, "Should find user prefixed password"
+    assert "Test_123" in password_values, "Should find short prefix password"
+    
+    # Test special characters
+    assert "my$pwd,123" in password_values, "Should find password with special chars"
+    assert "test;456" in password_values, "Should find password with semicolon"
+    assert "pwd_2023" in password_values, "Should find password with underscore"
+    
+    # Test formats with spaces
+    assert any("myP4ssw0rd" in p for p in password_values), "Should find password after space"
+    assert any("Test_123" in p for p in password_values), "Should find custom prefix password after space"
 
 def test_base64_detection():
     data = "SGVsbG8gV29ybGQ="  # "Hello World" in base64
@@ -423,9 +470,39 @@ def test_zeronet_detection(sample_social_media):
     stalker = reStalker(zeronet=True)
     results = list(stalker.parse(sample_social_media))
     
-    zeronet = [r for r in results if isinstance(r, Zeronet_URL)]
-    assert len(zeronet) > 0
-    assert "1HeLLo4" in str(zeronet[0])
+    # Get URLs for both Bitcoin-style and Bitname formats
+    zeronet = [r.value for r in results if isinstance(r, Zeronet_URL)]
+    zeronet_urls = set(zeronet)  # Remove duplicates
+    
+    # Test total number of URLs
+    assert len(zeronet_urls) >= 11, f"Should find at least 11 ZeroNet URLs, found {len(zeronet_urls)}"
+    
+    # Test Bitcoin-style address patterns
+    btc_patterns = [
+        "1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D",
+        "http://localhost:43110/1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D",
+        "http://127.0.0.1:43110/1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D",
+        "1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D/blog",
+        "http://localhost:43110/1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D/blog"
+    ]
+    
+    # Test Bitname patterns
+    bitname_patterns = [
+        "example.bit",
+        "blog.example.bit",
+        "http://localhost:43110/example.bit",
+        "http://127.0.0.1:43110/example.bit",
+        "example.bit/blog",
+        "http://localhost:43110/example.bit/blog"
+    ]
+    
+    # Verify all patterns are found
+    for pattern in btc_patterns + bitname_patterns:
+        assert pattern in zeronet_urls, f"Should detect {pattern}"
+
+    # Print URLs if test fails
+    if not all(pattern in zeronet_urls for pattern in btc_patterns + bitname_patterns):
+        print("Found ZeroNet URLs:", sorted(zeronet_urls))
 
 def test_zeronet_context_and_bitname(sample_contextual_data):
     stalker = reStalker(zeronet_ctxt=True, bitname=True)
@@ -474,10 +551,55 @@ def test_messaging_platforms(sample_communication_platforms):
     telegram = [r for r in results if isinstance(r, Telegram_URL)]
     skype = [r for r in results if isinstance(r, Skype_URL)]
     
-    assert len(whatsapp) == 4
-    assert len(discord) == 5
-    assert len(telegram) == 6
-    assert len(skype) == 5
+    # Get URLs for all platforms
+    whatsapp_urls = [str(w.value) for w in whatsapp]
+    discord_urls = [str(d.value) for d in discord]
+    telegram_urls = [str(t.value) for t in telegram]
+    skype_urls = [str(s.value) for s in skype]
+    
+    # Test WhatsApp URL patterns
+    assert any('wa.me/34666777888' in url for url in whatsapp_urls), "Should detect basic wa.me URL"
+    assert any('wa.me/34666777888?text=Hello' in url for url in whatsapp_urls), "Should detect wa.me URL with text parameter"
+    assert any('api.whatsapp.com/send?phone=34666777888' in url for url in whatsapp_urls), "Should detect API URL with phone parameter"
+    assert any('chat.whatsapp.com/invite/abc123' in url for url in whatsapp_urls), "Should detect group invite URL"
+    
+    # Test Discord URL patterns
+    assert any('discord.gg/abcd1234' in url for url in discord_urls), "Should detect discord.gg invite link"
+    assert any('discord.com/invite/abcd1234' in url for url in discord_urls), "Should detect discord.com invite link"
+    assert any('discordapp.com/invite/abcd1234' in url for url in discord_urls), "Should detect discordapp.com invite link"
+    assert any('discord.me/server' in url for url in discord_urls), "Should detect discord.me server link"
+    assert any('discord.io/server' in url for url in discord_urls), "Should detect discord.io server link"
+    
+    # Test Telegram URL patterns
+    assert any('t.me/telegramchannel' in url for url in telegram_urls), "Should detect t.me channel link"
+    assert any('telegram.me/telegramchannel' in url for url in telegram_urls), "Should detect telegram.me channel link"
+    assert any('telegram.dog/telegramchannel' in url for url in telegram_urls), "Should detect telegram.dog channel link"
+    assert any('t.me/joinchat/abcdef123456' in url for url in telegram_urls), "Should detect private chat invite link"
+    assert any('t.me/+abcdef123456' in url for url in telegram_urls), "Should detect plus-prefixed invite link"
+    assert any('t.me/c/123456789/1234' in url for url in telegram_urls), "Should detect specific chat message link"
+    
+    # Test Skype URL patterns
+    assert any('skype://join?id=abcd1234' in url for url in skype_urls), "Should detect skype protocol join link"
+    assert any('skype:echo123?call' in url for url in skype_urls), "Should detect skype call link"
+    assert any('skype:echo123?chat' in url for url in skype_urls), "Should detect skype chat link"
+    assert any('skype:echo123?add' in url for url in skype_urls), "Should detect skype add contact link"
+    assert any('join.skype.com/invite/abcd1234' in url for url in skype_urls), "Should detect web invite link"
+    
+    # Test total numbers with descriptive messages
+    assert len(whatsapp) >= 4, f"Should find at least 4 WhatsApp URLs, found {len(whatsapp)}: {whatsapp_urls}"
+    assert len(discord) >= 5, f"Should find at least 5 Discord URLs, found {len(discord)}: {discord_urls}"
+    assert len(telegram) >= 6, f"Should find at least 6 Telegram URLs, found {len(telegram)}: {telegram_urls}"
+    assert len(skype) >= 5, f"Should find at least 5 Skype URLs, found {len(skype)}: {skype_urls}"
+    
+    # Print found URLs if test fails for any platform
+    if len(whatsapp) < 4:
+        print("Found WhatsApp URLs:", whatsapp_urls)
+    if len(discord) < 5:
+        print("Found Discord URLs:", discord_urls)
+    if len(telegram) < 6:
+        print("Found Telegram URLs:", telegram_urls)
+    if len(skype) < 5:
+        print("Found Skype URLs:", skype_urls)
 
 def test_hash_detection(sample_hashes):
     stalker = reStalker(md5=True, sha1=True, sha256=True)
