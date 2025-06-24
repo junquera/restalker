@@ -14,7 +14,9 @@ from restalker import (
     Email, Phone, PGP, GA_Tracking_Code, Tor_URL, I2P_URL,
     IPFS_URL, Base64, Username, Password, Zeronet_URL, Bitname_URL,
     Paste, TW_Account, Location, Organization, Keyphrase,
-    OwnName, Whatsapp_URL, Discord_URL, Telegram_URL, Skype_URL, MD5, SHA1, SHA256
+    OwnName, Whatsapp_URL, Discord_URL, Telegram_URL, Skype_URL, 
+    MD5, SHA1, SHA256, Session_ID, Tox_ID
+
 )
 
 @pytest.fixture
@@ -223,6 +225,16 @@ def sample_hashes():
     """
 
 @pytest.fixture
+def sample_tox_ids():
+    # First is valid, the rest are invalid examples (incorrect format, non-hex characters, checksum mismatch)
+    return """
+    F24FA39D41F53ABF80FD3A32B05B8340E15A4128B3ED77E09B556EE6BDB7D6138321BA2D6028
+    56A1ADE4B65B86BCD51CC73E2CD4E542179F47959FE3E0E21B4B0ACDADE51855
+    56A1ADE4B65B86BCD51CC73E2CD4E542179F47959FE3E0E21B4B0ACDADE51855D34D34D37XYZ
+    56A1ADE4B65B86BCD51CC73E2CD4E542179F47959FE3E0E21B4B0ACDADE51855D34D34D37CB0
+    """
+
+@pytest.fixture
 def sample_social_media():
     return """
     Twitter: @twitteruser
@@ -356,7 +368,7 @@ def test_url_detection(sample_url_data):
     assert len(ipfs) > 0
 
 def test_analytics_code_detection():
-    data = "Google Analytics: UA-12345678-9 and G-ABCDEFGHIJ"
+    data = "Google Analytics: UA-12345678-9 and G-ABCDEFGHIJ www.website.com/UXF8qo74PzHxW3oSkcJt2DG-nqZGb38pCiYTIHyDa0[/HIDEREACT]"
     stalker = reStalker(gatc=True)
     results = list(stalker.parse(data))
     codes = [r for r in results if isinstance(r, GA_Tracking_Code)]
@@ -423,7 +435,7 @@ def test_ethereum_address_case_sensitivity(sample_eth_addresses):
     results = list(stalker.parse(sample_eth_addresses))
     
     eth_wallets = [r for r in results if isinstance(r, ETH_Wallet)]
-    # Verificar que las direcciones case-insensitive se detecten como la misma
+    # Verify that case-insensitive addresses are detected as the same
     unique_addresses = set(str(w) for w in eth_wallets)
     assert len(unique_addresses) == 2
 
@@ -433,7 +445,7 @@ def test_monero_address_validation(sample_monero_addresses):
     
     xmr_wallets = [r for r in results if isinstance(r, XMR_Wallet)]
     assert len(xmr_wallets) == 3
-    # Verificar longitud estándar de direcciones Monero
+    # Verify standard length of Monero addresses
     assert all(len(str(wallet).split('(')[1][:-1]) >= 95 for wallet in xmr_wallets)
 
 def test_i2p_url_detection(sample_i2p_addresses):
@@ -525,7 +537,6 @@ def test_contextual_information(sample_contextual_data):
     keyphrases = [r for r in results if isinstance(r, Keyphrase)]
     names = [r for r in results if isinstance(r, OwnName)]
     
-    # Verificar que se encontraron localizaciones y que Michigan está entre ellas
     assert len(locations) > 0 and "Michigan" in str([x.value for x in locations])
     assert len(orgs) > 0 and "Example Corp" in str([x.value for x in orgs])
     assert len(keyphrases) > 0 and "confidential" in str([x.value for x in keyphrases])
@@ -601,3 +612,137 @@ def test_hash_detection(sample_hashes):
     assert len(md5_hashes) > 0 and len(str(md5_hashes[0])) == 32 + 5 #len + wrapper
     assert len(sha1_hashes) > 0 and len(str(sha1_hashes[0])) == 40 + 6 #len + wrapper
     assert len(sha256_hashes) > 0 and len(str(sha256_hashes[0])) == 64 + 8 #len + wrapper
+
+def test_tox_id_detection(sample_tox_ids):
+    stalker = reStalker(tox=True)
+    results = list(stalker.parse(sample_tox_ids))
+    
+    tox_ids = [r for r in results if isinstance(r, Tox_ID)]
+    
+    # Verify that we found the expected number of Tox IDs
+    assert len(tox_ids) == 1
+
+    # Split by new line and strip each line to remove leading/trailing whitespace
+    ids = [line.strip() for line in sample_tox_ids.split('\n') if line.strip()]
+    valid_id = ids[0]  # First is valid
+    invalid_ids = ids[1:4]  # Last 3 are invalid examples
+
+    assert Tox_ID.isvalid(valid_id) == True
+    
+    for invalid_id in invalid_ids:
+        assert Tox_ID.isvalid(invalid_id) == False
+
+def test_session_id_validation():
+    # Valid Session IDs
+    valid_session_ids = [
+        "05010203040506070809a0b0c0d0e0f0ff010203040506070809a0b0c0d0e0f0ff",
+        "15abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+        "25FEDCBA9876543210FEDCBA9876543210FEDCBA9876543210FEDCBA9876543210",
+        "050123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "15ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789"
+    ]
+    
+    # Invalid Session IDs
+    invalid_session_ids = [
+        # Wrong length (too short)
+        "05010203040506070809a0b0c0d0e0f0ff01020304050607080",
+        "15abcdef0123456789abcdef012345",
+        # Wrong length (too long)
+        "05010203040506070809a0b0c0d0e0f0ff010203040506070809a0b0c0d0e0f0ffabc",
+        # Non-hex characters
+        "05010203040506070809g0b0c0d0e0f0ff010203040506070809a0b0c0d0e0f0ff",
+        "15abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678z",
+        # Empty string
+        "",
+        # None
+        None,
+        # Non-string types
+        123,
+        [],
+        {}
+    ]
+    
+    # Test valid Session IDs
+    for session_id in valid_session_ids:
+        assert Session_ID.isvalid(session_id) == True, f"Should be valid: {session_id}"
+    
+    # Test invalid Session IDs
+    for session_id in invalid_session_ids:
+        assert Session_ID.isvalid(session_id) == False, f"Should be invalid: {session_id}"
+
+
+def test_session_id_detection():
+    """Test Session ID detection in text"""
+    sample_data = """
+    Here are some Session IDs for testing:
+    
+    Valid Session IDs:
+    05010203040506070809a0b0c0d0e0f0ff010203040506070809a0b0c0d0e0f0ff
+    15abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789
+    25FEDCBA9876543210FEDCBA9876543210FEDCBA9876543210FEDCBA9876543210
+    
+    Invalid ones (should not be detected):
+    01010203040506070809a0b0c0d0e0f0ff010203040506070809a0b0c0d0e0f0ffff
+    05010203040506070809a0b0c0d0e0f0ff01020304050607080
+    
+    Mixed with other content:
+    My Session ID is 050123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef please contact me
+    Contact: session://15ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789
+    """
+    
+    stalker = reStalker(session_id=True)
+    results = list(stalker.parse(sample_data))
+    
+    session_ids = [r for r in results if isinstance(r, Session_ID)]
+    
+    # Should detect exactly 5 valid Session IDs
+    assert len(session_ids) == 5
+    
+    # Verify all detected Session IDs are valid
+    for sid in session_ids:
+        assert Session_ID.isvalid(sid.value) == True
+    
+    # Check that specific valid Session IDs are detected
+    detected_values = [sid.value for sid in session_ids]
+    expected_session_ids = [
+        "05010203040506070809a0b0c0d0e0f0ff010203040506070809a0b0c0d0e0f0ff",
+        "15abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+        "25FEDCBA9876543210FEDCBA9876543210FEDCBA9876543210FEDCBA9876543210",
+        "050123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "15ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789"
+    ]
+    
+    for expected in expected_session_ids:
+        assert expected in detected_values, f"Expected Session ID not detected: {expected}"
+
+
+def test_session_id_edge_cases():
+    """Test Session ID detection edge cases"""
+    
+    # Test with all=True
+    stalker_all = reStalker(all=True)
+    sample_with_session_id = "My ID: 05010203040506070809a0b0c0d0e0f0ff010203040506070809a0b0c0d0e0f0ff"
+    results = list(stalker_all.parse(sample_with_session_id))
+    session_ids = [r for r in results if isinstance(r, Session_ID)]
+    assert len(session_ids) == 1
+    
+    # Test with session_id=False (should not detect)
+    stalker_no_session = reStalker(session_id=False)
+    results = list(stalker_no_session.parse(sample_with_session_id))
+    session_ids = [r for r in results if isinstance(r, Session_ID)]
+    assert len(session_ids) == 0
+    
+    # Test boundary cases for hex validation
+    boundary_cases = """
+    Valid hex only: 05ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789
+    With invalid hex char: 05ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF012345678G
+    """
+    
+    stalker = reStalker(session_id=True)
+    results = list(stalker.parse(boundary_cases))
+    session_ids = [r for r in results if isinstance(r, Session_ID)]
+    
+    # Should only detect the valid one
+    assert len(session_ids) == 1
+    assert session_ids[0].value == "05ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789"
+

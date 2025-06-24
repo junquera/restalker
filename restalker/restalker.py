@@ -1,4 +1,3 @@
-from os import stat
 import based58
 from hashlib import sha256
 from bech32ref import segwit_addr
@@ -16,6 +15,15 @@ from .textan import TextAnalysis
 class Item:
     def __init__(self, value=None):
         self.value = value
+
+    def __eq__(self, other):
+        if not isinstance(other, Item):
+            return False
+        
+        return self.value == other.value and type(self).__name__ == type(other).__name__
+
+    def __hash__(self):
+        return hash(type(self).__name__ + str(self.value))
 
     def __str__(self):
         return f"{type(self).__name__}({self.value[:128]})"
@@ -39,31 +47,28 @@ class Keyphrase(Item):
 class Keyword(Item):
     pass
 
+
 class BTC_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if address[0] in ["1", "3"]:
                 decode_address = based58.b58decode(address.encode("utf-8"))
                 ret = (
-                    decode_address[-4:]
-                    == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
+                    decode_address[-4:] == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
                 )
             elif address.startswith("bc"):
                 hrpgot, data, spec = segwit_addr.bech32_decode(address)
                 ret = (hrpgot is not None) and (data is not None) and (spec is not None)
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class ETH_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             ret = Web3.is_address(address)
         except:
@@ -73,7 +78,7 @@ class ETH_Wallet(Item):
 class XMR_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             # Remove any whitespace from the address
             clean_address = ''.join(address.split())
@@ -86,90 +91,73 @@ class XMR_Wallet(Item):
 class ZEC_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if (address[0] == "t" and address[1] in ["1", "3"]) or address.startswith(
                 "zc"
             ):
                 decode_address = based58.b58decode(address.encode("utf-8"))
                 ret = (
-                    decode_address[-4:]
-                    == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
+                    decode_address[-4:] == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
                 )
             elif address.startswith("zs"):
                 hrpgot, data, spec = segwit_addr.bech32_decode(address)
                 ret = (hrpgot is not None) and (data is not None) and (spec is not None)
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class DASH_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if re.search(dash_wallet_regex, address)[0] == address:
                 decode_address = based58.b58decode(address.encode("utf-8"))
                 ret = (
-                    decode_address[-4:]
-                    == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
+                    decode_address[-4:] == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
                 )
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class DOT_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if re.search(dot_wallet_regex, address)[0] == address:
                 prefix, decode = SS58Decoder.Decode(address)
                 ret = prefix == 0
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class XRP_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if re.search(xrp_wallet_regex, address)[0] == address:
-                decode_address = based58.b58decode_check(
+                based58.b58decode_check(
                     address.encode("utf-8"),
                     alphabet=based58.Alphabet.RIPPLE,
                 )
                 ret = True
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class BNB_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = None
+        ret = False
         try:
             if re.search(bnb_wallet_regex, address)[0] == address:
                 hrpgot, data, spec = segwit_addr.bech32_decode(address)
                 ret = hrpgot == "bnb"
-            else:
-                ret = False
-        except:
-            ret = False
-        return ret
+        finally:
+            return ret
 
 
 class TW_Account(Item):
@@ -265,7 +253,7 @@ class PGP(Item):
 
     def is_private_key(self):
         return "PRIVATE KEY" in self.value
-    
+
     @staticmethod
     def clean_pgp_key(pgp_key):
         cleaned_key = re.sub(r'<br\s*/?>', '', pgp_key)
@@ -274,8 +262,72 @@ class PGP(Item):
 
 
 class GA_Tracking_Code(Item):
-    pass
+    @staticmethod
+    def isvalid(code: str) -> bool:
+        # Validate that the code is not part of a larger string
+        return bool(re.fullmatch(r'(?:UA-\d{4,10}-\d|G-[A-Za-z0-9]{10})', code))
 
+class Card_Number(Item):
+
+    @staticmethod
+    def isvalid(number: str) -> bool:
+
+        def luhn_check(card_number: str) -> bool:
+            digits = [int(d) for d in str(card_number)]
+            odd_digits = digits[-1::-2]
+            even_digits = digits[-2::-2]
+            checksum = sum(odd_digits)
+            for d in even_digits:
+                checksum += sum(divmod(d * 2, 10))
+            return checksum % 10 == 0
+
+        return luhn_check(number)
+
+class Session_ID(Item):
+    @staticmethod
+    def isvalid(session_id: str) -> bool:
+
+        if not isinstance(session_id, str):
+            return False
+            
+        if len(session_id) != 66:
+            return False
+
+        try:
+            int(session_id, 16)  # Esto falla si no es hexadecimal válido
+            return True
+        except ValueError:
+            return False
+
+
+class Tox_ID(Item):
+    @staticmethod
+    def isvalid(tox_id: str) -> bool:
+        """Verify if the string is a valid Tox ID - 76 hexadecimal chars (64 public key + 4 NoSpam + 2 checksum)"""
+        ret = None
+        try:
+            # Check if it's a valid 76-character hexadecimal string
+            if len(tox_id) == 76 and all(c in '0123456789ABCDEFabcdef' for c in tox_id):
+                # Convert the Tox ID from hexadecimal to bytes
+                tox_id_bytes = bytes.fromhex(tox_id)
+                
+                # The ID is 38 bytes: 32 bytes public key + 4 bytes NoSpam + 2 bytes checksum
+                # Extract the checksum (last 2 bytes)
+                actual_checksum = tox_id_bytes[36:38]
+                
+                # Calculate the checksum by XORing pairs of bytes
+                calculated_checksum = bytearray(2)
+                for i in range(0, 36, 2):
+                    calculated_checksum[0] ^= tox_id_bytes[i]
+                    calculated_checksum[1] ^= tox_id_bytes[i+1]
+                
+                # Verify that the calculated checksum matches the actual checksum
+                ret = (actual_checksum == calculated_checksum)
+            else:
+                ret = False
+        except Exception as e:
+            ret = False
+        return ret
 
 number_regex = r"[0-9]+"
 
@@ -346,12 +398,108 @@ tor_hidden_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % tor_hidden_domai
 i2p_hidden_domain = r"(?:[a-z0-9]+\.){1,5}i2p(?:\:[0-9]{2,5})?$"
 i2p_hidden_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % i2p_hidden_domain[:-1]
 
+card_regex = {
+    # American Express - 34, 37 - length 15
+    "American_Express": r"3[47][0-9]{13}",
+    
+    # China T-Union - 31 - length 19
+    "China_T_Union": r"31[0-9]{17}",
+    
+    # China UnionPay - 62 - length 16-19
+    "China_UnionPay": r"62[0-9]{14,17}",
+    
+    # Diners Club enRoute - 2014, 2149 - length 15
+    "Diners_Club_enRoute": r"2014[0-9]{11}|2149[0-9]{11}",
+    
+    # Diners Club International - 30, 36, 38, 39 - length 14-19
+    "Diners_Club_International": r"3(?:0[0-5]|[68][0-9]|9)[0-9]{11,16}",
+    
+    # Diners Club United States & Canada - 54, 55 - length 16
+    "Diners_Club_US_CA": r"5[45][0-9]{14}",
+    
+    # Discover - 6011, 644-649, 65, 622126-622925 - length 16-19
+    "Discover": r"6011[0-9]{12,15}|64[4-9][0-9]{13,16}|65[0-9]{14,17}|622(?:12[6-9]|1[3-9][0-9]|[2-8][0-9][0-9]|9[0-1][0-9]|92[0-5])[0-9]{10,13}",
+    
+    # UkrCard - 60400100-60420099 - length 16-19
+    "UkrCard": r"6042[0-9]{12,15}|6040[0-9]{12,15}|6041[0-9]{12,15}",
+    
+    # RuPay - 60, 65, 81, 82, 508, 353, 356 - length 16
+    "RuPay": r"(?:508|6[05]|8[12])[0-9]{14}|35[36][0-9]{13}",
+    
+    # InterPayment - 636 - length 16-19
+    "InterPayment": r"636[0-9]{13,16}",
+    
+    # InstaPayment - 637-639 - length 16
+    "InstaPayment": r"63[7-9][0-9]{13}",
+    
+    # JCB - 3528-3589 - length 16-19
+    "JCB": r"(?:352[8-9]|35[3-8][0-9])[0-9]{12,15}",
+    
+    # Maestro - 5018, 5020, 5038, 5893, 6304, 6759, 6761-6763 - length 12-19
+    "Maestro": r"(?:5018|5020|5038|5893|6304|6759|676[1-3])[0-9]{8,15}",
+    
+    # Maestro UK - 6759, 676770, 676774 - length 12-19
+    "Maestro_UK": r"(?:6759|676770|676774)[0-9]{8,15}",
+    
+    # Dankort - 5019, 4571 - length 16
+    "Dankort": r"5019[0-9]{12}|4571[0-9]{12}",
+    
+    # Mir - 2200-2204 - length 16-19
+    "Mir": r"220[0-4][0-9]{12,15}",
+    
+    # BORICA - 2205 - length 16
+    "BORICA": r"2205[0-9]{12}",
+    
+    # Mastercard - 2221-2720, 51-55 - length 16
+    "Mastercard": r"(?:222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[0-1][0-9]|2720|5[1-5][0-9]{2})[0-9]{12}",
+    
+    # Troy - 65, 9792 - length 16
+    "Troy": r"(?:65|9792)[0-9]{14}",
+    
+    # Visa - 4 - length 13,16,19
+    "Visa": r"4[0-9]{12}(?:[0-9]{3,6})?",
+    
+    # Visa Electron - 4026, 417500, 4844, 4913, 4917 - length 16
+    "Visa_Electron": r"(?:4026|417500|4844|4913|4917)[0-9]{10}",
+    
+    # UATP - 1 - length 15
+    "UATP": r"1[0-9]{14}",
+    
+    # Verve - 506099-506198, 650002-650027, 507865-507964 - length 16,18,19
+    "Verve": r"(?:506(?:0[9][9]|1[0-8][0-9])|650(?:0[0-1][0-9]|02[0-7])|507(?:8[6-9][0-9]|9[0-6][0-9]))[0-9]{10}(?:[0-9]{2,3})?",
+    
+    # LankaPay - 357111 - length 16
+    "LankaPay": r"357111[0-9]{10}",
+    
+    # Uzcard - 8600, 5614 - length 16
+    "Uzcard": r"(?:8600|5614)[0-9]{12}",
+    
+    # HUMO - 9860 - length 16
+    "HUMO": r"9860[0-9]{12}",
+    
+    # GPN - 1946, 50, 56, 58, 60-63 - length 16,18,19
+    "GPN": r"(?:1946|5[068]|6[0-3])[0-9]{12}(?:[0-9]{2,3})?",
+    
+    # Napas - 9704 - length 16,19
+    "Napas": r"9704[0-9]{12}(?:[0-9]{3})?"
+}
+
+# Regex combinada para todas las tarjetas
+all_card_regex = r"(?:" + "|".join(card_regex.values()) + r")"
+
+# Add BIN and generic credit card number regex
+bin_regex = r"\b\d{6,8}\b"  # BIN/IIN: 6 or 8 digits
+ccn_regex = r"\b\d{8,19}\b"  # Payment card number: 8-19 digits
 
 http_regex = r"(?:https?\:\/\/)"
 localhost_regex = r"(?:localhost|127\.0\.0\.1)"
-port_regex = lambda p: r"(?:\:%d)?" % (p)
 # TODO Add query parameters
 path_regex = r"(?:\/[a-zA-Z0-9_-]+)*"
+
+
+def port_regex(p):
+    return r"(?:\:%d)?" % (p)
+
 
 zeronet_params = dict(
     http=http_regex,
@@ -361,6 +509,7 @@ zeronet_params = dict(
     bitcoin=btc_wallet_regex,
     bitname=bitname_domain_regex,
 )
+
 
 bitname_url = r"((?:{http})?(?:{bitcoin}|{bitname})(?:{port})?(?:{path})?)".format(
     **zeronet_params
@@ -377,7 +526,11 @@ pgp_footer = r'-----END PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----'
 pgp_key = r"(%s[\s\S]{175,5000}%s)" % (pgp_header, pgp_footer)
 
 
-ga_tracking_code_regex = r"(UA-\d{4,10}-\d|G-\w{10})"
+ga_tracking_code_regex = r"\b(UA-\d{4,10}-\d|G-[A-Za-z0-9]{10})\b"
+
+session_id_regex = r"(?<![0-9a-fA-F])[0-9a-fA-F]{66}(?![0-9a-fA-F])"
+
+tox_id_regex = r"([a-fA-F0-9]{76})"
 
 """
 Freenet URL spec:
@@ -390,7 +543,7 @@ Freenet URL spec:
     - KSK@filename
     KSK@myfile.txt
 
-Crear sitios de freenet:
+Create freenet sites:
 
     http://localhost:8888/freenet:USK@spOnEa2YvAoNfreZPfoy0tVNCzQghLdWaaNM10GEiEM,QRKjyaBkOX5Qw~aEml19WIDaJJo2X3hU9mGz8GcUuKc,AQACAAE/freesite_es/11/
 """
@@ -482,6 +635,7 @@ md5_regex = r"[a-f0-9]{32}"
 sha1_regex = r"[a-f0-9]{40}"
 sha256_regex = r"[a-f0-9]{64}"
 
+
 # Method for avoid lists of lists and empty elements
 def extract_elements(x):
     if x is None:
@@ -510,6 +664,9 @@ class reStalker:
         dot_wallet=False,
         xrp_wallet=False,
         bnb_wallet=False,
+        credit_card=False,
+        bin_number=False,
+        ccn_number=False,
         tor=False,
         i2p=False,
         ipfs=False,
@@ -536,6 +693,8 @@ class reStalker:
         md5=False,
         sha1=False,
         sha256=False,
+        session_id=False,
+        tox=False,
         all=False,
     ):
 
@@ -559,6 +718,10 @@ class reStalker:
         self.dot_wallet = dot_wallet or all
         self.xrp_wallet = xrp_wallet or all
         self.bnb_wallet = bnb_wallet or all
+
+        self.credit_card = credit_card or all
+        self.bin_number = bin_number or all
+        self.ccn_number = ccn_number or all
 
         self.tor = tor or all
         self.i2p = i2p or all
@@ -585,6 +748,9 @@ class reStalker:
         self.md5 = md5 or all
         self.sha1 = sha1 or all
         self.sha256 = sha256 or all
+        self.session_id = session_id or all
+        self.tox = tox or all
+
 
     def add_keyword(self, keyword):
         self.keywords.append(keyword)
@@ -593,17 +759,24 @@ class reStalker:
         while keyword in self.keywords:
             self.keywords.remove(keyword)
 
-    def extract_links(
-        self, body, origin=None, url_format=any_url, domain_format=domain_regex
-    ):
-
+    def extract_links(self, body, origin=None, url_format=any_url, domain_format=domain_regex):
         urls = set()
 
-        for url in re.findall(url_format, body, re.DOTALL):
+        def add_url_safely(url_str):
+            """Helper function to safely add URLs to the set"""
             try:
-                urls.add(UUF(url).rebuild())
+                if url_str and isinstance(url_str, str):
+                    cleaned_url = UUF(url_str).rebuild()
+                    if cleaned_url:
+                        urls.add(cleaned_url)
+            except (ValueError, AttributeError) as e:
+                print(f"[*] Error processing URL {url_str}: {e}")
             except Exception as e:
-                pass
+                print(f"[*] Unexpected error with URL {url_str}: {e}")
+
+        # Process URLs found with regex
+        for url in re.findall(url_format, body, re.DOTALL):
+            add_url_safely(url)
 
         try:
             # soup = BeautifulSoup(body, "html.parser")
@@ -614,22 +787,28 @@ class reStalker:
                     for url in links:
                         try:
                             urls.add(UUF(urljoin(origin, url.get("href"))).rebuild())
+                        except AttributeError:
+                            print("[*] AttributeError: Invalid attribute in URL")
+                        except ValueError:
+                            print("[*] ValueError: Invalid URL format")
                         except Exception as e:
-                            pass
-        except:
-            print("[*] Error with HTML parsing")
+                            print(f"[*] Unexpected error: {e}")
+        except TypeError:
+            print("[*] TypeError: Invalid input type for BeautifulSoup")
+        except Exception as e:
+            print(f"[*] Error with HTML parsing: {e}")
 
         for url in urls:
             if url:
                 parsed_url = UUF(url)
-                # TODO Usar la regex completa en lugar de sólo el dominio?
+                # TODO Use complete regex instead of just the domain?
                 if re.match(domain_format, parsed_url.domain, re.DOTALL):
                     yield parsed_url.rebuild()
 
     @staticmethod
     def body_text(body):
         try:
-            # TODO ¿Esto se puede hacer con el response de scrapy?
+            # TODO Can this be done with the scrapy response?
             soup = BeautifulSoup(body, "lxml")
 
             for script in soup(["script", "style"]):
@@ -640,19 +819,19 @@ class reStalker:
             lines = (line.strip() for line in text.splitlines())
             chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
             text = "\n".join(chunk for chunk in chunks if chunk)
-        except Exception as e:
+        except Exception:
             text = body
 
         return text
 
     def _analyze_chunk(self, body, origin=None):
         if self.ner:
-            # Pre-procesamiento del texto para eliminar etiquetas y mejorar la detección
+            # Text pre-processing to remove tags and improve detection
             cleaned_text = re.sub(r'(?:Location|Organization|Person|Keyphrase|BitName):\s*', '', body)
             sentences = nltk.sent_tokenize(cleaned_text)
             
             for sentence in sentences:
-                # Pre-procesar para manejar nombres de organizaciones con múltiples palabras
+                # Pre-process to handle organization names with multiple words
                 sentence = re.sub(r'\s+Ltd\.?$', ' Limited', sentence)
                 sentence = re.sub(r'\s+Inc\.?$', ' Incorporated', sentence)
                 sentence = re.sub(r'\s+Corp\.?$', ' Corporation', sentence)
@@ -668,13 +847,13 @@ class reStalker:
                             yield OwnName(value=person_name)
 
                 if self.organization:
-                    # Buscar organizaciones usando NER
+                    # Search for organizations using NER
                     for subtree in sentt.subtrees(filter=lambda t: t.label() == "ORGANIZATION"):
                         org_name = ' '.join([leave[0] for leave in subtree.leaves()])
                         if org_name and not org_name.lower().startswith('organization'):
                             yield Organization(value=org_name)
                     
-                    # Buscar organizaciones usando patrones comunes
+                    # Search for organizations using common patterns
                     org_patterns = [
                         r'([A-Z][a-zA-Z0-9\s]+(?:Corporation|Corp\.?|Limited|Ltd\.?|Inc\.?|LLC|LLP))',
                         r'([A-Z][a-zA-Z0-9\s]+\s+(?:Group|Systems|Technologies|Solutions|Services))'
@@ -688,13 +867,13 @@ class reStalker:
                                 yield Organization(value=org_name)
 
                 if self.location:
-                    # Procesar el texto para encontrar ubicaciones
+                    # Process the text to find locations
                     for subtree in sentt.subtrees(filter=lambda t: t.label() in ["GPE", "LOCATION"]):
                         location_text = ' '.join([leave[0] for leave in subtree.leaves()])
                         if location_text and not location_text.lower().startswith('location'):
                             yield Location(value=location_text)
                     
-                    # Buscar ubicaciones en el texto usando comas como separadores
+                    # Search for locations in the text using commas as separators
                     potential_locations = [loc.strip() for loc in sentence.split(',')]
                     for loc in potential_locations:
                         tokens = nltk.word_tokenize(loc)
@@ -717,9 +896,9 @@ class reStalker:
                 for k in ta.extract_top_keyphrases():
                     yield Keyphrase(value=k)
 
-        # TODO Test si el valor es None
-        # TODO Refactor para iterar
-        # TODO "".join() para evitar tuplas de la regex
+        # TODO Test if the value is None
+        # TODO Refactor to iterate
+        # TODO "".join() to avoid regex tuples
         if self.phone:
             # TODO Reformat result number
             phones = re.findall(phone_regex, body)
@@ -784,6 +963,28 @@ class reStalker:
                 if BNB_Wallet.isvalid(address=bnb_wallet):
                     yield BNB_Wallet(value=bnb_wallet)
 
+        if self.credit_card:
+            card_numbers = re.findall(all_card_regex, body)
+            for card_number in card_numbers:
+                if Card_Number.isvalid(card_number):
+                    companies = []
+                    for company, regex in card_regex.items():
+                        if re.match(regex, card_number):
+                            companies.append(company)
+                    yield Card_Number(value=f"Companies=[{','.join(companies)}] Number={card_number}")
+
+        # Add BIN/IIN extraction
+        if self.bin_number:
+            for bin_candidate in re.findall(bin_regex, body):
+                yield Item(value=f"BIN/IIN={bin_candidate}")
+
+        # Add generic CCN extraction
+        if self.ccn_number:
+            for ccn_candidate in re.findall(ccn_regex, body):
+                # Avoid duplicates with card_numbers
+                if not (self.credit_card and re.match(all_card_regex, ccn_candidate)):
+                    yield Item(value=f"CCN={ccn_candidate}")
+
         if self.twitter:
             tw_accounts = re.findall(tw_account_regex, body)
             for tw_account in tw_accounts:
@@ -799,7 +1000,7 @@ class reStalker:
             for link in i2p_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield I2P_URL(value=link_item)
 
@@ -813,7 +1014,7 @@ class reStalker:
             for link in tor_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield Tor_URL(value=link_item)
 
@@ -821,7 +1022,6 @@ class reStalker:
             freenet_links = re.findall(freenet_hidden_url, body, re.DOTALL)
             for link in freenet_links:
                 yield Freenet_URL(value=link)
-                
         if self.zeronet:
             # TODO Experimental
             if self.zeronet_ctxt and False:
@@ -859,7 +1059,7 @@ class reStalker:
             for link in whatsapp_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield Whatsapp_URL(value=link_item)
 
@@ -869,16 +1069,17 @@ class reStalker:
             for link in discord_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield Discord_URL(value=link_item)
 
         if self.telegram:
             telegram_links = re.findall(telegram_url_regex, body)
+            telegram_links = extract_elements(telegram_links)
             for link in telegram_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield Telegram_URL(value=link_item)
 
@@ -887,7 +1088,7 @@ class reStalker:
             for link in skype_links:
                 try:
                     link_item = UUF(link).full_url
-                except Exception as e:
+                except Exception:
                     link_item = link
                 yield Skype_URL(value=link_item)
 
@@ -926,10 +1127,24 @@ class reStalker:
             for sha256 in sha256s:
                 yield SHA256(value=sha256)
         
+        if self.tox:
+            tox_ids = re.findall(tox_id_regex, body)
+            for tox_id in tox_ids:
+                if Tox_ID.isvalid(tox_id):
+                    yield Tox_ID(value=tox_id)
+        
         if self.gatc:
             gatc = re.findall(ga_tracking_code_regex, body)
             for g in gatc:
-                yield GA_Tracking_Code(value=g)
+                if GA_Tracking_Code.isvalid(g):
+                    yield GA_Tracking_Code(value=g)
+
+        if self.session_id:
+            session_ids = re.findall(session_id_regex, body)
+            for sid in session_ids:
+                session_id_value = sid
+                if Session_ID.isvalid(session_id_value):
+                    yield Session_ID(value=session_id_value)
 
     def parse(self, body, origin=None, buff_size=20480):
 
@@ -938,10 +1153,11 @@ class reStalker:
         chunk_size = buff_size // 2
 
         # print("Chunks", len(body)//chunk_size)
-
+        
         while i * chunk_size <= len(body):
 
-            chunk = body[i * chunk_size : (i + 2) * chunk_size]
+            chunk = body[i * chunk_size: (i + 2) * chunk_size]
+            
             chunk_analysis = self._analyze_chunk(chunk, origin=origin)
 
             for result in chunk_analysis:
