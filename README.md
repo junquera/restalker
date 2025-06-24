@@ -101,6 +101,10 @@ IOC and entities extractor.
 
     - ghostbin.com
 
+## Documentation
+
+You can find further [documentation](https://deepwiki.com/junquera/restalker) here.
+
 ## Install
 
 Console:
