@@ -1,5 +1,6 @@
 from .restalker import (
     reStalker,
+    Item,
     Phone,
     Email,
     Keyphrase,
@@ -36,6 +37,8 @@ from .restalker import (
     PGP,
     GA_Tracking_Code,
     Card_Number,
+    Session_ID,
+    Tox_ID
 )
 from . import link_extractors as link_extractors
 
