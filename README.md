@@ -11,9 +11,19 @@ IOC and entities extractor.
 
 `reStalker` can extract these entities from any binary or text source:
 
-- Phone
+- Base64
 
-- Email
+- Credentials
+
+    - Username
+
+    - Password
+
+    - Phone
+
+    - Email
+
+    - Own Name
 
 - Digital assets
 
@@ -33,46 +43,70 @@ IOC and entities extractor.
 
     - BNB Wallet
 
-- TW Account
+- Social networks
 
-- Tor URL
+    - TW / X Account
 
-- I2P URL
+    - Telegram URL
 
-- Freenet URL
+    - Whatsapp URL
 
-- Zeronet URL
+    - Skype URL
 
-- IPFS URL
+    - Tox ID
 
-- Username
+    - Session ID
 
-- Password
+- Hashes
 
-- Base64
+    - MD5
 
-- OwnName
+    - SHA1
 
-- Telegram URL
+    - SHA256
 
-- Whatsapp URL
+- Credit Cards
 
-- Skype URL
+    - Bin Numbers
 
-- Paste
+    - Credit Card Numbers
 
-- MD5
+- URLs
 
-- SHA1
+    - Tor URL
 
-- SHA256
+    - I2P URL
+
+    - Freenet URL
+
+    - Zeronet URL
+
+    - IPFS URL
+
+- Paste sites
+
+    - justpaste.it
+
+    - pastebin.com
+
+    - pasted.co
+
+    - hastebin.com
+
+    - snipt.org
+
+    - gist.github.com
+
+    - telegra.ph
+
+    - ghostbin.com
 
 ## Install
 
 Console:
 
 ```sh
-pip3 install "restalker<3"
+pip3 install restalker<3
 ```
 
 In `requeriments.txt`:
@@ -96,16 +130,16 @@ import restalker
 
 # Define which elements we desire
 # for example Tor URLs
-s = restalker.reStalker(tor=True, i2p=True)
+s = restalker.reStalker(tor=True i2p=True)
 
 elements = s.parse(input_text)
 
 for element in elements:
-    print("[*] Darknet IOC found:", element)
+    print([*] Darknet IOC found: element)
 ```
 
 # Acknowledgements
 
 [Byron Labs](https://byronlabs.io/) is an active supporter of the `reStalker` development.
 
-![](https://gitlab.com/junquera/restalker/-/raw/master/doc/img/byronlabs-300x142.png)
+![Byron Labs Logo](doc/img/logo_byronlabs.png)
