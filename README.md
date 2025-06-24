@@ -130,12 +130,12 @@ import restalker
 
 # Define which elements we desire
 # for example Tor URLs
-s = restalker.reStalker(tor=True i2p=True)
+s = restalker.reStalker(tor=True, i2p=True)
 
 elements = s.parse(input_text)
 
 for element in elements:
-    print([*] Darknet IOC found: element)
+    print(f"[*] Darknet IOC found: {element}")
 ```
 
 # Acknowledgements
