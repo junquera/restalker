@@ -138,7 +138,3 @@ def format_metadata(tags):
 
 t = TmpFile('abcde'.encode('utf-8'))
 t.safe_delete()
-#
-#
-# with open('/home/junquera/Imágenes/stranger-kids-portada.jpg', 'rb') as f:
-#     print(get_metadata(f.read()))

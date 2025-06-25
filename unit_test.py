@@ -1,11 +1,10 @@
 import pytest
-import nltk
 
 """  README
 
-For testing is required to download some NLTK resources. Run the following command in your terminal:
+For testing with spaCy NER functionality, make sure to install spaCy and download the English model:
 
-python3 -c "import nltk; nltk.download('maxent_ne_chunker'); nltk.download('words'); nltk.download('averaged_perceptron_tagger'); nltk.download('maxent_ne_chunker_tab'); nltk.download('punkt'); nltk.download('stopwords')"
+python -m spacy download en_core_web_sm
 """
 
 from restalker import (
@@ -376,7 +375,7 @@ def test_ethereum_address_case_sensitivity(sample_eth_addresses):
     results = list(stalker.parse(sample_eth_addresses))
     
     eth_wallets = [r for r in results if isinstance(r, ETH_Wallet)]
-    # Verificar que las direcciones case-insensitive se detecten como la misma
+    # Verify that case-insensitive addresses are detected as the same
     unique_addresses = set(str(w) for w in eth_wallets)
     assert len(unique_addresses) == 2
 
@@ -386,7 +385,7 @@ def test_monero_address_validation(sample_monero_addresses):
     
     xmr_wallets = [r for r in results if isinstance(r, XMR_Wallet)]
     assert len(xmr_wallets) == 3
-    # Verificar longitud estándar de direcciones Monero
+    # Verify standard length of Monero addresses
     assert all(len(str(wallet).split('(')[1][:-1]) >= 95 for wallet in xmr_wallets)
 
 def test_i2p_url_detection(sample_i2p_addresses):
@@ -448,7 +447,7 @@ def test_contextual_information(sample_contextual_data):
     keyphrases = [r for r in results if isinstance(r, Keyphrase)]
     names = [r for r in results if isinstance(r, OwnName)]
     
-    # Verificar que se encontraron localizaciones y que Michigan está entre ellas
+    # Verify that locations were found and that Michigan is among them
     assert len(locations) > 0 and "Michigan" in str([x.value for x in locations])
     assert len(orgs) > 0 and "Example Corp" in str([x.value for x in orgs])
     assert len(keyphrases) > 0 and "confidential" in str([x.value for x in keyphrases])
@@ -479,3 +478,237 @@ def test_hash_detection(sample_hashes):
     assert len(md5_hashes) > 0 and len(str(md5_hashes[0])) == 32 + 5 #len + wrapper
     assert len(sha1_hashes) > 0 and len(str(sha1_hashes[0])) == 40 + 6 #len + wrapper
     assert len(sha256_hashes) > 0 and len(str(sha256_hashes[0])) == 64 + 8 #len + wrapper
+
+# Test spaCy-based IOC detection - requires 'python -m spacy download en_core_web_sm'
+
+@pytest.fixture
+def sample_spacy_person_data():
+    """Test data specifically designed for person name detection using spaCy NER"""
+    return """
+    The investigation team included John Smith, Maria Garcia, and Robert Johnson.
+    Contact person: Dr. Sarah Williams (PhD in Computer Science).
+    Witness testimony by Michael Brown and Jennifer Davis.
+    Report submitted by: Alex Thompson, Senior Analyst.
+    Person: Jane Anderson provided additional information.
+    Mr. David Wilson and Ms. Lisa Taylor were present during the meeting.
+    """
+
+@pytest.fixture
+def sample_spacy_location_data():
+    """Test data for location detection using spaCy NER"""
+    return """
+    The incident occurred in New York City, United States.
+    Suspects were last seen in London, England and Paris, France.
+    Location: Los Angeles, California
+    Evidence was found in Tokyo, Japan and Berlin, Germany.
+    Investigation expanded to Sydney, Australia.
+    Reports came from Toronto, Canada and Mexico City, Mexico.
+    Additional leads in Rome, Italy and Moscow, Russia.
+    Barcelona, Madrid, Chicago, Boston
+    """
+
+@pytest.fixture
+def sample_spacy_organization_data():
+    """Test data for organization detection using spaCy NER"""
+    return """
+    The breach affected Microsoft Corporation and Apple Inc.
+    Investigation by Federal Bureau of Investigation (FBI).
+    Organization: Google LLC was notified about the incident.
+    Collaboration with Amazon Web Services and IBM Systems.
+    Reports submitted to Securities Exchange Commission.
+    Acme Corporation Ltd. and Example Technologies Inc. were involved.
+    Partnership with BytonLabs Solutions and CyberSec Group.
+    NATO and United Nations issued statements.
+    Organization: Tesla Motors reported similar incidents.
+    """
+
+@pytest.fixture
+def sample_mixed_spacy_data():
+    """Mixed data containing persons, locations, and organizations"""
+    return """
+    John Doe from Microsoft visited our New York office.
+    Sarah Johnson at Google's Mountain View, California headquarters.
+    The FBI agent, Robert Smith, investigated the incident in Washington, DC.
+    Dr. Maria Garcia from MIT presented research in Boston, Massachusetts.
+    Apple Inc. CEO Tim Cook announced new products in Cupertino.
+    Location: Seattle, Washington
+    Organization: Amazon Corporation
+    Person: Jeff Bezos
+    """
+
+def test_spacy_person_detection(sample_spacy_person_data):
+    """Test detection of person names using spaCy NER"""
+    stalker = reStalker(own_name=True)
+    results = list(stalker.parse(sample_spacy_person_data))
+    
+    names = [r for r in results if isinstance(r, OwnName)]
+    assert len(names) > 0, "Should detect person names using spaCy"
+    
+    # Check for specific names
+    name_values = [n.value for n in names]
+    expected_names = ["John Smith", "Maria Garcia", "Robert Johnson", 
+                     "Sarah Williams", "Michael Brown", "Jennifer Davis",
+                     "Alex Thompson", "Jane Anderson", "David Wilson", "Lisa Taylor"]
+    
+    found_names = []
+    for expected in expected_names:
+        if any(expected in name for name in name_values):
+            found_names.append(expected)
+    
+    assert len(found_names) >= 3, f"Should find at least 3 person names, found: {found_names}"
+
+def test_spacy_location_detection(sample_spacy_location_data):
+    """Test detection of locations using spaCy NER"""
+    stalker = reStalker(location=True)
+    results = list(stalker.parse(sample_spacy_location_data))
+    
+    locations = [r for r in results if isinstance(r, Location)]
+    assert len(locations) > 0, "Should detect locations using spaCy"
+    
+    # Check for specific locations
+    location_values = [l.value for l in locations]
+    expected_locations = ["New York City", "United States", "London", "England", 
+                         "Paris", "France", "Los Angeles", "California", 
+                         "Tokyo", "Japan", "Berlin", "Germany"]
+    
+    found_locations = []
+    for expected in expected_locations:
+        if any(expected in loc for loc in location_values):
+            found_locations.append(expected)
+    
+    assert len(found_locations) >= 4, f"Should find at least 4 locations, found: {found_locations}"
+
+def test_spacy_organization_detection(sample_spacy_organization_data):
+    """Test detection of organizations using spaCy NER"""
+    stalker = reStalker(organization=True)
+    results = list(stalker.parse(sample_spacy_organization_data))
+    
+    organizations = [r for r in results if isinstance(r, Organization)]
+    assert len(organizations) > 0, "Should detect organizations using spaCy"
+    
+    # Check for specific organizations
+    org_values = [o.value for o in organizations]
+    expected_orgs = ["Microsoft Corporation", "Apple Inc.", "Google LLC", 
+                    "Federal Bureau of Investigation", "Amazon Web Services",
+                    "IBM Systems", "Securities Exchange Commission"]
+    
+    found_orgs = []
+    for expected in expected_orgs:
+        if any(expected in org or org in expected for org in org_values):
+            found_orgs.append(expected)
+    
+    assert len(found_orgs) >= 3, f"Should find at least 3 organizations, found: {found_orgs}"
+
+def test_spacy_mixed_entity_detection(sample_mixed_spacy_data):
+    """Test detection of mixed entities (persons, locations, organizations) in same text"""
+    stalker = reStalker(own_name=True, location=True, organization=True)
+    results = list(stalker.parse(sample_mixed_spacy_data))
+    
+    names = [r for r in results if isinstance(r, OwnName)]
+    locations = [r for r in results if isinstance(r, Location)]
+    organizations = [r for r in results if isinstance(r, Organization)]
+    
+    assert len(names) > 0, "Should detect person names"
+    assert len(locations) > 0, "Should detect locations" 
+    assert len(organizations) > 0, "Should detect organizations"
+    
+    # Verify specific entities
+    name_values = [n.value for n in names]
+    location_values = [l.value for l in locations]
+    org_values = [o.value for o in organizations]
+    
+    # Check for expected entities
+    assert any("John Doe" in name for name in name_values), "Should find John Doe"
+    assert any("New York" in loc for loc in location_values), "Should find New York"
+    assert any("Microsoft" in org for org in org_values), "Should find Microsoft"
+
+def test_spacy_without_nlp_model():
+    """Test behavior when spaCy model is not available"""
+    stalker = reStalker(own_name=True, location=True, organization=True)
+    
+    # Simulate missing spaCy model by setting nlp to None
+    original_nlp = stalker.nlp
+    stalker.nlp = None
+    
+    test_data = "John Smith works at Microsoft in New York."
+    results = list(stalker.parse(test_data))
+    
+    # Should not crash and should return empty results for NER-based entities
+    names = [r for r in results if isinstance(r, OwnName)]
+    locations = [r for r in results if isinstance(r, Location)]
+    organizations = [r for r in results if isinstance(r, Organization)]
+    
+    # Without spaCy model, these should be empty or very limited
+    assert len(names) == 0 or len(names) < 2, "Should have limited or no results without spaCy model"
+    
+    # Restore original nlp for other tests
+    stalker.nlp = original_nlp
+
+def test_spacy_entity_filtering():
+    """Test that spaCy entities are properly filtered and cleaned"""
+    stalker = reStalker(own_name=True, location=True, organization=True)
+    
+    # Test data with potential false positives and edge cases
+    test_data = """
+    Person: This should not be detected as a person name.
+    Location: This should not be detected as a location.
+    Organization: This should not be detected as an organization.
+    
+    Real person: Albert Einstein
+    Real location: Switzerland  
+    Real organization: NASA and Microsoft Corporation
+    """
+    
+    results = list(stalker.parse(test_data))
+    
+    names = [r for r in results if isinstance(r, OwnName)]
+    locations = [r for r in results if isinstance(r, Location)]  
+    organizations = [r for r in results if isinstance(r, Organization)]
+    
+    # Check that labels are filtered out
+    name_values = [n.value for n in names]
+    location_values = [l.value for l in locations]
+    org_values = [o.value for o in organizations]
+    
+    # Should not contain the label text itself
+    assert not any("Person:" in name for name in name_values), "Should filter out 'Person:' labels"
+    assert not any("Location:" in loc for loc in location_values), "Should filter out 'Location:' labels"  
+    assert not any("Organization:" in org for org in org_values), "Should filter out 'Organization:' labels"
+    
+    # Should contain real entities
+    assert any("Einstein" in name for name in name_values), "Should detect real person names"
+    assert any("Switzerland" in loc for loc in location_values), "Should detect real locations"
+    assert any(("NASA" in org or "Microsoft" in org) for org in org_values), "Should detect real organizations"
+
+def test_spacy_performance_with_large_text():
+    """Test spaCy performance with larger text blocks"""
+    stalker = reStalker(own_name=True, location=True, organization=True)
+    
+    # Create a larger text block with repeated entities
+    large_text = """
+    Investigation Report Summary:
+    
+    This comprehensive investigation was conducted by Special Agent John Smith from the Federal Bureau of Investigation,
+    in collaboration with Agent Sarah Johnson from the Central Intelligence Agency. The investigation spanned multiple
+    locations including New York City, Los Angeles, Chicago, and Washington DC.
+    
+    Key organizations involved included Microsoft Corporation, Google LLC, Apple Inc., and Amazon Web Services.
+    Additional cooperation was provided by the National Security Agency and Department of Homeland Security.
+    
+    Primary contacts were Dr. Michael Brown from MIT, Professor Lisa Davis from Stanford University, and 
+    Director Robert Wilson from the Cybersecurity and Infrastructure Security Agency.
+    
+    The investigation covered incidents in London, Paris, Tokyo, Berlin, and Sydney, involving international
+    cooperation with Interpol, European Union Agency for Cybersecurity, and various national law enforcement agencies.
+    """ * 3  # Repeat to make it larger
+    
+    results = list(stalker.parse(large_text))
+    
+    names = [r for r in results if isinstance(r, OwnName)]
+    locations = [r for r in results if isinstance(r, Location)]
+    organizations = [r for r in results if isinstance(r, Organization)]
+    
+    # Should handle large text without issues
+    assert len(names) > 5, f"Should detect multiple person names in large text, found: {len(names)}"
+    assert len(locations) > 8, f"Should detect multiple locations in large text, found: {len(locations)}"
+    assert len(organizations) > 5, f"Should detect multiple organizations in large text, found: {len(organizations)}"

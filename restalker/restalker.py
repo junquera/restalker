@@ -9,7 +9,7 @@ from .link_extractors import UUF
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 import re
-import nltk
+import spacy
 from .textan import TextAnalysis
 
 
@@ -430,7 +430,7 @@ freenet_hidden_url = r"(?:(?:{http}?{localhost}{port})\/)?(?:freenet\:)?((?:{fre
 """
 http://localhost:8080/ipfs/QmW2WQi7j6c7UgJTarActp7tDNikE4B2qXtFCfLPdsgaTQ
 """
-# TODO Evitar len44 (hay problemas con las llaves para formatear después domain)
+# TODO Avoid len44 (there are problems with keys for formatting after domain)
 ipfs_hash = r"(?:ipfs\/Qm[a-zA-Z0-9]{len44}|ipns\/{domain})".format(
     **dict(len44="{44}", domain=domain_regex)
 )
@@ -563,6 +563,16 @@ class reStalker:
         self.sha1 = sha1 or all
         self.sha256 = sha256 or all
 
+        # Initialize spaCy model for NER processing
+        if self.ner:
+            try:
+                self.nlp = spacy.load("en_core_web_sm")
+            except OSError:
+                print("Warning: spaCy model 'en_core_web_sm' not found. NER functionality will be limited.")
+                self.nlp = None
+        else:
+            self.nlp = None
+
     def add_keyword(self, keyword):
         self.keywords.append(keyword)
 
@@ -599,14 +609,14 @@ class reStalker:
         for url in urls:
             if url:
                 parsed_url = UUF(url)
-                # TODO Usar la regex completa en lugar de sólo el dominio?
+                # TODO Use the complete regex instead of just the domain?
                 if re.match(domain_format, parsed_url.domain, re.DOTALL):
                     yield parsed_url.rebuild()
 
     @staticmethod
     def body_text(body):
         try:
-            # TODO ¿Esto se puede hacer con el response de scrapy?
+            # TODO Can this be done with scrapy response?
             soup = BeautifulSoup(body, "lxml")
 
             for script in soup(["script", "style"]):
@@ -623,64 +633,59 @@ class reStalker:
         return text
 
     def _analyze_chunk(self, body, origin=None):
-        if self.ner:
-            # Pre-procesamiento del texto para eliminar etiquetas y mejorar la detección
+        if self.ner and self.nlp:
+            # Text preprocessing to remove tags and improve detection
             cleaned_text = re.sub(r'(?:Location|Organization|Person|Keyphrase|BitName):\s*', '', body)
-            sentences = nltk.sent_tokenize(cleaned_text)
             
-            for sentence in sentences:
-                # Pre-procesar para manejar nombres de organizaciones con múltiples palabras
-                sentence = re.sub(r'\s+Ltd\.?$', ' Limited', sentence)
-                sentence = re.sub(r'\s+Inc\.?$', ' Incorporated', sentence)
-                sentence = re.sub(r'\s+Corp\.?$', ' Corporation', sentence)
-                
-                tokens = nltk.word_tokenize(sentence)
-                pos = nltk.pos_tag(tokens)
-                sentt = nltk.ne_chunk(pos, binary=False)
-
-                if self.own_name:
-                    for subtree in sentt.subtrees(filter=lambda t: t.label() == "PERSON"):
-                        person_name = ' '.join([leave[0] for leave in subtree.leaves()])
+            # Process the text with spaCy
+            doc = self.nlp(cleaned_text)
+            
+            if self.own_name:
+                for ent in doc.ents:
+                    if ent.label_ == "PERSON":
+                        person_name = ent.text.strip()
                         if person_name:
                             yield OwnName(value=person_name)
 
-                if self.organization:
-                    # Buscar organizaciones usando NER
-                    for subtree in sentt.subtrees(filter=lambda t: t.label() == "ORGANIZATION"):
-                        org_name = ' '.join([leave[0] for leave in subtree.leaves()])
+            if self.organization:
+                # Search for organizations using spaCy NER
+                for ent in doc.ents:
+                    if ent.label_ == "ORG":
+                        org_name = ent.text.strip()
                         if org_name and not org_name.lower().startswith('organization'):
                             yield Organization(value=org_name)
-                    
-                    # Buscar organizaciones usando patrones comunes
-                    org_patterns = [
-                        r'([A-Z][a-zA-Z0-9\s]+(?:Corporation|Corp\.?|Limited|Ltd\.?|Inc\.?|LLC|LLP))',
-                        r'([A-Z][a-zA-Z0-9\s]+\s+(?:Group|Systems|Technologies|Solutions|Services))'
-                    ]
-                    
-                    for pattern in org_patterns:
-                        matches = re.finditer(pattern, sentence)
-                        for match in matches:
-                            org_name = match.group(1).strip()
-                            if org_name and not org_name.lower().startswith('organization'):
-                                yield Organization(value=org_name)
+                
+                # Search for organizations using common patterns
+                org_patterns = [
+                    r'([A-Z][a-zA-Z0-9\s]+(?:Corporation|Corp\.?|Limited|Ltd\.?|Inc\.?|LLC|LLP))',
+                    r'([A-Z][a-zA-Z0-9\s]+\s+(?:Group|Systems|Technologies|Solutions|Services))'
+                ]
+                
+                for pattern in org_patterns:
+                    matches = re.finditer(pattern, cleaned_text)
+                    for match in matches:
+                        org_name = match.group(1).strip()
+                        if org_name and not org_name.lower().startswith('organization'):
+                            yield Organization(value=org_name)
 
-                if self.location:
-                    # Procesar el texto para encontrar ubicaciones
-                    for subtree in sentt.subtrees(filter=lambda t: t.label() in ["GPE", "LOCATION"]):
-                        location_text = ' '.join([leave[0] for leave in subtree.leaves()])
+            if self.location:
+                # Process locations with spaCy
+                for ent in doc.ents:
+                    if ent.label_ in ["GPE", "LOC"]:
+                        location_text = ent.text.strip()
                         if location_text and not location_text.lower().startswith('location'):
                             yield Location(value=location_text)
-                    
-                    # Buscar ubicaciones en el texto usando comas como separadores
-                    potential_locations = [loc.strip() for loc in sentence.split(',')]
-                    for loc in potential_locations:
-                        tokens = nltk.word_tokenize(loc)
-                        pos = nltk.pos_tag(tokens)
-                        chunk = nltk.ne_chunk(pos, binary=False)
-                        for subtree in chunk.subtrees(filter=lambda t: t.label() in ["GPE", "LOCATION"]):
-                            location_text = ' '.join([leave[0] for leave in subtree.leaves()])
-                            if location_text and not location_text.lower().startswith('location'):
-                                yield Location(value=location_text)
+                
+                # Search for additional locations using commas as separators
+                potential_locations = [loc.strip() for loc in cleaned_text.split(',')]
+                for loc in potential_locations:
+                    if len(loc) > 2 and len(loc) < 50:  # Filter very short or very long strings
+                        loc_doc = self.nlp(loc)
+                        for ent in loc_doc.ents:
+                            if ent.label_ in ["GPE", "LOC"]:
+                                location_text = ent.text.strip()
+                                if location_text and not location_text.lower().startswith('location'):
+                                    yield Location(value=location_text)
 
         if len(self.keywords) > 0 or self.keyphrase:
             ta = TextAnalysis(body)
@@ -694,9 +699,9 @@ class reStalker:
                 for k in ta.extract_top_keyphrases():
                     yield Keyphrase(value=k)
 
-        # TODO Test si el valor es None
-        # TODO Refactor para iterar
-        # TODO "".join() para evitar tuplas de la regex
+        # TODO Test if the value is None
+        # TODO Refactor to iterate
+        # TODO "".join() to avoid regex tuples
         if self.phone:
             # TODO Reformat result number
             phones = re.findall(phone_regex, body)

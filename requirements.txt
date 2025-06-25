@@ -3,8 +3,8 @@ bech32ref
 bip-utils
 bs4
 monero
-nltk
-numpy
-rake-nltk
+spacy>=3.4.0
+yake
+textstat
 web3
 web3bs4

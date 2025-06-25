@@ -8,9 +8,9 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-numpy = "*"
-nltk = "*"
-rake-nltk = "*"
+spacy = "^3.4.0"
+yake = "*"
+textstat = "*"
 based58 = "*"
 web3 = "*"
 monero = "*"
