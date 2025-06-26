@@ -3256,13 +3256,60 @@ Man is the master of everything and decides everything.
   gtag('config', 'UA-12345678-9');
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-9876543210"></script>
+
+American Express	378282246310005
+American Express	371449635398431
+American Express Corporate	378734493671000
+Diners Club	30569309025904
+Discover	6011111111111117
+Discover	6011000990139424
+JCB	3530111333300000
+JCB	3566002020360505
+Mastercard	2221000000000009
+Mastercard	2223000048400011
+Mastercard	2223016768739313
+Mastercard	5555555555554444
+Mastercard	5105105105105100
+Visa	4111111111111111
+Visa	4012888888881881
+Visa	4222222222222
+Visa	4999991111111113
+Visa	4999992222222229
+Mastercard	5199999999999991
+Mastercard	5299999999999990
+
+https://t.me/resource
+https://telegram.me/resource
+https://teleg.one/resource
+https://tgclick.com/resource
+
+t.me/resource
+telegram.me/resource
+teleg.one/resource
+tgclick.com/resource
+
+t.me/secret_resource
+telegram.me/secret_resource
+teleg.one/secret_resource
+tgclick.com/secret_resource
+
+t.me/secret-resource
+telegram.me/secret-resource
+teleg.one/secret-resource
+tgclick.com/secret-resource
+
+tg://resource?id=007
+tg://resource?id=blablabla
+
 """
 
 nltk.download('punkt_tab')
 nltk.download('stopwords')
 
-s = restalker.reStalker(all=True)
+s = restalker.reStalker(telegram=True)
 # s = restalker.reStalker(tor=True)
-
-for p in s.parse(target):
+ 
+result = list(s.parse(target))
+print(f"Len: {len(result)}")
+for p in result:
     print(p)
