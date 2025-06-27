@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 import re
 import spacy
 from .textan import TextAnalysis
+from .spacy_singleton import get_spacy_model, is_spacy_available
 
 
 class Item:
@@ -565,11 +566,7 @@ class reStalker:
 
         # Initialize spaCy model for NER processing
         if self.ner:
-            try:
-                self.nlp = spacy.load("en_core_web_sm")
-            except OSError:
-                print("Warning: spaCy model 'en_core_web_sm' not found. NER functionality will be limited.")
-                self.nlp = None
+            self.nlp = get_spacy_model()
         else:
             self.nlp = None
 

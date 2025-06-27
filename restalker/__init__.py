@@ -1,11 +1,8 @@
 from .restalker import *
 from . import link_extractors
+from .spacy_singleton import get_spacy_model, is_spacy_available
 
-# Initialize spaCy model if available
-try:
-    import spacy
-    spacy.load("en_core_web_sm")
-except (ImportError, OSError):
-    print("Warning: spaCy model 'en_core_web_sm' not available. Some NER functionality may be limited.")
+# Initialize spaCy model singleton on import
+get_spacy_model()
 
 __version__ = "1.2.1"
