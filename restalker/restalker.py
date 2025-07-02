@@ -696,62 +696,65 @@ class reStalker:
         session_id=False,
         tox=False,
         all=False,
+        credentials = False,
+        digital_assets = False,
+        social_networks = False,
+        hashes = False,
+        dark_web = False,
     ):
 
+        self.username = username or credentials or all
+        self.password = password or credentials or all
+        self.base64 = base64 or credentials or all
+        self.phone = phone or credentials or all
+        self.email = email or credentials or all
+
+        self.tor = tor or dark_web or all
+        self.i2p = i2p or dark_web or all
+        self.freenet = freenet or dark_web or all
+        self.zeronet_ctxt = zeronet_ctxt
+        self.zeronet = zeronet or dark_web or all or zeronet_ctxt
+        self.bitname = bitname or dark_web or all
+        self.ipfs = ipfs or dark_web or all
+
+        self.md5 = md5 or hashes or all
+        self.sha1 = sha1 or hashes or all
+        self.sha256 = sha256 or hashes or all
+
+        self.twitter = twitter or social_networks or all
+        self.whatsapp = whatsapp or social_networks or all
+        self.discord = discord or social_networks or all
+        self.telegram = telegram or social_networks or all
+        self.skype = skype or social_networks or all
+        self.session_id = session_id or social_networks or all
+        self.tox = tox or social_networks or all
+
         self.ner = own_name or location or organization
-        self.own_name = own_name or all
+        self.own_name = own_name or credentials or all
         self.location = location or all
         self.organization = organization or all
 
-        self.keyphrase = keyphrase or all
-        self.keywords = keywords
-
-        self.phone = phone or all
-        self.email = email or all
-        self.twitter = twitter or all
-
-        self.btc_wallet = btc_wallet or all
-        self.eth_wallet = eth_wallet or all
-        self.xmr_wallet = xmr_wallet or all
-        self.zec_wallet = zec_wallet or all
-        self.dash_wallet = dash_wallet or all
-        self.dot_wallet = dot_wallet or all
-        self.xrp_wallet = xrp_wallet or all
-        self.bnb_wallet = bnb_wallet or all
+        self.btc_wallet = btc_wallet or digital_assets or all
+        self.eth_wallet = eth_wallet or digital_assets or all
+        self.xmr_wallet = xmr_wallet or digital_assets or all
+        self.zec_wallet = zec_wallet or digital_assets or all
+        self.dash_wallet = dash_wallet or digital_assets or all
+        self.dot_wallet = dot_wallet or digital_assets or all
+        self.xrp_wallet = xrp_wallet or digital_assets or all
+        self.bnb_wallet = bnb_wallet or digital_assets or all
 
         self.credit_card = credit_card or all
         self.bin_number = bin_number or all
         self.ccn_number = ccn_number or all
 
-        self.tor = tor or all
-        self.i2p = i2p or all
-        self.freenet = freenet or all
-        self.zeronet_ctxt = zeronet_ctxt
-        self.zeronet = zeronet or all or zeronet_ctxt
-        self.bitname = bitname or all
-
         self.pgp = pgp or all
         self.gatc = gatc or all
 
-        self.ipfs = ipfs or all
+        self.keyphrase = keyphrase or all
+        self.keywords = keywords
 
         self.paste = paste or all
-
-        self.username = username or all
-        self.password = password or all
-        self.base64 = base64 or all
-        self.whatsapp = whatsapp or all
-        self.discord = discord or all
-        self.telegram = telegram or all
-        self.skype = skype or all
-
-        self.md5 = md5 or all
-        self.sha1 = sha1 or all
-        self.sha256 = sha256 or all
-        self.session_id = session_id or all
-        self.tox = tox or all
-
-
+        
     def add_keyword(self, keyword):
         self.keywords.append(keyword)
 
