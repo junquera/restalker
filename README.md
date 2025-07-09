@@ -1,6 +1,6 @@
 # 🕵️ reStalker
 
-![reStalker Logo](doc/img/icon.png)
+![reStalker Logo](https://github.com/junquera/restalker/blob/develop/doc/img/icon.png)
 
 **IOC and Entities Extractor**
 
@@ -192,4 +192,4 @@ We welcome contributions! Please feel free to submit a Pull Request. For major c
 
 [Byron Labs](https://byronlabs.io/) is an active supporter of the `reStalker` development.
 
-![Byron Labs Logo](doc/img/logo_byronlabs.png)
+![Byron Labs Logo](https://github.com/junquera/restalker/blob/develop/doc/img/logo_byronlabs.png)
