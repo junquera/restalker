@@ -26,21 +26,21 @@ class Item:
         return hash(type(self).__name__ + str(self.value))
 
     def __str__(self):
-        return f"{type(self).__name__}({self.value[:128]})"
+        return f"{type(self).__name__}({self.value[:128] if self.value else ''})"
 
     def __repr__(self):
-        return f"{type(self).__name__}({self.value[:128]})"
+        return f"{type(self).__name__}({self.value[:128] if self.value else ''})"
 
 
-class Phone(Item):
+class PhoneNumber(Item):
     pass
 
 
-class Email(Item):
+class EmailAddress(Item):
     pass
 
 
-class Keyphrase(Item):
+class KeyPhrase(Item):
     pass
 
 
@@ -48,7 +48,7 @@ class Keyword(Item):
     pass
 
 
-class BTC_Wallet(Item):
+class BitcoinAddress(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
         ret = False
@@ -65,7 +65,7 @@ class BTC_Wallet(Item):
             return ret
 
 
-class ETH_Wallet(Item):
+class EthereumAddress(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
         ret = False
@@ -75,7 +75,7 @@ class ETH_Wallet(Item):
             ret = False
         return ret
 
-class XMR_Wallet(Item):
+class MoneroAddress(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
         ret = False
@@ -88,7 +88,7 @@ class XMR_Wallet(Item):
         return ret
 
 
-class ZEC_Wallet(Item):
+class ZcashAddress(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
         ret = False
@@ -107,12 +107,13 @@ class ZEC_Wallet(Item):
             return ret
 
 
-class DASH_Wallet(Item):
+class DashAddress(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
         ret = False
         try:
-            if re.search(dash_wallet_regex, address)[0] == address:
+            match = re.search(dash_wallet_regex, address)
+            if match and match[0] == address:
                 decode_address = based58.b58decode(address.encode("utf-8"))
                 ret = (
                     decode_address[-4:] == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
@@ -121,24 +122,26 @@ class DASH_Wallet(Item):
             return ret
 
 
-class DOT_Wallet(Item):
+class PolkadotAddress(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
         ret = False
         try:
-            if re.search(dot_wallet_regex, address)[0] == address:
+            match = re.search(dot_wallet_regex, address)
+            if match and match[0] == address:
                 prefix, decode = SS58Decoder.Decode(address)
                 ret = prefix == 0
         finally:
             return ret
 
 
-class XRP_Wallet(Item):
+class RippleAddress(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
         ret = False
         try:
-            if re.search(xrp_wallet_regex, address)[0] == address:
+            match = re.search(xrp_wallet_regex, address)
+            if match and match[0] == address:
                 based58.b58decode_check(
                     address.encode("utf-8"),
                     alphabet=based58.Alphabet.RIPPLE,
@@ -148,43 +151,44 @@ class XRP_Wallet(Item):
             return ret
 
 
-class BNB_Wallet(Item):
+class BinanceAddress(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
         ret = False
         try:
-            if re.search(bnb_wallet_regex, address)[0] == address:
+            match = re.search(bnb_wallet_regex, address)
+            if match and match[0] == address:
                 hrpgot, data, spec = segwit_addr.bech32_decode(address)
                 ret = hrpgot == "bnb"
         finally:
             return ret
 
 
-class TW_Account(Item):
+class TwitterAccount(Item):
     pass
 
 
-class Tor_URL(Item):
+class OnionAddress(Item):
     pass
 
 
-class I2P_URL(Item):
+class I2pAddress(Item):
     pass
 
 
-class Freenet_URL(Item):
+class FreenetAddress(Item):
     pass
 
 
-class Zeronet_URL(Item):
+class ZeronetAddress(Item):
     pass
 
 
-class Bitname_URL(Item):
+class BitnameAddress(Item):
     pass
 
 
-class IPFS_URL(Item):
+class IpfsAddress(Item):
     pass
 
 
@@ -200,39 +204,39 @@ class Base64(Item):
     pass
 
 
-class OwnName(Item):
+class PersonName(Item):
     pass
 
 
-class Telegram_URL(Item):
+class TelegramUrl(Item):
     pass
 
 
-class Whatsapp_URL(Item):
+class WhatsappUrl(Item):
     pass
 
 
-class Skype_URL(Item):
+class SkypeUrl(Item):
     pass
 
 
-class Discord_URL(Item):
+class DiscordUrl(Item):
     pass
 
 
-class Paste(Item):
+class PasteUrl(Item):
     pass
 
 
-class MD5(Item):
+class Md5Hash(Item):
     pass
 
 
-class SHA1(Item):
+class Sha1Hash(Item):
     pass
 
 
-class SHA256(Item):
+class Sha256Hash(Item):
     pass
 
 
@@ -244,7 +248,7 @@ class Location(Item):
     pass
 
 
-class PGP(Item):
+class PgpKey(Item):
     def __init__(self, value):
         self.value = self.clean_pgp_key(value)
 
@@ -261,13 +265,13 @@ class PGP(Item):
         return cleaned_key
 
 
-class GA_Tracking_Code(Item):
+class GoogleAnalyticsTrackingCode(Item):
     @staticmethod
     def isvalid(code: str) -> bool:
         # Validate that the code is not part of a larger string
         return bool(re.fullmatch(r'(?:UA-\d{4,10}-\d|G-[A-Za-z0-9]{10})', code))
 
-class Card_Number(Item):
+class CreditCardNumber(Item):
 
     @staticmethod
     def isvalid(number: str) -> bool:
@@ -283,7 +287,7 @@ class Card_Number(Item):
 
         return luhn_check(number)
 
-class Session_ID(Item):
+class SessionId(Item):
     @staticmethod
     def isvalid(session_id: str) -> bool:
 
@@ -300,7 +304,7 @@ class Session_ID(Item):
             return False
 
 
-class Tox_ID(Item):
+class ToxId(Item):
     @staticmethod
     def isvalid(tox_id: str) -> bool:
         """Verify if the string is a valid Tox ID - 76 hexadecimal chars (64 public key + 4 NoSpam + 2 checksum)"""
@@ -390,10 +394,10 @@ own_name_regex = r"([A-Z][a-z]{2,10} [A-Z][a-z]{2,10})"
 domain_regex = r"(?:[a-z0-9]+\.){0,4}[a-z0-9]+\.?(?:\:[0-9]{2,5})?$"
 any_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % domain_regex[:-1]
 
-tor_hidden_domain = (
+onion_hidden_domain = (
     r"(?:[a-z0-9]+\.){0,4}(?:[a-z0-9]{16}|[a-z0-9]{56})\.onion(?:\:[0-9]{2,5})?$"
 )
-tor_hidden_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % tor_hidden_domain[:-1]
+onion_hidden_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % onion_hidden_domain[:-1]
 
 i2p_hidden_domain = r"(?:[a-z0-9]+\.){1,5}i2p(?:\:[0-9]{2,5})?$"
 i2p_hidden_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % i2p_hidden_domain[:-1]
@@ -654,102 +658,100 @@ def extract_elements(x):
 class reStalker:
     def __init__(
         self,
-        phone=False,
-        email=False,
-        btc_wallet=False,
-        eth_wallet=False,
-        xmr_wallet=False,
-        zec_wallet=False,
-        dash_wallet=False,
-        dot_wallet=False,
-        xrp_wallet=False,
-        bnb_wallet=False,
-        credit_card=False,
+        phone_number=False,
+        email_address=False,
+        bitcoin_address=False,
+        ethereum_address=False,
+        monero_address=False,
+        zcash_address=False,
+        dash_address=False,
+        polkadot_address=False,
+        ripple_address=False,
+        binance_address=False,
+        credit_card_number=False,
         bin_number=False,
-        ccn_number=False,
-        tor=False,
-        i2p=False,
-        ipfs=False,
-        freenet=False,
-        zeronet=False,
+        onion_address=False,
+        i2p_address=False,
+        ipfs_address=False,
+        freenet_address=False,
+        zeronet_address=False,
         zeronet_ctxt=False,
-        bitname=False,
-        paste=False,
-        twitter=False,
+        bitname_address=False,
+        paste_url=False,
+        twitter_account=False,
         username=False,
         password=False,
         location=False,
         organization=False,
-        keyphrase=False,
+        key_phrase=False,
         keywords=[],
-        pgp=False,
-        gatc=False,
+        pgp_key=False,
+        google_analytics_tracking_code=False,
         base64=False,
-        own_name=False,
-        whatsapp=False,
-        discord=False,
-        telegram=False,
-        skype=False,
-        md5=False,
-        sha1=False,
-        sha256=False,
+        person_name=False,
+        whatsapp_url=False,
+        discord_url=False,
+        telegram_url=False,
+        skype_url=False,
+        md5_hash=False,
+        sha1_hash=False,
+        sha256_hash=False,
         session_id=False,
-        tox=False,
+        tox_id=False,
         all=False,
     ):
 
-        self.ner = own_name or location or organization
-        self.own_name = own_name or all
+        self.ner = person_name or location or organization
+        self.person_name = person_name or all
         self.location = location or all
         self.organization = organization or all
 
-        self.keyphrase = keyphrase or all
+        self.key_phrase = key_phrase or all
         self.keywords = keywords
 
-        self.phone = phone or all
-        self.email = email or all
-        self.twitter = twitter or all
+        self.phone_number = phone_number or all
+        self.email_address = email_address or all
+        self.twitter_account = twitter_account or all
 
-        self.btc_wallet = btc_wallet or all
-        self.eth_wallet = eth_wallet or all
-        self.xmr_wallet = xmr_wallet or all
-        self.zec_wallet = zec_wallet or all
-        self.dash_wallet = dash_wallet or all
-        self.dot_wallet = dot_wallet or all
-        self.xrp_wallet = xrp_wallet or all
-        self.bnb_wallet = bnb_wallet or all
+        self.bitcoin_address = bitcoin_address or all
+        self.ethereum_address = ethereum_address or all
+        self.monero_address = monero_address or all
+        self.zcash_address = zcash_address or all
+        self.dash_address = dash_address or all
+        self.polkadot_address = polkadot_address or all
+        self.ripple_address = ripple_address or all
+        self.binance_address = binance_address or all
 
-        self.credit_card = credit_card or all
+        self.credit_card_number = credit_card_number or all
         self.bin_number = bin_number or all
-        self.ccn_number = ccn_number or all
 
-        self.tor = tor or all
-        self.i2p = i2p or all
-        self.freenet = freenet or all
+        self.onion_address = onion_address or all
+        self.i2p_address = i2p_address or all
+        self.freenet_address = freenet_address or all
         self.zeronet_ctxt = zeronet_ctxt
-        self.zeronet = zeronet or all or zeronet_ctxt
-        self.bitname = bitname or all
+        self.zeronet_address = zeronet_address or all or zeronet_ctxt
+        self.bitname_address = bitname_address or all
 
-        self.pgp = pgp or all
-        self.gatc = gatc or all
+        self.pgp_key = pgp_key or all
+        self.google_analytics_tracking_code = google_analytics_tracking_code or all
 
-        self.ipfs = ipfs or all
+        self.ipfs_address = ipfs_address or all
 
-        self.paste = paste or all
+        self.paste_url = paste_url or all
 
         self.username = username or all
         self.password = password or all
         self.base64 = base64 or all
-        self.whatsapp = whatsapp or all
-        self.discord = discord or all
-        self.telegram = telegram or all
-        self.skype = skype or all
+        self.whatsapp_url = whatsapp_url or all
+        self.discord_url = discord_url or all
+        self.telegram_url = telegram_url or all
+        self.skype_url = skype_url or all
 
-        self.md5 = md5 or all
-        self.sha1 = sha1 or all
-        self.sha256 = sha256 or all
+        self.md5_hash = md5_hash or all
+        self.sha1_hash = sha1_hash or all
+        self.sha256_hash = sha256_hash or all
         self.session_id = session_id or all
-        self.tox = tox or all
+        self.tox_id = tox_id or all
 
 
     def add_keyword(self, keyword):
@@ -782,11 +784,14 @@ class reStalker:
             # soup = BeautifulSoup(body, "html.parser")
             soup = BeautifulSoup(body, "lxml")
             if soup:
-                links = soup.findAll("a")
+                links = soup.find_all("a")
                 if links:
                     for url in links:
                         try:
-                            urls.add(UUF(urljoin(origin, url.get("href"))).rebuild())
+                            # Type ignore the BeautifulSoup warning
+                            href = url.get("href")  # type: ignore
+                            if href and origin and isinstance(href, str):
+                                urls.add(UUF(urljoin(origin, href)).rebuild())
                         except AttributeError:
                             print("[*] AttributeError: Invalid attribute in URL")
                         except ValueError:
@@ -840,11 +845,11 @@ class reStalker:
                 pos = nltk.pos_tag(tokens)
                 sentt = nltk.ne_chunk(pos, binary=False)
 
-                if self.own_name:
+                if self.person_name:
                     for subtree in sentt.subtrees(filter=lambda t: t.label() == "PERSON"):
                         person_name = ' '.join([leave[0] for leave in subtree.leaves()])
                         if person_name:
-                            yield OwnName(value=person_name)
+                            yield PersonName(value=person_name)
 
                 if self.organization:
                     # Search for organizations using NER
@@ -884,7 +889,7 @@ class reStalker:
                             if location_text and not location_text.lower().startswith('location'):
                                 yield Location(value=location_text)
 
-        if len(self.keywords) > 0 or self.keyphrase:
+        if len(self.keywords) > 0 or self.key_phrase:
             ta = TextAnalysis(body)
             for k in self.keywords:
                 # TODO Generate k variations
@@ -892,105 +897,100 @@ class reStalker:
                 if ta.is_keyword_present(k) > 0 or body.lower().find(k) >= 0:
                     yield Keyword(value=k)
 
-            if self.keyphrase:
+            if self.key_phrase:
                 for k in ta.extract_top_keyphrases():
-                    yield Keyphrase(value=k)
+                    yield KeyPhrase(value=k)
 
         # TODO Test if the value is None
         # TODO Refactor to iterate
         # TODO "".join() to avoid regex tuples
-        if self.phone:
+        if self.phone_number:
             # TODO Reformat result number
             phones = re.findall(phone_regex, body)
             for phone in phones:
-                yield Phone(value="".join(phone))
+                yield PhoneNumber(value="".join(phone))
 
-        if self.email:
+        if self.email_address:
             emails = re.findall(email_regex, body)
             for email in emails:
-                yield Email(value=email)
+                yield EmailAddress(value=email)
                 if self.username:
                     yield Username(value=email.split("@")[0])
 
-        if self.btc_wallet:
+        if self.bitcoin_address:
             btc_wallets = re.findall(btc_wallet_regex, body)
             btc_wallets.extend(re.findall(btc_wallet_bech32_regex, body))
             for btc_wallet in btc_wallets:
-                if BTC_Wallet.isvalid(address=btc_wallet):
-                    yield BTC_Wallet(value=btc_wallet)
+                if BitcoinAddress.isvalid(address=btc_wallet):
+                    yield BitcoinAddress(value=btc_wallet)
 
-        if self.eth_wallet:
+        if self.ethereum_address:
             eth_wallets = re.findall(eth_wallet_regex, body)
             for eth_wallet in eth_wallets:
-                if ETH_Wallet.isvalid(address=eth_wallet):
-                    yield ETH_Wallet(value=eth_wallet)
+                if EthereumAddress.isvalid(address=eth_wallet):
+                    yield EthereumAddress(value=eth_wallet)
 
-        if self.xmr_wallet:
+        if self.monero_address:
             xmr_wallets = re.findall(xmr_wallet_regex, body)
             for xmr_wallet in xmr_wallets:
-                if XMR_Wallet.isvalid(address=xmr_wallet):
-                    yield XMR_Wallet(value=xmr_wallet)
+                if MoneroAddress.isvalid(address=xmr_wallet):
+                    yield MoneroAddress(value=xmr_wallet)
 
-        if self.zec_wallet:
+        if self.zcash_address:
             zec_wallets = re.findall(zec_wallet_transparent_regex, body)
             zec_wallets.extend(re.findall(zec_wallet_private_regex, body))
             zec_wallets.extend(re.findall(zec_wallet_private_sapling_regex, body))
             for zec_wallet in zec_wallets:
-                if ZEC_Wallet.isvalid(address=zec_wallet):
-                    yield ZEC_Wallet(value=zec_wallet)
+                if ZcashAddress.isvalid(address=zec_wallet):
+                    yield ZcashAddress(value=zec_wallet)
 
-        if self.dash_wallet:
+        if self.dash_address:
             dash_wallets = re.findall(dash_wallet_regex, body)
             for dash_wallet in dash_wallets:
-                if DASH_Wallet.isvalid(address=dash_wallet):
-                    yield DASH_Wallet(value=dash_wallet)
+                if DashAddress.isvalid(address=dash_wallet):
+                    yield DashAddress(value=dash_wallet)
 
-        if self.dot_wallet:
+        if self.polkadot_address:
             dot_wallets = re.findall(dot_wallet_regex, body)
             for dot_wallet in dot_wallets:
-                if DOT_Wallet.isvalid(address=dot_wallet):
-                    yield DOT_Wallet(value=dot_wallet)
+                if PolkadotAddress.isvalid(address=dot_wallet):
+                    yield PolkadotAddress(value=dot_wallet)
 
-        if self.xrp_wallet:
+        if self.ripple_address:
             xrp_wallets = re.findall(xrp_wallet_regex, body)
             for xrp_wallet in xrp_wallets:
-                if XRP_Wallet.isvalid(address=xrp_wallet):
-                    yield XRP_Wallet(value=xrp_wallet)
+                if RippleAddress.isvalid(address=xrp_wallet):
+                    yield RippleAddress(value=xrp_wallet)
 
-        if self.bnb_wallet:
+        if self.binance_address:
             bnb_wallets = re.findall(bnb_wallet_regex, body)
             for bnb_wallet in bnb_wallets:
-                if BNB_Wallet.isvalid(address=bnb_wallet):
-                    yield BNB_Wallet(value=bnb_wallet)
+                if BinanceAddress.isvalid(address=bnb_wallet):
+                    yield BinanceAddress(value=bnb_wallet)
 
-        if self.credit_card:
+        if self.credit_card_number:
             card_numbers = re.findall(all_card_regex, body)
+            generic_card_numbers = re.findall(ccn_regex, body)
+            card_numbers = set(card_numbers + generic_card_numbers)
             for card_number in card_numbers:
-                if Card_Number.isvalid(card_number):
+                if CreditCardNumber.isvalid(card_number):
                     companies = []
                     for company, regex in card_regex.items():
                         if re.match(regex, card_number):
                             companies.append(company)
-                    yield Card_Number(value=f"Companies=[{','.join(companies)}] Number={card_number}")
+                    yield CreditCardNumber(value=f"Companies=[{','.join(companies)}] Number={card_number}")
 
         # Add BIN/IIN extraction
         if self.bin_number:
             for bin_candidate in re.findall(bin_regex, body):
                 yield Item(value=f"BIN/IIN={bin_candidate}")
 
-        # Add generic CCN extraction
-        if self.ccn_number:
-            for ccn_candidate in re.findall(ccn_regex, body):
-                # Avoid duplicates with card_numbers
-                if not (self.credit_card and re.match(all_card_regex, ccn_candidate)):
-                    yield Item(value=f"CCN={ccn_candidate}")
-
-        if self.twitter:
+        if self.twitter_account:
             tw_accounts = re.findall(tw_account_regex, body)
             for tw_account in tw_accounts:
-                yield TW_Account(value=tw_account)
+                yield TwitterAccount(value=tw_account)
 
-        if self.i2p:
+        if self.i2p_address:
             i2p_links = self.extract_links(
                 body,
                 url_format=i2p_hidden_url,
@@ -1002,27 +1002,27 @@ class reStalker:
                     link_item = UUF(link).full_url
                 except Exception:
                     link_item = link
-                yield I2P_URL(value=link_item)
+                yield I2pAddress(value=link_item)
 
-        if self.tor:
-            tor_links = self.extract_links(
+        if self.onion_address:
+            onion_links = self.extract_links(
                 body,
-                url_format=tor_hidden_url,
-                domain_format=tor_hidden_domain,
+                url_format=onion_hidden_url,
+                domain_format=onion_hidden_domain,
                 origin=origin,
             )
-            for link in tor_links:
+            for link in onion_links:
                 try:
                     link_item = UUF(link).full_url
                 except Exception:
                     link_item = link
-                yield Tor_URL(value=link_item)
+                yield OnionAddress(value=link_item)
 
-        if self.freenet:
+        if self.freenet_address:
             freenet_links = re.findall(freenet_hidden_url, body, re.DOTALL)
             for link in freenet_links:
-                yield Freenet_URL(value=link)
-        if self.zeronet:
+                yield FreenetAddress(value=link)
+        if self.zeronet_address:
             # TODO Experimental
             if self.zeronet_ctxt and False:
                 if body.find("zeronet") < 0:
@@ -1032,28 +1032,28 @@ class reStalker:
             zeronet_links = extract_elements(zeronet_links)
 
             for link in zeronet_links:
-                yield Zeronet_URL(value=link)
+                yield ZeronetAddress(value=link)
 
-        if self.bitname:
+        if self.bitname_address:
             bitname_links = re.findall(bitname_url, body, re.DOTALL)
             bitname_links = extract_elements(bitname_links)
 
             for link in bitname_links:
-                yield Bitname_URL(value=link)
+                yield BitnameAddress(value=link)
 
-        if self.pgp:
+        if self.pgp_key:
             pgp_keys = re.findall(pgp_key, body, re.DOTALL)
             for k in pgp_keys:
-                yield PGP(value=k)
+                yield PgpKey(value=k)
 
-        if self.ipfs:
+        if self.ipfs_address:
 
             ipfs_links = re.findall(ipfs_url, body, re.DOTALL)
             ipfs_links = extract_elements(ipfs_links)
             for link in ipfs_links:
-                yield IPFS_URL(value=link)
+                yield IpfsAddress(value=link)
 
-        if self.whatsapp:
+        if self.whatsapp_url:
             whatsapp_links = re.findall(whatsapp_url_regex, body)
             whatsapp_links = extract_elements(whatsapp_links)
             for link in whatsapp_links:
@@ -1061,9 +1061,9 @@ class reStalker:
                     link_item = UUF(link).full_url
                 except Exception:
                     link_item = link
-                yield Whatsapp_URL(value=link_item)
+                yield WhatsappUrl(value=link_item)
 
-        if self.discord:
+        if self.discord_url:
             discord_links = re.findall(discord_url_regex, body)
             discord_links = extract_elements(discord_links)
             for link in discord_links:
@@ -1071,9 +1071,9 @@ class reStalker:
                     link_item = UUF(link).full_url
                 except Exception:
                     link_item = link
-                yield Discord_URL(value=link_item)
+                yield DiscordUrl(value=link_item)
 
-        if self.telegram:
+        if self.telegram_url:
             telegram_links = re.findall(telegram_url_regex, body)
             telegram_links = extract_elements(telegram_links)
             for link in telegram_links:
@@ -1081,26 +1081,26 @@ class reStalker:
                     link_item = UUF(link).full_url
                 except Exception:
                     link_item = link
-                yield Telegram_URL(value=link_item)
+                yield TelegramUrl(value=link_item)
 
-        if self.skype:
+        if self.skype_url:
             skype_links = re.findall(skype_url_regex, body)
             for link in skype_links:
                 try:
                     link_item = UUF(link).full_url
                 except Exception:
                     link_item = link
-                yield Skype_URL(value=link_item)
+                yield SkypeUrl(value=link_item)
 
         if self.username:
             usernames = re.findall(username_regex, body)
             for username in usernames:
                 yield Username(value=username)
 
-        if self.paste:
+        if self.paste_url:
             pastes = re.findall(paste_url_regex, body)
             for pst in pastes:
-                yield Paste(value=pst)
+                yield PasteUrl(value=pst)
 
         if self.password:
             passwords = re.findall(password_regex, body)
@@ -1112,39 +1112,39 @@ class reStalker:
             for b64 in base64s:
                 yield Base64(value=b64)
 
-        if self.md5:
+        if self.md5_hash:
             md5s = re.findall(md5_regex, body)
             for md5 in md5s:
-                yield MD5(value=md5)
+                yield Md5Hash(value=md5)
 
-        if self.sha1:
+        if self.sha1_hash:
             sha1s = re.findall(sha1_regex, body)
             for sha1 in sha1s:
-                yield SHA1(value=sha1)
+                yield Sha1Hash(value=sha1)
 
-        if self.sha256:
+        if self.sha256_hash:
             sha256s = re.findall(sha256_regex, body)
             for sha256 in sha256s:
-                yield SHA256(value=sha256)
+                yield Sha256Hash(value=sha256)
         
-        if self.tox:
+        if self.tox_id:
             tox_ids = re.findall(tox_id_regex, body)
             for tox_id in tox_ids:
-                if Tox_ID.isvalid(tox_id):
-                    yield Tox_ID(value=tox_id)
+                if ToxId.isvalid(tox_id):
+                    yield ToxId(value=tox_id)
         
-        if self.gatc:
+        if self.google_analytics_tracking_code:
             gatc = re.findall(ga_tracking_code_regex, body)
             for g in gatc:
-                if GA_Tracking_Code.isvalid(g):
-                    yield GA_Tracking_Code(value=g)
+                if GoogleAnalyticsTrackingCode.isvalid(g):
+                    yield GoogleAnalyticsTrackingCode(value=g)
 
         if self.session_id:
             session_ids = re.findall(session_id_regex, body)
             for sid in session_ids:
                 session_id_value = sid
-                if Session_ID.isvalid(session_id_value):
-                    yield Session_ID(value=session_id_value)
+                if SessionId.isvalid(session_id_value):
+                    yield SessionId(value=session_id_value)
 
     def parse(self, body, origin=None, buff_size=20480):
 
