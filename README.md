@@ -46,62 +46,77 @@ for element in elements:
 
 ### 🔐 Credentials & Identity
 
-- **Base64** encoded data
-- **Username** patterns
-- **Password** patterns  
-- **Phone** numbers
-- **Email** addresses
-- **Personal names**
+- **Base64** encoded data (`base64=True`)
+- **Username** patterns (`username=True`)
+- **Password** patterns (`password=True`)
+- **Phone** numbers (`phone=True`)
+- **Email** addresses (`email=True`)
+- **Personal names** (`own_name=True`)
+- **PGP** keys (`pgp=True`)
+
+### 🗺️ Location & Organization
+
+- **Location** information (`location=True`)
+- **Organization** names (`organization=True`)
+- **Keyphrases** (`keyphrase=True`)
+- **Keywords** (`keywords=["keyword1", "keyword2"]`)
+
+### 📊 Analytics & Tracking
+
+- **Google Analytics** tracking codes (`gatc=True`)
 
 ### 💰 Digital Assets & Cryptocurrencies
 
-- **BTC** (Bitcoin) wallet addresses
-- **ETH** (Ethereum) wallet addresses
-- **XMR** (Monero) wallet addresses
-- **ZEC** (Zcash) wallet addresses
-- **DASH** wallet addresses
-- **DOT** (Polkadot) wallet addresses
-- **XRP** (Ripple) wallet addresses
-- **BNB** (Binance) wallet addresses
+- **BTC** (Bitcoin) wallet addresses (`btc_wallet=True`)
+- **ETH** (Ethereum) wallet addresses (`eth_wallet=True`)
+- **XMR** (Monero) wallet addresses (`xmr_wallet=True`)
+- **ZEC** (Zcash) wallet addresses (`zec_wallet=True`)
+- **DASH** wallet addresses (`dash_wallet=True`)
+- **DOT** (Polkadot) wallet addresses (`dot_wallet=True`)
+- **XRP** (Ripple) wallet addresses (`xrp_wallet=True`)
+- **BNB** (Binance) wallet addresses (`bnb_wallet=True`)
 
 ### 📱 Social Networks & Communication
 
-- **Twitter/X** account handles
-- **Telegram** URLs
-- **WhatsApp** URLs
-- **Skype** URLs
-- **Tox ID** identifiers
-- **Session ID** identifiers
+- **Twitter/X** account handles (`twitter=True`)
+- **Telegram** URLs (`telegram=True`)
+- **WhatsApp** URLs (`whatsapp=True`)
+- **Discord** URLs (`discord=True`)
+- **Skype** URLs (`skype=True`)
+- **Tox ID** identifiers (`tox=True`)
+- **Session ID** identifiers (`session_id=True`)
 
 ### 🔐 Cryptographic Hashes
 
-- **MD5** hash values
-- **SHA1** hash values
-- **SHA256** hash values
+- **MD5** hash values (`md5=True`)
+- **SHA1** hash values (`sha1=True`)
+- **SHA256** hash values (`sha256=True`)
 
 ### 💳 Financial Information
 
-- **BIN** (Bank Identification Numbers)
-- **Credit Card** numbers
+- **BIN** (Bank Identification Numbers) (`bin_number=True`)
+- **Credit Card** numbers (`credit_card=True`)
+- **CCN** (Credit Card Numbers - generic) (`ccn_number=True`)
 
 ### 🌐 Dark Web & Alternative Networks
 
-- **Tor** (.onion) URLs
-- **I2P** URLs
-- **Freenet** URLs
-- **ZeroNet** URLs
-- **IPFS** URLs
+- **Tor** (.onion) URLs (`tor=True`)
+- **I2P** URLs (`i2p=True`)
+- **Freenet** URLs (`freenet=True`)
+- **ZeroNet** URLs (`zeronet=True`)
+- **BitName** URLs (`bitname=True`)
+- **IPFS** URLs (`ipfs=True`)
 
 ### 📋 Paste Sites & Code Sharing
 
-- **justpaste.it** links
-- **pastebin.com** links
-- **pasted.co** links
-- **hastebin.com** links
-- **snipt.org** links
-- **gist.github.com** links
-- **telegra.ph** links
-- **ghostbin.com** links
+- **justpaste.it** links (`paste=True`)
+- **pastebin.com** links (`paste=True`)
+- **pasted.co** links (`paste=True`)
+- **hastebin.com** links (`paste=True`)
+- **snipt.org** links (`paste=True`)
+- **gist.github.com** links (`paste=True`)
+- **telegra.ph** links (`paste=True`)
+- **ghostbin.com** links (`paste=True`)
 
 ---
 
