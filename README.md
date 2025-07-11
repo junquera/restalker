@@ -46,53 +46,53 @@ for element in elements:
 
 ### 🔐 Credentials & Identity
 
-- **Base64** encoded data
-- **Username** patterns
-- **Password** patterns  
-- **Phone** numbers
-- **Email** addresses
-- **Personal names**
+- **Base64** encoded data `(base64=True)`
+- **Username** patterns `(username=True)`
+- **Password** patterns `(password=True)`
+- **Phone** numbers `(phone_number=True)`
+- **Email** addresses `(email_address=True)`
+- **Personal names** `(person_name=True)`
 
 ### 💰 Digital Assets & Cryptocurrencies
 
-- **BTC** (Bitcoin) wallet addresses
-- **ETH** (Ethereum) wallet addresses
-- **XMR** (Monero) wallet addresses
-- **ZEC** (Zcash) wallet addresses
-- **DASH** wallet addresses
-- **DOT** (Polkadot) wallet addresses
-- **XRP** (Ripple) wallet addresses
-- **BNB** (Binance) wallet addresses
+- **BTC** (Bitcoin) wallet addresses `(bitcoin_address=True)`
+- **ETH** (Ethereum) wallet addresses `(ethereum_address=True)`
+- **XMR** (Monero) wallet addresses `(monero_address=True)`
+- **ZEC** (Zcash) wallet addresses `(zcash_address=True)`
+- **DASH** wallet addresses `(dash_address=True)`
+- **DOT** (Polkadot) wallet addresses `(polkadot_address=True)`
+- **XRP** (Ripple) wallet addresses `(ripple_address=True)`
+- **BNB** (Binance) wallet addresses `(binance_address=True)`
 
 ### 📱 Social Networks & Communication
 
-- **Twitter/X** account handles
-- **Telegram** URLs
-- **WhatsApp** URLs
-- **Skype** URLs
-- **Tox ID** identifiers
-- **Session ID** identifiers
+- **Twitter/X** account handles `(twitter_account=True)`
+- **Telegram** URLs `(telegram_url=True)`
+- **WhatsApp** URLs `(whatsapp_url=True)`
+- **Skype** URLs `(skype_url=True)`
+- **Tox ID** identifiers `(tox_id=True)`
+- **Session ID** identifiers `(session_id=True)`
 
 ### 🔐 Cryptographic Hashes
 
-- **MD5** hash values
-- **SHA1** hash values
-- **SHA256** hash values
+- **MD5** hash values `(md5_hash=True)`
+- **SHA1** hash values `(sha1_hash=True)`
+- **SHA256** hash values `(sha256_hash=True)`
 
 ### 💳 Financial Information
 
-- **BIN** (Bank Identification Numbers)
-- **Credit Card** numbers
+- **BIN** (Bank Identification Numbers) `(bin_number=True)`
+- **Credit Card** numbers `(credit_card_number=True)`
 
 ### 🌐 Dark Web & Alternative Networks
 
-- **Tor** (.onion) URLs
-- **I2P** URLs
-- **Freenet** URLs
-- **ZeroNet** URLs
-- **IPFS** URLs
+- **Tor** (.onion) URLs `(onion_address=True)`
+- **I2P** URLs `(i2p_address=True)`
+- **Freenet** URLs `(freenet_address=True)`
+- **ZeroNet** URLs `(zeronet_address=True)`
+- **IPFS** URLs `(ipfs_address=True)`
 
-### 📋 Paste Sites & Code Sharing
+### 📋 Paste Sites & Code Sharing `(paste_url=True)`
 
 - **justpaste.it** links
 - **pastebin.com** links
