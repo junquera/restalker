@@ -765,6 +765,10 @@ class reStalker:
         def add_url_safely(url_str):
             """Helper function to safely add URLs to the set"""
             try:
+                # Convert bytes to string if needed
+                if isinstance(url_str, bytes):
+                    url_str = url_str.decode('utf-8')
+                
                 if url_str and isinstance(url_str, str):
                     cleaned_url = UUF(url_str).rebuild()
                     if cleaned_url:
@@ -786,12 +790,23 @@ class reStalker:
                 if links:
                     for url in links:
                         try:
-                            urls.add(UUF(urljoin(origin, url.get("href"))).rebuild())
+                            href = url.get("href")
+                            if href:
+                                if origin is not None:
+                                    # Make sure origin is a string
+                                    if isinstance(origin, bytes):
+                                        origin = origin.decode('utf-8')
+                                    full_url = urljoin(origin, href)
+                                else:
+                                    full_url = href
+                                    
+                                urls.add(UUF(full_url).rebuild())
                         except AttributeError:
                             print("[*] AttributeError: Invalid attribute in URL")
                         except ValueError:
                             print("[*] ValueError: Invalid URL format")
                         except Exception as e:
+                            print(f"Error parsing text with BeautifulSoup: {e}")
                             print(f"[*] Unexpected error: {e}")
         except TypeError:
             print("[*] TypeError: Invalid input type for BeautifulSoup")
@@ -999,8 +1014,11 @@ class reStalker:
             )
             for link in i2p_links:
                 try:
+                    if isinstance(link, bytes):
+                        link = link.decode('utf-8')
                     link_item = UUF(link).full_url
-                except Exception:
+                except Exception as e:
+                    print(f"[*] Error processing I2P URL: {e}")
                     link_item = link
                 yield I2P_URL(value=link_item)
 
@@ -1013,9 +1031,20 @@ class reStalker:
             )
             for link in tor_links:
                 try:
+                    # Ensure link is a string before passing to UUF
+                    if isinstance(link, bytes):
+                        link = link.decode('utf-8')
                     link_item = UUF(link).full_url
-                except Exception:
-                    link_item = link
+                except Exception as e:
+                    print(f"[*] Error processing Tor URL: {e}")
+                    # If there's an error, just use the original link
+                    if isinstance(link, bytes):
+                        try:
+                            link_item = link.decode('utf-8')
+                        except Exception:
+                            link_item = str(link)
+                    else:
+                        link_item = link
                 yield Tor_URL(value=link_item)
 
         if self.freenet:
@@ -1058,8 +1087,11 @@ class reStalker:
             whatsapp_links = extract_elements(whatsapp_links)
             for link in whatsapp_links:
                 try:
+                    if isinstance(link, bytes):
+                        link = link.decode('utf-8')
                     link_item = UUF(link).full_url
-                except Exception:
+                except Exception as e:
+                    print(f"[*] Error processing WhatsApp URL: {e}")
                     link_item = link
                 yield Whatsapp_URL(value=link_item)
 
@@ -1068,8 +1100,11 @@ class reStalker:
             discord_links = extract_elements(discord_links)
             for link in discord_links:
                 try:
+                    if isinstance(link, bytes):
+                        link = link.decode('utf-8')
                     link_item = UUF(link).full_url
-                except Exception:
+                except Exception as e:
+                    print(f"[*] Error processing Discord URL: {e}")
                     link_item = link
                 yield Discord_URL(value=link_item)
 
@@ -1078,8 +1113,11 @@ class reStalker:
             telegram_links = extract_elements(telegram_links)
             for link in telegram_links:
                 try:
+                    if isinstance(link, bytes):
+                        link = link.decode('utf-8')
                     link_item = UUF(link).full_url
-                except Exception:
+                except Exception as e:
+                    print(f"[*] Error processing Telegram URL: {e}")
                     link_item = link
                 yield Telegram_URL(value=link_item)
 
@@ -1087,8 +1125,11 @@ class reStalker:
             skype_links = re.findall(skype_url_regex, body)
             for link in skype_links:
                 try:
+                    if isinstance(link, bytes):
+                        link = link.decode('utf-8')
                     link_item = UUF(link).full_url
-                except Exception:
+                except Exception as e:
+                    print(f"[*] Error processing Skype URL: {e}")
                     link_item = link
                 yield Skype_URL(value=link_item)
 
