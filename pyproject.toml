@@ -17,6 +17,7 @@ monero = "*"
 bip-utils = "*"
 bech32ref = "*"
 bs4 = "^0.0.2"
+pytest = "^8.4.1"
 
 [tool.poetry.dev-dependencies]
 
