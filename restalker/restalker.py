@@ -70,21 +70,22 @@ class ETH_Wallet(Item):
     def isvalid(address: str) -> bool:
         ret = False
         try:
-            ret = Web3.isAddress(address)
+            ret = Web3.is_address(address)
         except:
             ret = False
         return ret
-
-
 
 class XMR_Wallet(Item):
     @staticmethod
     def isvalid(address: str) -> bool:
         ret = False
         try:
-            ret = xmr_address(address) is not None
-        finally:
-            return ret
+            # Remove any whitespace from the address
+            clean_address = ''.join(address.split())
+            ret = xmr_address(clean_address) is not None
+        except:
+            ret = False
+        return ret
 
 
 class ZEC_Wallet(Item):
@@ -282,6 +283,52 @@ class Card_Number(Item):
 
         return luhn_check(number)
 
+class Session_ID(Item):
+    @staticmethod
+    def isvalid(session_id: str) -> bool:
+
+        if not isinstance(session_id, str):
+            return False
+            
+        if len(session_id) != 66:
+            return False
+
+        try:
+            int(session_id, 16)  # Esto falla si no es hexadecimal válido
+            return True
+        except ValueError:
+            return False
+
+
+class Tox_ID(Item):
+    @staticmethod
+    def isvalid(tox_id: str) -> bool:
+        """Verify if the string is a valid Tox ID - 76 hexadecimal chars (64 public key + 4 NoSpam + 2 checksum)"""
+        ret = None
+        try:
+            # Check if it's a valid 76-character hexadecimal string
+            if len(tox_id) == 76 and all(c in '0123456789ABCDEFabcdef' for c in tox_id):
+                # Convert the Tox ID from hexadecimal to bytes
+                tox_id_bytes = bytes.fromhex(tox_id)
+                
+                # The ID is 38 bytes: 32 bytes public key + 4 bytes NoSpam + 2 bytes checksum
+                # Extract the checksum (last 2 bytes)
+                actual_checksum = tox_id_bytes[36:38]
+                
+                # Calculate the checksum by XORing pairs of bytes
+                calculated_checksum = bytearray(2)
+                for i in range(0, 36, 2):
+                    calculated_checksum[0] ^= tox_id_bytes[i]
+                    calculated_checksum[1] ^= tox_id_bytes[i+1]
+                
+                # Verify that the calculated checksum matches the actual checksum
+                ret = (actual_checksum == calculated_checksum)
+            else:
+                ret = False
+        except Exception as e:
+            ret = False
+        return ret
+
 number_regex = r"[0-9]+"
 
 alnum_join = r"[a-zA-Z0-9\-\~]+"
@@ -320,22 +367,19 @@ bitname_domain_regex = r"(?:[a-zA-Z0-9]+\.)+bit"
 
 tw_account_regex = r"[^a-zA-Z0-9]@([a-zA-Z0-9_]{3,15})"
 
-telegram_url_regex = re.compile(
-    r"((?:https?:\/\/)?(?:t\.me|telegram\.me|teleg\.one|tgclick\.com)(?:\/[a-zA-Z0-9_-]+)+)|"
-    r"((?:tg:\/\/)(?:[a-zA-Z0-9_-]+\?[a-zA-Z0-9_-]+=[a-zA-Z0-9_-]+)+)"
-)
+telegram_url_regex = r"((?:https?\:\/\/)?(?:t\.me|telegram\.me|telegram\.dog)(?:\/(?:joinchat|c|\+)?[a-zA-Z0-9_-]+(?:\/[0-9]+)?)+)"
 
-whatsapp_url_regex = r"((?:https?\:\/\/)?chat\.whatsapp\.com(?:\/[a-zA-Z0-9_-]+)+)"
+whatsapp_url_regex = r"((?:https?\:\/\/)?(?:wa\.me|api\.whatsapp\.com\/send|chat\.whatsapp\.com)(?:\/(?:invite\/)?[a-zA-Z0-9_-]+)*(?:\?(?:[^=]+=[^&\s]+)(?:&[^=]+=[^&\s]+)*)?)"
 
 discord_url_regex = (
-    r"((?:https?\:\/\/)?discord(?:app)?\.(?:gg|com|net)(?:\/[a-zA-Z0-9_-]+)+)"
+    r"((?:https?\:\/\/)?(?:discord(?:app)?\.(?:gg|com|io|me)|discord\.(?:com\/invite))(?:\/[a-zA-Z0-9_-]+)+)"
 )
 
-skype_url_regex = r"((?:https?\:\/\/)?join\.skype\.com(?:\/[a-zA-Z0-9]+)+)"
+skype_url_regex = r"((?:skype\:\/\/join\?id=[a-zA-Z0-9_-]+|skype\:([^?\s]+)(?:\?(?:call|chat|add))?|(?:https?\:\/\/)?join\.skype\.com(?:\/invite)?(?:\/[a-zA-Z0-9_-]+)+))"
 
 username_regex = r"([a-zA-Z0-9\$\.,;_-]{8,20})[^a-zA-Z0-9]"
 
-password_regex = r"(?:[Pp]ass(?:word)?.|[a-zA-Z0-9_-]\:)([a-zA-Z0-9$,;_-]{4,16})"
+password_regex = r"(?:[Pp]ass(?:word)?.|[a-zA-Z0-9_-]\:\s?)([a-zA-Z0-9$,;_-]{4,16})"
 
 base64_regex = (
     r"((?:[a-zA-Z0-9\+\/]{4})+(?:[a-zA-Z0-9\+\/]{3}[=]|[a-zA-Z0-9\+\/]{2}[=]{2}))"
@@ -443,6 +487,10 @@ card_regex = {
 # Regex combinada para todas las tarjetas
 all_card_regex = r"(?:" + "|".join(card_regex.values()) + r")"
 
+# Add BIN and generic credit card number regex
+bin_regex = r"\b\d{6,8}\b"  # BIN/IIN: 6 or 8 digits
+ccn_regex = r"\b\d{8,19}\b"  # Payment card number: 8-19 digits
+
 http_regex = r"(?:https?\:\/\/)"
 localhost_regex = r"(?:localhost|127\.0\.0\.1)"
 # TODO Add query parameters
@@ -480,6 +528,10 @@ pgp_key = r"(%s[\s\S]{175,5000}%s)" % (pgp_header, pgp_footer)
 
 ga_tracking_code_regex = r"\b(UA-\d{4,10}-\d|G-[A-Za-z0-9]{10})\b"
 
+session_id_regex = r"(?<![0-9a-fA-F])[0-9a-fA-F]{66}(?![0-9a-fA-F])"
+
+tox_id_regex = r"([a-fA-F0-9]{76})"
+
 """
 Freenet URL spec:
     - CHK@file hash,decryption key,crypto settings
@@ -501,15 +553,15 @@ freenet_terms = dict(
     decryption_key=alnum_join,
     crypto_settings=r"[A-Z]+(?:\-\-[0-9]+)?",
     public_key=alnum_join,
-    user_selected_name="[a-zA-Z0-9\_]+",
+    user_selected_name=r"[a-zA-Z0-9\\_]+",
     version=number_regex,
     file_name=file_name,
 )
 
 freenet_keys = dict(
     chk="CHK@{file_hash},{decryption_key},{crypto_settings}",
-    ssk="SSK@{public_key},{decryption_key},{crypto_settings}\/{user_selected_name}\-{version}",
-    usk="USK@{public_key},{decryption_key},{crypto_settings}\/{user_selected_name}\/{version}",
+    ssk="SSK@{public_key},{decryption_key},{crypto_settings}\\/{user_selected_name}\\-{version}",
+    usk="USK@{public_key},{decryption_key},{crypto_settings}\\/{user_selected_name}\\/{version}",
     ksk="KSK@{file_name}",
 )
 
@@ -532,19 +584,38 @@ freenet_hidden_url = r"(?:(?:{http}?{localhost}{port})\/)?(?:freenet\:)?((?:{fre
 """
 http://localhost:8080/ipfs/QmW2WQi7j6c7UgJTarActp7tDNikE4B2qXtFCfLPdsgaTQ
 """
-# TODO Evitar len44 (hay problemas con las llaves para formatear después domain)
-ipfs_hash = r"(?:ipfs\/Qm[a-zA-Z0-9]{len44}|ipns\/{domain})".format(
-    **dict(len44="{44}", domain=domain_regex)
-)
-ipfs_params = dict(
-    ipfs_hash=ipfs_hash,
-    http=http_regex,
-    localhost=localhost_regex,
-    port=port_regex(8080),
-    path=path_regex,
-)
-ipfs_url = r"((?:{http}?{localhost}{port}(?:\/)?){ipfs_hash}{path})".format(
-    **ipfs_params
+# Regular expressions for IPFS
+# CIDv0 starts with Qm 
+# CIDv1 usually starts with baf... and uses base32
+# Rule of thumb: use len >= 46 for both v0 and v1 to avoid false positives
+ipfs_cid = r"(?:Qm[a-zA-Z0-9]{44}|b[a-z2-7]{45,})"
+ipns_name = r"(?:k[a-z2-7]{45,}|[a-z0-9]+(?:\.[a-z0-9]+)*)"
+ipfs_path = r"(?:\/[^\/\s\?#]+)*"
+ipfs_params = r"(?:\?[^\s#]*)?"
+ipfs_fragment = r"(?:#[^\s]*)?"
+
+# Native IPFS protocol format
+ipfs_native_url = r"(?:ipfs:\/\/%s%s%s%s)" % (ipfs_cid, ipfs_path, ipfs_params, ipfs_fragment)
+ipns_native_url = r"(?:ipns:\/\/%s%s%s%s)" % (ipns_name, ipfs_path, ipfs_params, ipfs_fragment)
+
+# Path gateway format
+ipfs_gateway = r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}"
+ipfs_gateway_port = r"(?::[0-9]{1,5})?"
+ipfs_gateway_url = r"(?:https?:\/\/%s%s\/ipfs\/%s%s%s%s)" % (ipfs_gateway, ipfs_gateway_port, ipfs_cid, ipfs_path, ipfs_params, ipfs_fragment)
+ipns_gateway_url = r"(?:https?:\/\/%s%s\/ipns\/%s%s%s%s)" % (ipfs_gateway, ipfs_gateway_port, ipns_name, ipfs_path, ipfs_params, ipfs_fragment)
+
+# Subdomain gateway format
+ipfs_subdomain_url = r"(?:https?:\/\/%s\.ipfs\.%s%s%s%s%s)" % (ipfs_cid, ipfs_gateway, ipfs_gateway_port, ipfs_path, ipfs_params, ipfs_fragment)
+ipns_subdomain_url = r"(?:https?:\/\/%s\.ipns\.%s%s%s%s%s)" % (ipns_name, ipfs_gateway, ipfs_gateway_port, ipfs_path, ipfs_params, ipfs_fragment)
+
+# Combined regex for any IPFS URL
+ipfs_url = r"(%s|%s|%s|%s|%s|%s)" % (
+    ipfs_native_url, 
+    ipns_native_url,
+    ipfs_gateway_url,
+    ipns_gateway_url, 
+    ipfs_subdomain_url,
+    ipns_subdomain_url
 )
 
 pastes = [
@@ -565,17 +636,19 @@ sha1_regex = r"[a-f0-9]{40}"
 sha256_regex = r"[a-f0-9]{64}"
 
 
-# Method for avoid lists of lists
+# Method for avoid lists of lists and empty elements
 def extract_elements(x):
+    if x is None:
+        return []
     if type(x) in [tuple, list, set]:
-        result = list()
+        result = []
         for piece in x:
             for element in extract_elements(piece):
-                if element != "":
+                if element is not None and element != '':
                     result.append(element)
-        return set(result)
+        return set(el for el in result if el)  # Filters out empty elements
     else:
-        return [x]
+        return [x] if x is not None and x != '' else []
 
 
 class reStalker:
@@ -592,6 +665,8 @@ class reStalker:
         xrp_wallet=False,
         bnb_wallet=False,
         credit_card=False,
+        bin_number=False,
+        ccn_number=False,
         tor=False,
         i2p=False,
         ipfs=False,
@@ -618,6 +693,8 @@ class reStalker:
         md5=False,
         sha1=False,
         sha256=False,
+        session_id=False,
+        tox=False,
         all=False,
     ):
 
@@ -643,6 +720,8 @@ class reStalker:
         self.bnb_wallet = bnb_wallet or all
 
         self.credit_card = credit_card or all
+        self.bin_number = bin_number or all
+        self.ccn_number = ccn_number or all
 
         self.tor = tor or all
         self.i2p = i2p or all
@@ -669,6 +748,9 @@ class reStalker:
         self.md5 = md5 or all
         self.sha1 = sha1 or all
         self.sha256 = sha256 or all
+        self.session_id = session_id or all
+        self.tox = tox or all
+
 
     def add_keyword(self, keyword):
         self.keywords.append(keyword)
@@ -891,6 +973,18 @@ class reStalker:
                             companies.append(company)
                     yield Card_Number(value=f"Companies=[{','.join(companies)}] Number={card_number}")
 
+        # Add BIN/IIN extraction
+        if self.bin_number:
+            for bin_candidate in re.findall(bin_regex, body):
+                yield Item(value=f"BIN/IIN={bin_candidate}")
+
+        # Add generic CCN extraction
+        if self.ccn_number:
+            for ccn_candidate in re.findall(ccn_regex, body):
+                # Avoid duplicates with card_numbers
+                if not (self.credit_card and re.match(all_card_regex, ccn_candidate)):
+                    yield Item(value=f"CCN={ccn_candidate}")
+
         if self.twitter:
             tw_accounts = re.findall(tw_account_regex, body)
             for tw_account in tw_accounts:
@@ -1030,14 +1124,27 @@ class reStalker:
 
         if self.sha256:
             sha256s = re.findall(sha256_regex, body)
-            for sha256_hash in sha256s:
-                yield SHA256(value=sha256_hash)
-
+            for sha256 in sha256s:
+                yield SHA256(value=sha256)
+        
+        if self.tox:
+            tox_ids = re.findall(tox_id_regex, body)
+            for tox_id in tox_ids:
+                if Tox_ID.isvalid(tox_id):
+                    yield Tox_ID(value=tox_id)
+        
         if self.gatc:
             gatc = re.findall(ga_tracking_code_regex, body)
             for g in gatc:
                 if GA_Tracking_Code.isvalid(g):
                     yield GA_Tracking_Code(value=g)
+
+        if self.session_id:
+            session_ids = re.findall(session_id_regex, body)
+            for sid in session_ids:
+                session_id_value = sid
+                if Session_ID.isvalid(session_id_value):
+                    yield Session_ID(value=session_id_value)
 
     def parse(self, body, origin=None, buff_size=20480):
 
