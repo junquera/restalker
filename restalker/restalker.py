@@ -774,9 +774,9 @@ class reStalker:
                     if cleaned_url:
                         urls.add(cleaned_url)
             except (ValueError, AttributeError) as e:
-                print(f"[*] Error processing URL {url_str}: {e}")
+                print(f"[*] Error processing URL: value={url_str!r}, error={type(e).__name__}: {e}")
             except Exception as e:
-                print(f"[*] Unexpected error with URL {url_str}: {e}")
+                print(f"[*] Unexpected error with URL: value={url_str!r}, error={type(e).__name__}: {e}")
 
         # Process URLs found with regex
         for url in re.findall(url_format, body, re.DOTALL):
@@ -802,16 +802,16 @@ class reStalker:
                                     
                                 urls.add(UUF(full_url).rebuild())
                         except AttributeError:
-                            print("[*] AttributeError: Invalid attribute in URL")
+                            print(f"[*] AttributeError: Invalid attribute in URL, value={href!r}")
                         except ValueError:
-                            print("[*] ValueError: Invalid URL format")
+                            print(f"[*] ValueError: Invalid URL format, value={href!r}")
                         except Exception as e:
-                            print(f"Error parsing text with BeautifulSoup: {e}")
-                            print(f"[*] Unexpected error: {e}")
+                            print(f"Error parsing text with BeautifulSoup: value={href!r}, error={type(e).__name__}: {e}")
+                            print(f"[*] Unexpected error: value={href!r}, error={type(e).__name__}: {e}")
         except TypeError:
-            print("[*] TypeError: Invalid input type for BeautifulSoup")
+            print(f"[*] TypeError: Invalid input type for BeautifulSoup, value={body!r}")
         except Exception as e:
-            print(f"[*] Error with HTML parsing: {e}")
+            print(f"[*] Error with HTML parsing: value={body!r}, error={type(e).__name__}: {e}")
 
         for url in urls:
             if url:
@@ -1018,7 +1018,7 @@ class reStalker:
                         link = link.decode('utf-8')
                     link_item = UUF(link).full_url
                 except Exception as e:
-                    print(f"[*] Error processing I2P URL: {e}")
+                    print(f"[*] Error processing I2P URL: value={link!r}, error={type(e).__name__}: {e}")
                     link_item = link
                 yield I2P_URL(value=link_item)
 
@@ -1036,7 +1036,7 @@ class reStalker:
                         link = link.decode('utf-8')
                     link_item = UUF(link).full_url
                 except Exception as e:
-                    print(f"[*] Error processing Tor URL: {e}")
+                    print(f"[*] Error processing Tor URL: value={link!r}, error={type(e).__name__}: {e}")
                     # If there's an error, just use the original link
                     if isinstance(link, bytes):
                         try:
@@ -1091,7 +1091,7 @@ class reStalker:
                         link = link.decode('utf-8')
                     link_item = UUF(link).full_url
                 except Exception as e:
-                    print(f"[*] Error processing WhatsApp URL: {e}")
+                    print(f"[*] Error processing WhatsApp URL: value={link!r}, error={type(e).__name__}: {e}")
                     link_item = link
                 yield Whatsapp_URL(value=link_item)
 
@@ -1104,7 +1104,7 @@ class reStalker:
                         link = link.decode('utf-8')
                     link_item = UUF(link).full_url
                 except Exception as e:
-                    print(f"[*] Error processing Discord URL: {e}")
+                    print(f"[*] Error processing Discord URL: value={link!r}, error={type(e).__name__}: {e}")
                     link_item = link
                 yield Discord_URL(value=link_item)
 
@@ -1117,7 +1117,7 @@ class reStalker:
                         link = link.decode('utf-8')
                     link_item = UUF(link).full_url
                 except Exception as e:
-                    print(f"[*] Error processing Telegram URL: {e}")
+                    print(f"[*] Error processing Telegram URL: value={link!r}, error={type(e).__name__}: {e}")
                     link_item = link
                 yield Telegram_URL(value=link_item)
 
@@ -1129,7 +1129,7 @@ class reStalker:
                         link = link.decode('utf-8')
                     link_item = UUF(link).full_url
                 except Exception as e:
-                    print(f"[*] Error processing Skype URL: {e}")
+                    print(f"[*] Error processing Skype URL: value={link!r}, error={type(e).__name__}: {e}")
                     link_item = link
                 yield Skype_URL(value=link_item)
 
