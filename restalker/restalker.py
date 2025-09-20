@@ -839,39 +839,39 @@ class reStalker:
 
         return text
 
-    # Cargamos el modelo de spaCy una sola vez como variable de clase
+    # Load spacy model
     nlp = None
     
     def _analyze_chunk(self, body, origin=None):
-        # Inicializar el modelo de spaCy si aún no está cargado
+        # Load model if not loaded yet
         if reStalker.nlp is None:
             try:
-                reStalker.nlp = spacy.load("es_core_news_md")
+                reStalker.nlp = spacy.load("en_core_news_md")
             except OSError:
-                # Si no está instalado el modelo en español, intentamos con el inglés
+                # if english model isn't downloaded -> then try with the spanish one
                 try:
-                    reStalker.nlp = spacy.load("en_core_web_md")
+                    reStalker.nlp = spacy.load("es_core_web_md")
                 except OSError:
-                    # Como último recurso, usamos el modelo pequeño
+                    # If all fails, try to use a small english one
                     reStalker.nlp = spacy.load("en_core_web_sm")
         
         if self.ner:
             # Text pre-processing to remove tags and improve detection
             cleaned_text = re.sub(r'(?:Location|Organization|Person|Keyphrase|BitName):\s*', '', body)
             
-            # Procesamos el texto con spaCy
+            # Process the text, now with spacy
             doc = reStalker.nlp(cleaned_text)
             
-            # Pre-procesamos el texto para manejar nombres de organizaciones con múltiples palabras
+            # Pre-process to handle organization names with multiple words
             preprocessed_text = re.sub(r'\s+Ltd\.?$', ' Limited', cleaned_text)
             preprocessed_text = re.sub(r'\s+Inc\.?$', ' Incorporated', preprocessed_text)
             preprocessed_text = re.sub(r'\s+Corp\.?$', ' Corporation', preprocessed_text)
             
-            # Procesamos el texto pre-procesado
+            # Process the pre-processed text
             doc_preprocessed = reStalker.nlp(preprocessed_text)
             
             if self.own_name:
-                # Extraer entidades de tipo PERSONA
+                # Extract PERSON
                 for ent in doc.ents:
                     if ent.label_ == "PER" or ent.label_ == "PERSON":
                         person_name = ent.text
@@ -879,14 +879,14 @@ class reStalker:
                             yield OwnName(value=person_name)
             
             if self.organization:
-                # Extraer entidades de tipo ORGANIZACIÓN usando spaCy
+                # Extract ORGANIZATIONS
                 for ent in doc.ents:
                     if ent.label_ == "ORG" or ent.label_ == "ORGANIZATION":
                         org_name = ent.text
                         if org_name and not org_name.lower().startswith('organization'):
                             yield Organization(value=org_name)
                 
-                # Buscar organizaciones usando patrones comunes
+                # Search for common patterns
                 org_patterns = [
                     r'([A-Z][a-zA-Z0-9\s]+(?:Corporation|Corp\.?|Limited|Ltd\.?|Inc\.?|LLC|LLP))',
                     r'([A-Z][a-zA-Z0-9\s]+\s+(?:Group|Systems|Technologies|Solutions|Services))'
@@ -900,14 +900,14 @@ class reStalker:
                             yield Organization(value=org_name)
             
             if self.location:
-                # Extraer entidades de tipo UBICACIÓN usando spaCy
+                # Extract locations
                 for ent in doc.ents:
                     if ent.label_ in ["LOC", "GPE", "FAC", "LOCATION"]:
                         location_text = ent.text
                         if location_text and not location_text.lower().startswith('location'):
                             yield Location(value=location_text)
                 
-                # Buscar ubicaciones en texto usando comas como separadores
+                # Search between comas
                 for sent in doc.sents:
                     potential_locations = [loc.strip() for loc in sent.text.split(',')]
                     for loc_text in potential_locations:
