@@ -8,7 +8,7 @@ from .link_extractors import UUF
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 import re
-import nltk
+import spacy
 from .textan import TextAnalysis
 
 
@@ -839,65 +839,85 @@ class reStalker:
 
         return text
 
+    # Cargamos el modelo de spaCy una sola vez como variable de clase
+    nlp = None
+    
     def _analyze_chunk(self, body, origin=None):
+        # Inicializar el modelo de spaCy si aún no está cargado
+        if reStalker.nlp is None:
+            try:
+                reStalker.nlp = spacy.load("es_core_news_md")
+            except OSError:
+                # Si no está instalado el modelo en español, intentamos con el inglés
+                try:
+                    reStalker.nlp = spacy.load("en_core_web_md")
+                except OSError:
+                    # Como último recurso, usamos el modelo pequeño
+                    reStalker.nlp = spacy.load("en_core_web_sm")
+        
         if self.ner:
             # Text pre-processing to remove tags and improve detection
             cleaned_text = re.sub(r'(?:Location|Organization|Person|Keyphrase|BitName):\s*', '', body)
-            sentences = nltk.sent_tokenize(cleaned_text)
             
-            for sentence in sentences:
-                # Pre-process to handle organization names with multiple words
-                sentence = re.sub(r'\s+Ltd\.?$', ' Limited', sentence)
-                sentence = re.sub(r'\s+Inc\.?$', ' Incorporated', sentence)
-                sentence = re.sub(r'\s+Corp\.?$', ' Corporation', sentence)
-                
-                tokens = nltk.word_tokenize(sentence)
-                pos = nltk.pos_tag(tokens)
-                sentt = nltk.ne_chunk(pos, binary=False)
-
-                if self.own_name:
-                    for subtree in sentt.subtrees(filter=lambda t: t.label() == "PERSON"):
-                        person_name = ' '.join([leave[0] for leave in subtree.leaves()])
-                        if person_name:
+            # Procesamos el texto con spaCy
+            doc = reStalker.nlp(cleaned_text)
+            
+            # Pre-procesamos el texto para manejar nombres de organizaciones con múltiples palabras
+            preprocessed_text = re.sub(r'\s+Ltd\.?$', ' Limited', cleaned_text)
+            preprocessed_text = re.sub(r'\s+Inc\.?$', ' Incorporated', preprocessed_text)
+            preprocessed_text = re.sub(r'\s+Corp\.?$', ' Corporation', preprocessed_text)
+            
+            # Procesamos el texto pre-procesado
+            doc_preprocessed = reStalker.nlp(preprocessed_text)
+            
+            if self.own_name:
+                # Extraer entidades de tipo PERSONA
+                for ent in doc.ents:
+                    if ent.label_ == "PER" or ent.label_ == "PERSON":
+                        person_name = ent.text
+                        if person_name and not person_name.lower().startswith('person'):
                             yield OwnName(value=person_name)
-
-                if self.organization:
-                    # Search for organizations using NER
-                    for subtree in sentt.subtrees(filter=lambda t: t.label() == "ORGANIZATION"):
-                        org_name = ' '.join([leave[0] for leave in subtree.leaves()])
+            
+            if self.organization:
+                # Extraer entidades de tipo ORGANIZACIÓN usando spaCy
+                for ent in doc.ents:
+                    if ent.label_ == "ORG" or ent.label_ == "ORGANIZATION":
+                        org_name = ent.text
                         if org_name and not org_name.lower().startswith('organization'):
                             yield Organization(value=org_name)
-                    
-                    # Search for organizations using common patterns
-                    org_patterns = [
-                        r'([A-Z][a-zA-Z0-9\s]+(?:Corporation|Corp\.?|Limited|Ltd\.?|Inc\.?|LLC|LLP))',
-                        r'([A-Z][a-zA-Z0-9\s]+\s+(?:Group|Systems|Technologies|Solutions|Services))'
-                    ]
-                    
-                    for pattern in org_patterns:
-                        matches = re.finditer(pattern, sentence)
-                        for match in matches:
-                            org_name = match.group(1).strip()
-                            if org_name and not org_name.lower().startswith('organization'):
-                                yield Organization(value=org_name)
-
-                if self.location:
-                    # Process the text to find locations
-                    for subtree in sentt.subtrees(filter=lambda t: t.label() in ["GPE", "LOCATION"]):
-                        location_text = ' '.join([leave[0] for leave in subtree.leaves()])
+                
+                # Buscar organizaciones usando patrones comunes
+                org_patterns = [
+                    r'([A-Z][a-zA-Z0-9\s]+(?:Corporation|Corp\.?|Limited|Ltd\.?|Inc\.?|LLC|LLP))',
+                    r'([A-Z][a-zA-Z0-9\s]+\s+(?:Group|Systems|Technologies|Solutions|Services))'
+                ]
+                
+                for pattern in org_patterns:
+                    matches = re.finditer(pattern, preprocessed_text)
+                    for match in matches:
+                        org_name = match.group(1).strip()
+                        if org_name and not org_name.lower().startswith('organization'):
+                            yield Organization(value=org_name)
+            
+            if self.location:
+                # Extraer entidades de tipo UBICACIÓN usando spaCy
+                for ent in doc.ents:
+                    if ent.label_ in ["LOC", "GPE", "FAC", "LOCATION"]:
+                        location_text = ent.text
                         if location_text and not location_text.lower().startswith('location'):
                             yield Location(value=location_text)
-                    
-                    # Search for locations in the text using commas as separators
-                    potential_locations = [loc.strip() for loc in sentence.split(',')]
-                    for loc in potential_locations:
-                        tokens = nltk.word_tokenize(loc)
-                        pos = nltk.pos_tag(tokens)
-                        chunk = nltk.ne_chunk(pos, binary=False)
-                        for subtree in chunk.subtrees(filter=lambda t: t.label() in ["GPE", "LOCATION"]):
-                            location_text = ' '.join([leave[0] for leave in subtree.leaves()])
-                            if location_text and not location_text.lower().startswith('location'):
-                                yield Location(value=location_text)
+                
+                # Buscar ubicaciones en texto usando comas como separadores
+                for sent in doc.sents:
+                    potential_locations = [loc.strip() for loc in sent.text.split(',')]
+                    for loc_text in potential_locations:
+                        if loc_text:
+                            loc_doc = reStalker.nlp(loc_text)
+                            for ent in loc_doc.ents:
+                                if ent.label_ in ["LOC", "GPE", "FAC", "LOCATION"]:
+                                    location_text = ent.text
+                                    if location_text and not location_text.lower().startswith('location'):
+                                        yield Location(value=location_text)
 
         if len(self.keywords) > 0 or self.keyphrase:
             ta = TextAnalysis(body)
