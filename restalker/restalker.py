@@ -47,6 +47,41 @@ class Keyphrase(Item):
 class Keyword(Item):
     pass
 
+class IBAN_Address(Item):
+    @staticmethod
+    def isvalid(address: str) -> bool:
+        ret = False
+        try:
+            if not address:
+                return False
+
+            iban = address.replace(" ", "").upper()
+
+            # Minimum length is from Norway with 15 chars
+            if len(iban) < 15:
+                return False
+
+            # First 2 must be country code, then 2 numbers
+            if not (iban[:2].isalpha() and iban[2:4].isdigit()):
+                return False
+
+            # Checksum ISO-13616
+            rearranged = iban[4:] + iban[:4]
+
+            numeric = ""
+            for ch in rearranged:
+                if ch.isdigit():
+                    numeric += ch
+                elif ch.isalpha():
+                    numeric += str(ord(ch) - 55)  # A=10, B=11, ...
+                else:
+                    return False  # Invalid Character
+
+            # IBAN if valid if mod 97 == 1
+            ret = int(numeric) % 97 == 1
+
+        finally:
+            return ret
 
 class BTC_Wallet(Item):
     @staticmethod
@@ -338,6 +373,8 @@ file_name = r"(?:[a-zA-Z0-9\_]+\.)+\.[a-zA-Z0-9]{2,4}"
 phone_regex = r"(\(?\+[0-9]{1,3}\)? ?-?[0-9]{1,3} ?-?[0-9]{3,5} ?-?[0-9]{4}( ?-?[0-9]{3})? ?(\w{1,10}\s?\d{1,6})?)"
 
 email_regex = r"([a-zA-Z0-9_.+-]+@(?:[a-zA-Z0-9-]+\.)+(?:[0-9][a-zA-Z0-9]{0,4}[a-zA-Z]|[0-9][a-zA-Z][a-zA-Z0-9]{0,4}|[a-zA-Z][a-zA-Z0-9]{1,5}))"
+
+iban_address_regex = r"\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]{4}){3,7}\b"
 
 btc_wallet_regex = r"([13][a-km-zA-HJ-NP-Z1-9]{25,34})"
 
@@ -656,6 +693,7 @@ class reStalker:
         self,
         phone=False,
         email=False,
+        iban_address=False,
         btc_wallet=False,
         eth_wallet=False,
         xmr_wallet=False,
@@ -710,6 +748,7 @@ class reStalker:
         self.email = email or all
         self.twitter = twitter or all
 
+        self.iban_address = iban_address or all
         self.btc_wallet = btc_wallet or all
         self.eth_wallet = eth_wallet or all
         self.xmr_wallet = xmr_wallet or all
@@ -947,6 +986,12 @@ class reStalker:
                 if self.username:
                     yield Username(value=email.split("@")[0])
 
+        if self.iban_address:
+            iban_addresses = re.findall(iban_address_regex, body)
+            for iban_address in iban_addresses:
+                if IBAN_Address.isvalid(address=iban_address):
+                    yield IBAN_Address(value=iban_address)
+                    
         if self.btc_wallet:
             btc_wallets = re.findall(btc_wallet_regex, body)
             btc_wallets.extend(re.findall(btc_wallet_bech32_regex, body))
