@@ -33,7 +33,20 @@ class Item:
 
 
 class Phone(Item):
-    pass
+    @staticmethod
+    def isvalid(phone: str) -> bool:
+        if not re.match(r"^[0-9\+\-\.\s\(\)]+$", phone):
+            return False
+
+        digits = "".join(x for x in phone if x.isdigit())
+
+        if not (7 <= len(digits) <= 15):
+            return False
+
+        if len(digits) == 8 and (digits.startswith("20") or digits.startswith("19")):
+            return False
+
+        return True
 
 
 class Email(Item):
@@ -468,7 +481,8 @@ alnum_join = r"[a-zA-Z0-9\-\~]+"
 
 file_name = r"(?:[a-zA-Z0-9\_]+\.)+\.[a-zA-Z0-9]{2,4}"
 
-phone_regex = r"(\(?\+[0-9]{1,3}\)? ?-?[0-9]{1,3} ?-?[0-9]{3,5} ?-?[0-9]{4}( ?-?[0-9]{3})? ?(\w{1,10}\s?\d{1,6})?)"
+# phone_regex = r"(\(?\+[0-9]{1,3}\)? ?-?[0-9]{1,3} ?-?[0-9]{3,5} ?-?[0-9]{4}( ?-?[0-9]{3})? ?(\w{1,10}\s?\d{1,6})?)"
+phone_regex = r"(\+?\(?\d[\d\-\.\s\(\)]{5,}\d)"
 
 email_regex = r"([a-zA-Z0-9_.+-]+@(?:[a-zA-Z0-9-]+\.)+(?:[0-9][a-zA-Z0-9]{0,4}[a-zA-Z]|[0-9][a-zA-Z][a-zA-Z0-9]{0,4}|[a-zA-Z][a-zA-Z0-9]{1,5}))"
 
@@ -1100,7 +1114,7 @@ class reStalker:
             if self.keyphrase:
                 for k in ta.extract_top_keyphrases():
                     yield Keyphrase(value=k)
-
+        """
         # TODO Test if the value is None
         # TODO Refactor to iterate
         # TODO "".join() to avoid regex tuples
@@ -1109,7 +1123,14 @@ class reStalker:
             phones = re.findall(phone_regex, body)
             for phone in phones:
                 yield Phone(value="".join(phone))
-
+        """
+        
+        if self.phone:
+            phones = re.findall(phone_regex, body)
+            for phone in phones:
+                if Phone.isvalid(phone=phone):
+                    yield Phone(value=phone)
+            
         if self.email:
             emails = re.findall(email_regex, body)
             for email in emails:
