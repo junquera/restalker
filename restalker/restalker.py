@@ -202,7 +202,29 @@ class TW_Account(Item):
 class Tor_URL(Item):
     pass
 
+class IPV4_Address(Item):
+    @staticmethod
+    def isvalid(address: str) -> bool:
+        ret = False
+        try:
+            if not address:
+                return False
 
+            address = address.split('.')
+            
+            # IPv4 has 4 blocks separated by a dot (192.168.1.1)
+            if len(address) != 4:
+                return False
+            
+            # Each block will be between 0 and 255
+            for block in address:
+                if int(block) < 0 or int(block) > 255:
+                    return False
+            
+            ret = True
+
+        finally:
+            return ret
 class I2P_URL(Item):
     pass
 
@@ -374,7 +396,9 @@ phone_regex = r"(\(?\+[0-9]{1,3}\)? ?-?[0-9]{1,3} ?-?[0-9]{3,5} ?-?[0-9]{4}( ?-?
 
 email_regex = r"([a-zA-Z0-9_.+-]+@(?:[a-zA-Z0-9-]+\.)+(?:[0-9][a-zA-Z0-9]{0,4}[a-zA-Z]|[0-9][a-zA-Z][a-zA-Z0-9]{0,4}|[a-zA-Z][a-zA-Z0-9]{1,5}))"
 
-iban_address_regex = r"\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]{4}){3,7}\b"
+iban_address_regex = r"[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]{4}){3,7}"
+
+ipv4_address_regex = r"(?:\[)?((?:\d{1,3}\.){3}\d{1,3})(?:\])?"
 
 btc_wallet_regex = r"([13][a-km-zA-HJ-NP-Z1-9]{25,34})"
 
@@ -706,6 +730,7 @@ class reStalker:
         bin_number=False,
         ccn_number=False,
         tor=False,
+        ipv4=False,
         i2p=False,
         ipfs=False,
         freenet=False,
@@ -772,6 +797,7 @@ class reStalker:
         self.pgp = pgp or all
         self.gatc = gatc or all
 
+        self.ipv4 = ipv4 or all
         self.ipfs = ipfs or all
 
         self.paste = paste or all
@@ -991,6 +1017,12 @@ class reStalker:
             for iban_address in iban_addresses:
                 if IBAN_Address.isvalid(address=iban_address):
                     yield IBAN_Address(value=iban_address)
+        
+        if self.ipv4:
+            ipv4_addresses = re.findall(ipv4_address_regex, body)
+            for ipv4_address in ipv4_addresses:
+                if IPV4_Address.isvalid(address=ipv4_address):
+                    yield IPV4_Address(value=ipv4_address)
                     
         if self.btc_wallet:
             btc_wallets = re.findall(btc_wallet_regex, body)
