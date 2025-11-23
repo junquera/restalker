@@ -6,6 +6,7 @@ from monero.address import address as xmr_address
 from bip_utils import SS58Decoder
 from .link_extractors import UUF
 from urllib.parse import urljoin
+from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import re
 import spacy
@@ -350,6 +351,24 @@ class OwnName(Item):
 class Telegram_URL(Item):
     pass
 
+class URL(Item):
+    @staticmethod
+    def isvalid(url: str) -> bool:
+        try:
+            parsed = urlparse(url)
+            
+            if parsed.scheme:
+                if parsed.scheme == 'file':
+                    return bool(parsed.path) 
+                
+                return bool(parsed.netloc) or (len(parsed.path) > 0)
+
+            if url.startswith('www.') and len(url) > 4:
+                return True
+
+            return False
+        except:
+            return False
 
 class Whatsapp_URL(Item):
     pass
@@ -555,6 +574,8 @@ own_name_regex = r"([A-Z][a-z]{2,10} [A-Z][a-z]{2,10})"
 
 domain_regex = r"(?:[a-z0-9]+\.){0,4}[a-z0-9]+\.?(?:\:[0-9]{2,5})?$"
 any_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % domain_regex[:-1]
+
+any_url_regex = r"((?:[a-zA-Z][a-zA-Z0-9+\-\.]*://|www\.)[^\s]+)"
 
 tor_hidden_domain = (
     r"(?:[a-z0-9]+\.){0,4}(?:[a-z0-9]{16}|[a-z0-9]{56})\.onion(?:\:[0-9]{2,5})?$"
@@ -871,6 +892,7 @@ class reStalker:
         sha256=False,
         session_id=False,
         tox=False,
+        url=False,
         all=False,
     ):
 
@@ -923,6 +945,7 @@ class reStalker:
         self.discord = discord or all
         self.telegram = telegram or all
         self.skype = skype or all
+        self.url = url or all
 
         self.md5 = md5 or all
         self.sha1 = sha1 or all
@@ -1277,6 +1300,18 @@ class reStalker:
                     print(f"[*] Error processing I2P URL: {e}")
                     link_item = link
                 yield I2P_URL(value=link_item)
+
+        if self.url:
+            seen_urls = set()
+        
+        for match in re.finditer(any_url_regex, body):
+            url_candidate = match.group()
+            url_candidate = url_candidate.rstrip('.,;:!?"\')]}')
+            
+            if url_candidate not in seen_urls:
+                if URL.isvalid(url_candidate):
+                    seen_urls.add(url_candidate)
+                    yield URL(value=url_candidate)
 
         if self.tor:
             tor_links = self.extract_links(
