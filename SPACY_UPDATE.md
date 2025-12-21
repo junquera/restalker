@@ -1,65 +1,65 @@
-# Actualización a spaCy
+# spaCy Update
 
-Esta rama del proyecto ha sido actualizada para utilizar [spaCy](https://spacy.io/) en lugar de NLTK para el procesamiento de lenguaje natural. Esta actualización proporciona varias ventajas:
+This project branch has been updated to use [spaCy](https://spacy.io/) instead of NLTK for natural language processing. This update provides several advantages:
 
-## Beneficios de la migración a spaCy
+## Benefits of migrating to spaCy
 
-1. **Rendimiento mejorado**: spaCy está optimizado para producción y ofrece mejor rendimiento.
-2. **Pipeline integrado**: Pipeline completo de NLP en un solo objeto, en lugar de funciones aisladas.
-3. **Reconocimiento de entidades mejorado**: Modelos NER (Named Entity Recognition) más precisos y modernos.
-4. **Soporte multilingüe**: Modelos pre-entrenados disponibles en varios idiomas.
-5. **Mantenimiento activo**: Actualizaciones frecuentes y amplio soporte de la comunidad.
+1. **Improved performance**: spaCy is optimized for production and offers better performance.
+2. **Integrated pipeline**: Complete NLP pipeline in a single object, rather than isolated functions.
+3. **Enhanced entity recognition**: More accurate and modern NER (Named Entity Recognition) models.
+4. **Multilingual support**: Pre-trained models available in multiple languages.
+5. **Active maintenance**: Frequent updates and extensive community support.
 
-## Configuración para usar spaCy
+## Setup for using spaCy
 
-### 1. Instalar dependencias
+### 1. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Configurar modelos de spaCy
+### 2. Configure spaCy models
 
-Ejecuta el script de configuración para instalar automáticamente los modelos necesarios:
+Run the setup script to automatically install the necessary models:
 
 ```bash
 python setup_spacy.py
 ```
 
-Alternativamente, puedes instalar los modelos manualmente:
+Alternatively, you can install the models manually:
 
 ```bash
-# Para español (recomendado)
+# For Spanish (recommended)
 python -m spacy download es_core_news_md
 
-# O para inglés
+# Or for English
 python -m spacy download en_core_web_md
 
-# O la versión pequeña (más rápida pero menos precisa)
+# Or the small version (faster but less accurate)
 python -m spacy download en_core_web_sm
 ```
 
-## Pruebas
+## Testing
 
-Para probar la funcionalidad de extracción de entidades:
+To test entity extraction functionality:
 
 ```bash
-python test.py [ruta_archivo_texto]
+python test.py [text_file_path]
 ```
 
-Para probar específicamente la funcionalidad de análisis de texto:
+To specifically test text analysis functionality:
 
 ```bash
 python test_textan.py
 ```
 
-## Cambios en el API
+## API Changes
 
-La API externa sigue siendo compatible con versiones anteriores. Las siguientes clases y métodos siguen funcionando de la misma manera:
+The external API remains backward compatible. The following classes and methods continue to work the same way:
 
-- `reStalker` - La clase principal para extracción de entidades
-- `TextAnalysis` - Análisis de texto para extracción de palabras clave y frases
+- `reStalker` - The main class for entity extraction
+- `TextAnalysis` - Text analysis for keyword and phrase extraction
 
-## Nota para desarrolladores
+## Note for Developers
 
-Si estás desarrollando con esta biblioteca, ten en cuenta que internamente ahora utilizamos modelos de spaCy. El rendimiento y los resultados pueden variar ligeramente con respecto a la versión basada en NLTK.
+If you're developing with this library, keep in mind that we now internally use spaCy models. Performance and results may vary slightly compared to the NLTK-based version.
