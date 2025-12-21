@@ -1,4 +1,4 @@
-# Función para inicializar el modelo de spaCy para las pruebas
+# Function to initialize spaCy model for tests
 def initialize_spacy_model():
     """
     Initialize and load an appropriate spaCy model for testing.

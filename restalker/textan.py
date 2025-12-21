@@ -21,15 +21,15 @@ class TextAnalysis():
         self._extract_keywords()
     
     def _extract_keywords(self):
-        # Filter relevant tokens (sin stopwords...)
+        # Filter relevant tokens (without stopwords...)
         keywords = [token.text.lower() for token in self.doc 
                     if not token.is_stop and not token.is_punct 
                     and not token.is_space and len(token.text.strip()) > 2]
         
-        # Count frequancy
+        # Count frequency
         self.word_freq = Counter(keywords)
         
-        # Crear degree dict (for rake-nltk compatiblity)
+        # Create degree dict (for rake-nltk compatibility)
         self.word_degrees = {word: freq for word, freq in self.word_freq.items()}
         
         self.phrases = []

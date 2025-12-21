@@ -258,14 +258,14 @@ class IPV6_Address(Item):
             if not address:
                 return False
 
-            # 1. LIMPIEZA DE ZONE ID (Crucial para Link-Local)
-            # Si llega "fe80::1%eth0", nos quedamos solo con "fe80::1"
+            # 1. ZONE ID CLEANUP (Crucial for Link-Local)
+            # If we receive "fe80::1%eth0", we keep only "fe80::1"
             address = address.split('%')[0]
 
-            # 2. VALIDACIÓN DE SINTAXIS DE BORDES
-            # Una IPv6 no puede empezar o terminar con un solo ":" (debe ser "::" o nada)
-            # Mal: ":2001::1" -> False
-            # Bien: "::1" -> True
+            # 2. EDGE SYNTAX VALIDATION
+            # An IPv6 cannot start or end with a single ":" (must be "::" or nothing)
+            # Bad: ":2001::1" -> False
+            # Good: "::1" -> True
             if address.startswith(':') and not address.startswith('::'):
                 return False
             if address.endswith(':') and not address.endswith('::'):
@@ -306,7 +306,7 @@ class IPV6_Address(Item):
             ret = True
 
         except ValueError:
-            # Captura errores de conversión (ej: caracteres no hex como 'g', 'z')
+            # Catches conversion errors (e.g.: non-hex characters like 'g', 'z')
             return False
         finally:
             return ret
@@ -458,7 +458,7 @@ class Session_ID(Item):
             return False
 
         try:
-            int(session_id, 16)  # Esto falla si no es hexadecimal válido
+            int(session_id, 16)  # This fails if it's not valid hexadecimal
             return True
         except ValueError:
             return False
@@ -500,8 +500,21 @@ alnum_join = r"[a-zA-Z0-9\-\~]+"
 
 file_name = r"(?:[a-zA-Z0-9\_]+\.)+\.[a-zA-Z0-9]{2,4}"
 
-# phone_regex = r"(\(?\+[0-9]{1,3}\)? ?-?[0-9]{1,3} ?-?[0-9]{3,5} ?-?[0-9]{4}( ?-?[0-9]{3})? ?(\w{1,10}\s?\d{1,6})?)"
-phone_regex = r"(\+?\(?\d[\d\-\.\s\(\)]{5,}\d)"
+# Phone number regex patterns for different formats
+# International format: +1-234-567-8901, +44 20 7123 4567, +34 666 777 888
+phone_international = r"\+\d{1,3}[\s\-\.]?\(?\d{1,4}\)?[\s\-\.]?\d{1,4}[\s\-\.]?\d{1,4}[\s\-\.]?\d{0,9}"
+
+# Format with parentheses: (123) 456-7890, (555) 123 4567
+phone_parentheses = r"\(\d{2,4}\)[\s\-\.]?\d{1,4}[\s\-\.]?\d{1,4}[\s\-\.]?\d{0,9}"
+
+# Standard formats: 123-456-7890, 123.456.7890, 123 456 7890
+phone_standard = r"\d{2,4}[\s\-\.]\d{2,4}[\s\-\.]\d{2,4}(?:[\s\-\.]\d{1,4})?(?:[\s\-\.]\d{1,4})?"
+
+# Format with area code: 1-800-123-4567
+phone_area_code = r"\d{1,3}[\s\-\.]\d{2,4}[\s\-\.]\d{2,4}[\s\-\.]\d{2,4}(?:[\s\-\.]\d{1,4})?"
+
+# Combined phone regex (will match any of the above formats)
+phone_regex = r"(" + "|".join([phone_international, phone_parentheses, phone_standard, phone_area_code]) + r")"
 
 email_regex = r"([a-zA-Z0-9_.+-]+@(?:[a-zA-Z0-9-]+\.)+(?:[0-9][a-zA-Z0-9]{0,4}[a-zA-Z]|[0-9][a-zA-Z][a-zA-Z0-9]{0,4}|[a-zA-Z][a-zA-Z0-9]{1,5}))"
 
@@ -1303,15 +1316,15 @@ class reStalker:
 
         if self.url:
             seen_urls = set()
-        
-        for match in re.finditer(any_url_regex, body):
-            url_candidate = match.group()
-            url_candidate = url_candidate.rstrip('.,;:!?"\')]}')
             
-            if url_candidate not in seen_urls:
-                if URL.isvalid(url_candidate):
-                    seen_urls.add(url_candidate)
-                    yield URL(value=url_candidate)
+            for match in re.finditer(any_url_regex, body):
+                url_candidate = match.group()
+                url_candidate = url_candidate.rstrip('.,;:!?"\')]}')
+                
+                if url_candidate not in seen_urls:
+                    if URL.isvalid(url_candidate):
+                        seen_urls.add(url_candidate)
+                        yield URL(value=url_candidate)
 
         if self.tor:
             tor_links = self.extract_links(
