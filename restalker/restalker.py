@@ -1134,7 +1134,8 @@ class reStalker:
                         phones.append(result.raw_string)
 
             for phone in phones:
-                yield Phone(value=phone)
+                if(len(phone) > 5):
+                    yield Phone(value=phone)
             
         if self.email:
             emails = re.findall(email_regex, body)
