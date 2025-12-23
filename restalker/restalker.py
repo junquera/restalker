@@ -34,20 +34,7 @@ class Item:
 
 
 class Phone(Item):
-    @staticmethod
-    def isvalid(phone: str) -> bool:
-        if not re.match(r"^[0-9\+\-\.\s\(\)]+$", phone):
-            return False
-
-        digits = "".join(x for x in phone if x.isdigit())
-
-        if not (7 <= len(digits) <= 15):
-            return False
-
-        if len(digits) == 8 and (digits.startswith("20") or digits.startswith("19")):
-            return False
-
-        return True
+    pass
 
 
 class Email(Item):
@@ -499,22 +486,6 @@ number_regex = r"[0-9]+"
 alnum_join = r"[a-zA-Z0-9\-\~]+"
 
 file_name = r"(?:[a-zA-Z0-9\_]+\.)+\.[a-zA-Z0-9]{2,4}"
-
-# Phone number regex patterns for different formats
-# International format: +1-234-567-8901, +44 20 7123 4567, +34 666 777 888
-phone_international = r"\+\d{1,3}[\s\-\.]?\(?\d{1,4}\)?[\s\-\.]?\d{1,4}[\s\-\.]?\d{1,4}[\s\-\.]?\d{0,9}"
-
-# Format with parentheses: (123) 456-7890, (555) 123 4567
-phone_parentheses = r"\(\d{2,4}\)[\s\-\.]?\d{1,4}[\s\-\.]?\d{1,4}[\s\-\.]?\d{0,9}"
-
-# Standard formats: 123-456-7890, 123.456.7890, 123 456 7890
-phone_standard = r"\d{2,4}[\s\-\.]\d{2,4}[\s\-\.]\d{2,4}(?:[\s\-\.]\d{1,4})?(?:[\s\-\.]\d{1,4})?"
-
-# Format with area code: 1-800-123-4567
-phone_area_code = r"\d{1,3}[\s\-\.]\d{2,4}[\s\-\.]\d{2,4}[\s\-\.]\d{2,4}(?:[\s\-\.]\d{1,4})?"
-
-# Combined phone regex (will match any of the above formats)
-phone_regex = r"(" + "|".join([phone_international, phone_parentheses, phone_standard, phone_area_code]) + r")"
 
 email_regex = r"([a-zA-Z0-9_.+-]+@(?:[a-zA-Z0-9-]+\.)+(?:[0-9][a-zA-Z0-9]{0,4}[a-zA-Z]|[0-9][a-zA-Z][a-zA-Z0-9]{0,4}|[a-zA-Z][a-zA-Z0-9]{1,5}))"
 
@@ -1150,22 +1121,20 @@ class reStalker:
             if self.keyphrase:
                 for k in ta.extract_top_keyphrases():
                     yield Keyphrase(value=k)
-        """
-        # TODO Test if the value is None
-        # TODO Refactor to iterate
-        # TODO "".join() to avoid regex tuples
+                
         if self.phone:
-            # TODO Reformat result number
-            phones = re.findall(phone_regex, body)
+            import phonenumbers
+            phones = []
+            regions = phonenumbers.SUPPORTED_REGIONS
+    
+            for region in regions:
+                m = phonenumbers.PhoneNumberMatcher(body, region, leniency=phonenumbers.Leniency.POSSIBLE)
+                for result in m:
+                    if result.raw_string not in phones:
+                        phones.append(result.raw_string)
+
             for phone in phones:
-                yield Phone(value="".join(phone))
-        """
-        
-        if self.phone:
-            phones = re.findall(phone_regex, body)
-            for phone in phones:
-                if Phone.isvalid(phone=phone):
-                    yield Phone(value=phone)
+                yield Phone(value=phone)
             
         if self.email:
             emails = re.findall(email_regex, body)

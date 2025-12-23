@@ -7,3 +7,5 @@ spacy
 numpy
 web3
 bs4
+phonenumbers
+lxml
