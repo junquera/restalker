@@ -1,12 +1,3 @@
-import restalker
-import sys
-import spacy
-
-if len(sys.argv) > 1:
-    with open(sys.argv[1]) as f:
-        target = f.read()
-else:
-    target = """'
 logo
 Wallet
 Intercambiar
@@ -3300,54 +3291,3 @@ tgclick.com/secret-resource
 
 tg://resource?id=007
 tg://resource?id=blablabla
-
-"""
-
-# Cargar modelo de spaCy - puede que necesites descargarlo primero con:
-# python -m spacy download es_core_news_sm
-try:
-    nlp = spacy.load("es_core_news_md")
-except OSError:
-    try:
-        nlp = spacy.load("en_core_web_md")
-    except OSError:
-        print("Descargando modelo de spaCy...")
-        spacy.cli.download("en_core_web_sm")
-        nlp = spacy.load("en_core_web_sm")
-
-#s = restalker.reStalker(telegram=True)
-# Test para reconocimiento de URLs de Tor
-s = restalker.reStalker(tor=True)
-result = list(s.parse(target))
-print(f"Len: {len(result)}")
-for p in result:
-    print(p)
-
-# Test adicional para reconocimiento de entidades nombradas
-print("\n--- Test de reconocimiento de entidades con spaCy ---")
-test_text = """
-Google Inc. ha abierto una nueva oficina en Madrid, España. 
-El CEO de Microsoft, Satya Nadella, visitará Barcelona el próximo mes.
-Apple está trabajando en un nuevo producto que revolucionará el mercado.
-La Universidad Autónoma de Madrid y el CSIC han firmado un acuerdo de colaboración.
-"""
-
-s_ner = restalker.reStalker(organization=True, location=True, own_name=True)
-result_ner = list(s_ner.parse(test_text))
-print(f"Entidades encontradas: {len(result_ner)}")
-for entity in result_ner:
-    print(entity)
-
-# Test para extracción de frases clave
-print("\n--- Test de extracción de frases clave con spaCy ---")
-test_keywords = """
-La inteligencia artificial está transformando la forma en que interactuamos con la tecnología.
-El procesamiento de lenguaje natural permite a las máquinas entender el lenguaje humano.
-Los modelos de aprendizaje automático pueden analizar grandes cantidades de datos.
-"""
-
-s_keys = restalker.reStalker(keyphrase=True)
-result_keys = list(s_keys.parse(test_keywords))
-print(f"Frases clave encontradas: {len(result_keys)}")
-for key in result_keys:
-    print(key)

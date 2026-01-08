@@ -42,9 +42,20 @@ from .restalker import (
 )
 from . import link_extractors as link_extractors
 
-import nltk
-nltk.download('stopwords')
-nltk.download('punkt')
+import spacy
+
+# Load models
+def load_spacy_model():
+    try:
+        return spacy.load("es_core_news_md")
+    except OSError:
+        try:
+            return spacy.load("en_core_web_md")
+        except OSError:
+            # Download smallermodels if error
+            print("Descargando modelo de spaCy...")
+            spacy.cli.download("en_core_web_sm")
+            return spacy.load("en_core_web_sm")
 
 
 __version__ = "2.0.8"
