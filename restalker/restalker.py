@@ -1051,7 +1051,7 @@ class reStalker:
                 r'\s+Corp\.?$', ' Corporation', preprocessed_text)
 
             # Define entity labels for GLiNER extraction
-            entity_labels = ['PERSON', 'ORGANIZATION', 'LOCATION', 'LOC', 'GPE', 'FAC']
+            entity_labels = ['PERSON', 'ORGANIZATION', "LOC", "GPE", "FAC", "LOCATION", "USERNAME", 'PASSWORD']
             
             # Extract entities using GLiNER
             entities = reStalker.gliner_model.predict_entities(
@@ -1121,6 +1121,24 @@ class reStalker:
                                 if location_text not in seen_locations:
                                     seen_locations.add(location_text)
                                     yield Location(value=location_text)
+
+        # Extract USERNAME and PASSWORD entities from GLiNER if NER is enabled
+        if self.ner:
+            # Extract username entities detected by GLiNER
+            if self.username:
+                for ent in entities:
+                    if ent['label'] == 'USERNAME':
+                        username_text = ent['text']
+                        if username_text:
+                            yield Username(value=username_text)
+            
+            # Extract password entities detected by GLiNER
+            if self.password:
+                for ent in entities:
+                    if ent['label'] == 'PASSWORD':
+                        password_text = ent['text']
+                        if password_text:
+                            yield Password(value=password_text)
 
         if len(self.keywords) > 0 or self.keyphrase:
             ta = TextAnalysis(body)
