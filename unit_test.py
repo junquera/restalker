@@ -1,24 +1,19 @@
 import pytest
-import spacy
 
-from unit_test_helpers import initialize_spacy_model
+from unit_test_helpers import initialize_gliner_model
 
 """  README
 
-For testing is required to download a spaCy language model. Run the following command in your terminal:
+For testing, the GLiNER model will be automatically downloaded from HuggingFace on first use.
+Make sure you have internet connectivity for the initial model download.
 
-python -m spacy download es_core_news_md
-# Or for English:
-# python -m spacy download en_core_web_md
-# Or for a smaller model:
-# python -m spacy download en_core_web_sm
+The model used is: nvidia/gliner-PII
 
-Or you can run the setup_spacy.py script that will handle this automatically:
-python setup_spacy.py
+No additional setup is required - GLiNER will handle model download automatically.
 """
 
-# Try to load a spaCy model for testing
-spacy_model = initialize_spacy_model()
+# Try to load the GLiNER model for testing
+gliner_model = initialize_gliner_model()
 
 from restalker import (
     reStalker, Item, BTC_Wallet, ETH_Wallet, XMR_Wallet,ZEC_Wallet, 

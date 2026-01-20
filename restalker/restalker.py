@@ -9,7 +9,6 @@ from urllib.parse import urljoin
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import re
-import spacy
 from .textan import TextAnalysis
 
 
@@ -1026,29 +1025,23 @@ class reStalker:
 
         return text
 
-    # Load spacy model
-    nlp = None
+    # GLiNER model for Named Entity Recognition - loaded once and reused
+    gliner_model = None
 
     def _analyze_chunk(self, body, origin=None):
-        # Load model if not loaded yet
-        if reStalker.nlp is None:
-            try:
-                reStalker.nlp = spacy.load("en_core_news_md")
-            except OSError:
-                # if english model isn't downloaded -> then try with the spanish one
-                try:
-                    reStalker.nlp = spacy.load("es_core_web_md")
-                except OSError:
-                    # If all fails, try to use a small english one
-                    reStalker.nlp = spacy.load("en_core_web_sm")
+        # Load GLiNER model if not loaded yet
+        if reStalker.gliner_model is None:
+            # Disable tensorflow warnings if present
+            import sys
+            sys.modules['tensorflow'] = None
+            from gliner import GLiNER
+            # Use nvidia's GLiNER model for PII and entity detection
+            reStalker.gliner_model = GLiNER.from_pretrained('nvidia/gliner-PII')
 
         if self.ner:
             # Text pre-processing to remove tags and improve detection
             cleaned_text = re.sub(
                 r'(?:Location|Organization|Person|Keyphrase|BitName):\s*', '', body)
-
-            # Process the text, now with spacy
-            doc = reStalker.nlp(cleaned_text)
 
             # Pre-process to handle organization names with multiple words
             preprocessed_text = re.sub(r'\s+Ltd\.?$', ' Limited', cleaned_text)
@@ -1057,26 +1050,39 @@ class reStalker:
             preprocessed_text = re.sub(
                 r'\s+Corp\.?$', ' Corporation', preprocessed_text)
 
-            # Process the pre-processed text
-            doc_preprocessed = reStalker.nlp(preprocessed_text)
+            # Define entity labels for GLiNER extraction
+            entity_labels = ['PERSON', 'ORGANIZATION', 'LOCATION', 'LOC', 'GPE', 'FAC']
+            
+            # Extract entities using GLiNER
+            entities = reStalker.gliner_model.predict_entities(
+                cleaned_text, entity_labels, threshold=0.5
+            )
+            
+            # Also extract from preprocessed text for better organization detection
+            entities_preprocessed = reStalker.gliner_model.predict_entities(
+                preprocessed_text, entity_labels, threshold=0.5
+            )
 
             if self.own_name:
-                # Extract PERSON
-                for ent in doc.ents:
-                    if ent.label_ == "PER" or ent.label_ == "PERSON":
-                        person_name = ent.text
+                # Extract PERSON entities
+                for ent in entities:
+                    if ent['label'] in ['PERSON']:
+                        person_name = ent['text']
                         if person_name and not person_name.lower().startswith('person'):
                             yield OwnName(value=person_name)
 
             if self.organization:
-                # Extract ORGANIZATIONS
-                for ent in doc.ents:
-                    if ent.label_ == "ORG" or ent.label_ == "ORGANIZATION":
-                        org_name = ent.text
+                # Extract ORGANIZATION entities from both passes
+                seen_orgs = set()
+                for ent in entities + entities_preprocessed:
+                    if ent['label'] in ['ORGANIZATION']:
+                        org_name = ent['text']
                         if org_name and not org_name.lower().startswith('organization'):
-                            yield Organization(value=org_name)
+                            if org_name not in seen_orgs:
+                                seen_orgs.add(org_name)
+                                yield Organization(value=org_name)
 
-                # Search for common patterns
+                # Search for common organizational patterns as fallback
                 org_patterns = [
                     r'([A-Z][a-zA-Z0-9\s]+(?:Corporation|Corp\.?|Limited|Ltd\.?|Inc\.?|LLC|LLP))',
                     r'([A-Z][a-zA-Z0-9\s]+\s+(?:Group|Systems|Technologies|Solutions|Services))'
@@ -1087,28 +1093,34 @@ class reStalker:
                     for match in matches:
                         org_name = match.group(1).strip()
                         if org_name and not org_name.lower().startswith('organization'):
-                            yield Organization(value=org_name)
+                            if org_name not in seen_orgs:
+                                seen_orgs.add(org_name)
+                                yield Organization(value=org_name)
 
             if self.location:
-                # Extract locations
-                for ent in doc.ents:
-                    if ent.label_ in ["LOC", "GPE", "FAC", "LOCATION"]:
-                        location_text = ent.text
+                # Extract location entities
+                seen_locations = set()
+                for ent in entities:
+                    if ent['label'] in ['LOCATION', 'LOC', 'GPE', 'FAC']:
+                        location_text = ent['text']
                         if location_text and not location_text.lower().startswith('location'):
-                            yield Location(value=location_text)
+                            if location_text not in seen_locations:
+                                seen_locations.add(location_text)
+                                yield Location(value=location_text)
 
-                # Search between comas
-                for sent in doc.sents:
-                    potential_locations = [loc.strip()
-                                           for loc in sent.text.split(',')]
-                    for loc_text in potential_locations:
-                        if loc_text:
-                            loc_doc = reStalker.nlp(loc_text)
-                            for ent in loc_doc.ents:
-                                if ent.label_ in ["LOC", "GPE", "FAC", "LOCATION"]:
-                                    location_text = ent.text
-                                    if location_text and not location_text.lower().startswith('location'):
-                                        yield Location(value=location_text)
+                # Search comma-separated potential locations
+                potential_locations = [loc.strip() for loc in cleaned_text.split(',')]
+                for loc_text in potential_locations:
+                    if loc_text and len(loc_text) > 2:
+                        loc_entities = reStalker.gliner_model.predict_entities(
+                            loc_text, ['LOCATION', 'LOC', 'GPE', 'FAC'], threshold=0.5
+                        )
+                        for ent in loc_entities:
+                            location_text = ent['text']
+                            if location_text and not location_text.lower().startswith('location'):
+                                if location_text not in seen_locations:
+                                    seen_locations.add(location_text)
+                                    yield Location(value=location_text)
 
         if len(self.keywords) > 0 or self.keyphrase:
             ta = TextAnalysis(body)

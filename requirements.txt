@@ -3,9 +3,8 @@ bech32ref
 bip-utils
 bs4
 monero
-spacy
 numpy
 web3
 bs4
-phonenumbers
 lxml
+gliner

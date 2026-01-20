@@ -9,13 +9,14 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.10"
 numpy = "*"
-spacy = "*"
+gliner = "*"
 based58 = "*"
 web3 = "*"
 monero = "*"
 bip-utils = "*"
 bech32ref = "*"
 bs4 = "^0.0.2"
+lxml = "*"
 
 [tool.poetry.dev-dependencies]
 
