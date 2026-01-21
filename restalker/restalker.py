@@ -1051,7 +1051,7 @@ class reStalker:
                 r'\s+Corp\.?$', ' Corporation', preprocessed_text)
 
             # Define entity labels for GLiNER extraction
-            entity_labels = ['PERSON', 'ORGANIZATION', "LOC", "GPE", "FAC", "LOCATION", "USERNAME", 'PASSWORD', 'PHONE_NUM']
+            entity_labels = ['PERSON', 'ORGANIZATION', "LOC", "GPE", "FAC", "LOCATION", 'CITY', "USERNAME", 'PASSWORD']
             
             # Extract entities using GLiNER
             entities = reStalker.gliner_model.predict_entities(
@@ -1173,19 +1173,20 @@ class reStalker:
 
         # Keyphrase removed - relevant entities are detected with GLiNER
         
-        # Phone detection using GLiNER
-        if self.phone and self.ner:
-            seen_phones = set()
-            for ent in entities:
-                if ent['label'] == 'PHONE_NUM':
-                    phone_text = ent['text'].strip()
-                    # Basic validations for phone
-                    if (phone_text and 
-                        len(phone_text) >= 6 and 
-                        phone_text not in seen_phones and
-                        ent.get('score', 0) > 0.5):  # Moderate confidence
-                        seen_phones.add(phone_text)
-                        yield Phone(value=phone_text)
+        if self.phone:
+            import phonenumbers
+            phones = []
+            regions = phonenumbers.SUPPORTED_REGIONS
+    
+            for region in regions:
+                m = phonenumbers.PhoneNumberMatcher(body, region, leniency=phonenumbers.Leniency.POSSIBLE)
+                for result in m:
+                    if result.raw_string not in phones:
+                        phones.append(result.raw_string)
+
+            for phone in phones:
+                if(len(phone) > 5):
+                    yield Phone(value=phone)
             
         if self.email:
             emails = re.findall(email_regex, body)
