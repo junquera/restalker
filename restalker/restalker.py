@@ -9,8 +9,6 @@ from urllib.parse import urljoin
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import re
-import spacy
-from .textan import TextAnalysis
 
 
 class Item:
@@ -880,15 +878,18 @@ class reStalker:
         all=False,
     ):
 
-        self.ner = own_name or location or organization
         self.own_name = own_name or all
         self.location = location or all
         self.organization = organization or all
+        self.username = username or all
+        self.password = password or all
+        self.phone = phone or all
+        
+        # NER is activated if any entity detected by GLiNER is enabled
+        self.ner = self.own_name or self.location or self.organization or self.username or self.password or self.phone
 
         self.keyphrase = keyphrase or all
         self.keywords = keywords
-
-        self.phone = phone or all
         self.email = email or all
         self.twitter = twitter or all
 
@@ -922,8 +923,6 @@ class reStalker:
 
         self.paste = paste or all
 
-        self.username = username or all
-        self.password = password or all
         self.base64 = base64 or all
         self.whatsapp = whatsapp or all
         self.discord = discord or all
@@ -1026,29 +1025,23 @@ class reStalker:
 
         return text
 
-    # Load spacy model
-    nlp = None
+    # GLiNER model for Named Entity Recognition - loaded once and reused
+    gliner_model = None
 
     def _analyze_chunk(self, body, origin=None):
-        # Load model if not loaded yet
-        if reStalker.nlp is None:
-            try:
-                reStalker.nlp = spacy.load("en_core_news_md")
-            except OSError:
-                # if english model isn't downloaded -> then try with the spanish one
-                try:
-                    reStalker.nlp = spacy.load("es_core_web_md")
-                except OSError:
-                    # If all fails, try to use a small english one
-                    reStalker.nlp = spacy.load("en_core_web_sm")
+        # Load GLiNER model if not loaded yet
+        if reStalker.gliner_model is None:
+            # Disable tensorflow warnings if present
+            import sys
+            sys.modules['tensorflow'] = None
+            from gliner import GLiNER
+            # Use nvidia's GLiNER model for PII and entity detection
+            reStalker.gliner_model = GLiNER.from_pretrained('nvidia/gliner-PII')
 
         if self.ner:
             # Text pre-processing to remove tags and improve detection
             cleaned_text = re.sub(
                 r'(?:Location|Organization|Person|Keyphrase|BitName):\s*', '', body)
-
-            # Process the text, now with spacy
-            doc = reStalker.nlp(cleaned_text)
 
             # Pre-process to handle organization names with multiple words
             preprocessed_text = re.sub(r'\s+Ltd\.?$', ' Limited', cleaned_text)
@@ -1057,71 +1050,129 @@ class reStalker:
             preprocessed_text = re.sub(
                 r'\s+Corp\.?$', ' Corporation', preprocessed_text)
 
-            # Process the pre-processed text
-            doc_preprocessed = reStalker.nlp(preprocessed_text)
+            # Define entity labels for GLiNER extraction
+            entity_labels = ['PERSON', 'ORGANIZATION', "LOC", "GPE", "FAC", "LOCATION", 'CITY', "USERNAME", 'PASSWORD']
+            
+            # Extract entities using GLiNER
+            entities = reStalker.gliner_model.predict_entities(
+                cleaned_text, entity_labels, threshold=0.5
+            )
+            
+            # Also extract from preprocessed text for better organization detection
+            entities_preprocessed = reStalker.gliner_model.predict_entities(
+                preprocessed_text, entity_labels, threshold=0.5
+            )
 
             if self.own_name:
-                # Extract PERSON
-                for ent in doc.ents:
-                    if ent.label_ == "PER" or ent.label_ == "PERSON":
-                        person_name = ent.text
+                # Extract PERSON entities
+                for ent in entities:
+                    if ent['label'] in ['PERSON']:
+                        person_name = ent['text']
                         if person_name and not person_name.lower().startswith('person'):
                             yield OwnName(value=person_name)
 
             if self.organization:
-                # Extract ORGANIZATIONS
-                for ent in doc.ents:
-                    if ent.label_ == "ORG" or ent.label_ == "ORGANIZATION":
-                        org_name = ent.text
-                        if org_name and not org_name.lower().startswith('organization'):
-                            yield Organization(value=org_name)
-
-                # Search for common patterns
-                org_patterns = [
-                    r'([A-Z][a-zA-Z0-9\s]+(?:Corporation|Corp\.?|Limited|Ltd\.?|Inc\.?|LLC|LLP))',
-                    r'([A-Z][a-zA-Z0-9\s]+\s+(?:Group|Systems|Technologies|Solutions|Services))'
-                ]
-
-                for pattern in org_patterns:
-                    matches = re.finditer(pattern, preprocessed_text)
-                    for match in matches:
-                        org_name = match.group(1).strip()
-                        if org_name and not org_name.lower().startswith('organization'):
-                            yield Organization(value=org_name)
+                # Extract ORGANIZATION entities from both passes
+                seen_orgs = set()
+                
+                # List of words that indicate this is not a valid organization name (only at start)
+                invalid_start_words = ['remember', 'that', 'we', 'need', 'this', 'for', 'what', 'when', 'where', 'why', 'how', 'should', 'would', 'could']
+                
+                for ent in entities + entities_preprocessed:
+                    if ent['label'] in ['ORGANIZATION']:
+                        org_name = ent['text'].strip()
+                        org_words = org_name.split()
+                        org_lower = org_name.lower()
+                        
+                        # Validations to filter false positives
+                        is_invalid = False
+                        for invalid_word in invalid_start_words:
+                            if org_lower.startswith(invalid_word + ' '):
+                                is_invalid = True
+                                break
+                        
+                        if (org_name and 
+                            not org_lower.startswith('organization') and
+                            len(org_name) <= 100 and  # Maximum reasonable length
+                            len(org_words) <= 10 and  # Maximum 10 words for an organization name
+                            not is_invalid and  # Does not start with common sentence words
+                            ent.get('score', 0) > 0.5):  # Moderate confidence
+                            if org_name not in seen_orgs:
+                                seen_orgs.add(org_name)
+                                yield Organization(value=org_name)
 
             if self.location:
-                # Extract locations
-                for ent in doc.ents:
-                    if ent.label_ in ["LOC", "GPE", "FAC", "LOCATION"]:
-                        location_text = ent.text
-                        if location_text and not location_text.lower().startswith('location'):
-                            yield Location(value=location_text)
+                # Extract location entities
+                seen_locations = set()
+                for ent in entities:
+                    if ent['label'] in ['LOCATION', 'LOC', 'GPE', 'FAC']:
+                        location_text = ent['text'].strip()
+                        # Filter patterns that are not locations
+                        if (location_text and 
+                            not location_text.lower().startswith('location') and
+                            not re.match(r'^[\+\d\s\(\)\-\.]+$', location_text) and  # Not only phone numbers/symbols
+                            not re.match(r'^\d+\.\d+\.\d+', location_text) and  # Not an IP
+                            len(location_text) > 1):  # Minimum 2 characters
+                            if location_text not in seen_locations:
+                                seen_locations.add(location_text)
+                                yield Location(value=location_text)
 
-                # Search between comas
-                for sent in doc.sents:
-                    potential_locations = [loc.strip()
-                                           for loc in sent.text.split(',')]
-                    for loc_text in potential_locations:
-                        if loc_text:
-                            loc_doc = reStalker.nlp(loc_text)
-                            for ent in loc_doc.ents:
-                                if ent.label_ in ["LOC", "GPE", "FAC", "LOCATION"]:
-                                    location_text = ent.text
-                                    if location_text and not location_text.lower().startswith('location'):
-                                        yield Location(value=location_text)
+                # Search comma-separated potential locations
+                potential_locations = [loc.strip() for loc in cleaned_text.split(',')]
+                for loc_text in potential_locations:
+                    if (loc_text and 
+                        len(loc_text) > 2 and
+                        not re.match(r'^[\+\d\s\(\)\-\.]+$', loc_text)):  # Not only numbers
+                        loc_entities = reStalker.gliner_model.predict_entities(
+                            loc_text, ['LOCATION', 'LOC', 'GPE', 'FAC'], threshold=0.5
+                        )
+                        for ent in loc_entities:
+                            location_text = ent['text'].strip()
+                            if (location_text and 
+                                not location_text.lower().startswith('location') and
+                                not re.match(r'^[\+\d\s\(\)\-\.]+$', location_text)):
+                                if location_text not in seen_locations:
+                                    seen_locations.add(location_text)
+                                    yield Location(value=location_text)
 
-        if len(self.keywords) > 0 or self.keyphrase:
-            ta = TextAnalysis(body)
+            # Extract USERNAME and PASSWORD entities from GLiNER
+            seen_usernames = set()
+            if self.username:
+                for ent in entities:
+                    if ent['label'] == 'USERNAME':
+                        username_text = ent['text'].strip()
+                        # Stricter validations for username
+                        if (username_text and 
+                            len(username_text) >= 3 and 
+                            len(username_text) <= 30 and
+                            not username_text.lower() in ['user', 'username', 'name', 'email', 'contact'] and
+                            ent.get('score', 0) > 0.6):  # Only high confidence
+                            seen_usernames.add(username_text)
+                            yield Username(value=username_text)
+            
+            seen_passwords = set()
+            if self.password:
+                for ent in entities:
+                    if ent['label'] == 'PASSWORD':
+                        password_text = ent['text'].strip()
+                        # Stricter validations for password
+                        if (password_text and 
+                            len(password_text) >= 6 and 
+                            len(password_text) <= 128 and
+                            not password_text.lower() in ['password', 'pass', 'pwd', 'key'] and
+                            ent.get('score', 0) > 0.6):  # Only high confidence
+                            seen_passwords.add(password_text)
+                            yield Password(value=password_text)
+
+        # Keywords - simple keyword search
+        if len(self.keywords) > 0:
             for k in self.keywords:
-                # TODO Generate k variations
                 k = k.lower()
-                if ta.is_keyword_present(k) > 0 or body.lower().find(k) >= 0:
+                if body.lower().find(k) >= 0:
                     yield Keyword(value=k)
 
-            if self.keyphrase:
-                for k in ta.extract_top_keyphrases():
-                    yield Keyphrase(value=k)
-                
+        # Keyphrase removed - relevant entities are detected with GLiNER
+        
         if self.phone:
             import phonenumbers
             phones = []
@@ -1141,8 +1192,6 @@ class reStalker:
             emails = re.findall(email_regex, body)
             for email in emails:
                 yield Email(value=email)
-                if self.username:
-                    yield Username(value=email.split("@")[0])
 
         if self.iban_address:
             iban_addresses = re.findall(iban_address_regex, body)
@@ -1407,20 +1456,16 @@ class reStalker:
                     link_item = link
                 yield Skype_URL(value=link_item)
 
-        if self.username:
-            usernames = re.findall(username_regex, body)
-            for username in usernames:
-                yield Username(value=username)
+        # Username ONLY detected with GLiNER (see NER section above)
+        # No regex fallback
 
         if self.paste:
             pastes = re.findall(paste_url_regex, body)
             for pst in pastes:
                 yield Paste(value=pst)
 
-        if self.password:
-            passwords = re.findall(password_regex, body)
-            for password in passwords:
-                yield Password(value=password)
+        # Password ONLY detected with GLiNER (see NER section above)
+        # No regex fallback
 
         if self.base64:
             base64s = re.findall(base64_regex, body)

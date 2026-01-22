@@ -1,23 +1,23 @@
-# Function to initialize spaCy model for tests
-def initialize_spacy_model():
+# Function to initialize GLiNER model for tests
+def initialize_gliner_model():
     """
-    Initialize and load an appropriate spaCy model for testing.
-    Returns the loaded model or None if no model could be loaded.
+    Initialize and load the GLiNER model for testing.
+    Returns the loaded model or None if the model could not be loaded.
     """
     try:
-        import spacy
+        # Disable tensorflow warnings if present
+        import sys
+        sys.modules['tensorflow'] = None
+        
+        from gliner import GLiNER
         try:
-            return spacy.load("es_core_news_md")
-        except OSError:
-            try:
-                return spacy.load("en_core_web_md")
-            except OSError:
-                try:
-                    return spacy.load("en_core_web_sm")
-                except OSError:
-                    print("Warning: No spaCy model found. NER tests may fail.")
-                    print("Please run: python -m spacy download en_core_web_sm")
-                    return None
+            # Load nvidia's GLiNER model for PII detection
+            return GLiNER.from_pretrained('nvidia/gliner-PII')
+        except Exception as e:
+            print(f"Warning: Could not load GLiNER model. NER tests may fail. Error: {e}")
+            print("Please ensure you have internet connectivity for the first download.")
+            return None
     except ImportError:
-        print("Warning: spaCy not installed. NER tests may fail.")
+        print("Warning: GLiNER not installed. NER tests may fail.")
+        print("Please run: pip install gliner")
         return None

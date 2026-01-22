@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="restalker",
-    version="2.0.9",
+    version="2.1.0",
     description="Text analyzer package",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -20,10 +20,12 @@ setup(
         "bech32ref",
         "bip-utils",
         "bs4",
-        "spacy",
+        "gliner",
         "numpy",
         "monero",
         "web3",
+        "lxml",
+        "phonenumbers",
     ],
     entry_points=dict(console_scripts=["restalker=restalker.restalker:main"]),
 )
