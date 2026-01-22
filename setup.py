@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="restalker",
-    version="2.0.9",
+    version="2.1.0",
     description="Text analyzer package",
     long_description=long_description,
     long_description_content_type="text/markdown",
