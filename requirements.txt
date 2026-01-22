@@ -8,3 +8,4 @@ web3
 bs4
 lxml
 gliner
+phonenumbers

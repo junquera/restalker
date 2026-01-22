@@ -25,6 +25,7 @@ setup(
         "monero",
         "web3",
         "lxml",
+        "phonenumbers",
     ],
     entry_points=dict(console_scripts=["restalker=restalker.restalker:main"]),
 )

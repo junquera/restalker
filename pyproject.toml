@@ -17,6 +17,7 @@ bip-utils = "*"
 bech32ref = "*"
 bs4 = "^0.0.2"
 lxml = "*"
+phonenumbers = "*"
 
 [tool.poetry.dev-dependencies]
 
