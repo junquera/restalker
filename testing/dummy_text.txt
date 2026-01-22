@@ -1,0 +1,49 @@
+Hi! My contact number is +34 612 345 678 and I also reply to contacto@cryptomail.io
+ or soporte.empresas@protonmail.com
+.
+
+If you want to message me, here are my links:
+
+Telegram: https://t.me/robertodev
+
+WhatsApp: https://wa.me/34612345678
+
+Discord: https://discord.gg/abc123XYZ
+
+TOX:
+EBC5604D9386E594CCC32943A03F96A96687FBD46788F1CD4F3337EB703C3C16BE3DC2CA6D9F
+
+BTC (Legacy):
+1BoatSLRHtKNngkdXEeobR76b53LETtpyT
+
+BTC (Bech32):
+bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
+
+ETH:
+0x32Be343B94f860124dC4fEe278FDCBD38C102D88
+
+XMR:
+888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkRxbANsAnjyPbb3iQ1YBRk1UXcdRsiKc9dhwMVgN5S9cQUiyoogDavup3H
+
+Tor:
+http://duskgytldkxiuqc6.onion
+
+I2P:
+http://mysite.i2p
+
+IPFS:
+ipfs://QmTzQ1Njhy5CeuJ4s5bJ1eP3LqgXbPyFJW4xvN5AfKqcW8
+
+192.168.1.1
+2001:0db8:85a3:0000:0000:8a2e:0370:7334
+2001:db8::1
+fe80::1%eth0
+fe80::a00:27ff:fe12:3456%wlan0
+::1
+
+User: roberto_dev
+Password: S3cure_Passw0rd!
+
+Full name: Roberto García
+
+Remember that we need this for what Amazon Web Services asked us in Madrid and Alcalá de Henares.

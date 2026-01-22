@@ -1,16 +1,17 @@
-# spaCy Update
+# GLiNER Migration
 
-This project branch has been updated to use [spaCy](https://spacy.io/) instead of NLTK for natural language processing. This update provides several advantages:
+This project has been migrated to use [nvidia GLiNER](https://huggingface.co/nvidia/gliner-PII) instead of spaCy for named entity recognition. This update provides several advantages:
 
-## Benefits of migrating to spaCy
+## Benefits of migrating to GLiNER
 
-1. **Improved performance**: spaCy is optimized for production and offers better performance.
-2. **Integrated pipeline**: Complete NLP pipeline in a single object, rather than isolated functions.
-3. **Enhanced entity recognition**: More accurate and modern NER (Named Entity Recognition) models.
-4. **Multilingual support**: Pre-trained models available in multiple languages.
-5. **Active maintenance**: Frequent updates and extensive community support.
+1. **Zero-shot NER**: GLiNER can recognize entities without requiring specific training data for each entity type.
+2. **Automatic model download**: Models are automatically downloaded from HuggingFace on first use.
+3. **No language-specific models**: Works across multiple languages without downloading separate models.
+4. **Modern architecture**: Built on transformer-based models for better accuracy.
+5. **Simpler setup**: No need to manually download or configure language-specific models.
+6. **Privacy-focused**: The nvidia/gliner-PII model is specifically designed for PII detection.
 
-## Setup for using spaCy
+## Setup
 
 ### 1. Install dependencies
 
@@ -18,26 +19,11 @@ This project branch has been updated to use [spaCy](https://spacy.io/) instead o
 pip install -r requirements.txt
 ```
 
-### 2. Configure spaCy models
+That's it! The GLiNER model will be automatically downloaded from HuggingFace on first use.
 
-Run the setup script to automatically install the necessary models:
+### 2. First run
 
-```bash
-python setup_spacy.py
-```
-
-Alternatively, you can install the models manually:
-
-```bash
-# For Spanish (recommended)
-python -m spacy download es_core_news_md
-
-# Or for English
-python -m spacy download en_core_web_md
-
-# Or the small version (faster but less accurate)
-python -m spacy download en_core_web_sm
-```
+On the first run, GLiNER will automatically download the `nvidia/gliner-PII` model from HuggingFace. This requires internet connectivity but only needs to be done once. The model is cached locally for subsequent uses.
 
 ## Testing
 
@@ -53,6 +39,12 @@ To specifically test text analysis functionality:
 python test_textan.py
 ```
 
+To test GLiNER directly:
+
+```bash
+python testing/test_gliner.py
+```
+
 ## API Changes
 
 The external API remains backward compatible. The following classes and methods continue to work the same way:
@@ -62,4 +54,4 @@ The external API remains backward compatible. The following classes and methods 
 
 ## Note for Developers
 
-If you're developing with this library, keep in mind that we now internally use spaCy models. Performance and results may vary slightly compared to the NLTK-based version.
+If you're developing with this library, keep in mind that we now internally use GLiNER models. The entity recognition is now powered by transformer-based models which provide better accuracy and don't require language-specific model downloads.

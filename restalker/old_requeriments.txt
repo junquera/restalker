@@ -1,3 +1,0 @@
-filemagic
-pyexifinfo
-PyPDF2

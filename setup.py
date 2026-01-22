@@ -20,10 +20,12 @@ setup(
         "bech32ref",
         "bip-utils",
         "bs4",
-        "spacy",
+        "gliner",
         "numpy",
         "monero",
         "web3",
+        "lxml",
+        "phonenumbers",
     ],
     entry_points=dict(console_scripts=["restalker=restalker.restalker:main"]),
 )

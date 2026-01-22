@@ -42,20 +42,7 @@ from .restalker import (
 )
 from . import link_extractors as link_extractors
 
-import spacy
-
-# Load models
-def load_spacy_model():
-    try:
-        return spacy.load("es_core_news_md")
-    except OSError:
-        try:
-            return spacy.load("en_core_web_md")
-        except OSError:
-            # Download smallermodels if error
-            print("Descargando modelo de spaCy...")
-            spacy.cli.download("en_core_web_sm")
-            return spacy.load("en_core_web_sm")
-
+# GLiNER model is loaded automatically when needed by TextAnalysis class
+# No need for explicit model loading function
 
 __version__ = "2.0.9"
