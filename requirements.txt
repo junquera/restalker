@@ -7,5 +7,5 @@ numpy
 web3
 bs4
 lxml
-gliner
+gliner2
 phonenumbers

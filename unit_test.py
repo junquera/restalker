@@ -4,15 +4,15 @@ from unit_test_helpers import initialize_gliner_model
 
 """  README
 
-For testing, the GLiNER model will be automatically downloaded from HuggingFace on first use.
+For testing, the GLiNER2 model will be automatically downloaded from HuggingFace on first use.
 Make sure you have internet connectivity for the initial model download.
 
-The model used is: nvidia/gliner-PII
+The model used is: fastino/gliner2-large-v1
 
-No additional setup is required - GLiNER will handle model download automatically.
+No additional setup is required - GLiNER2 will handle model download automatically.
 """
 
-# Try to load the GLiNER model for testing
+# Try to load the GLiNER2 model for testing
 gliner_model = initialize_gliner_model()
 
 

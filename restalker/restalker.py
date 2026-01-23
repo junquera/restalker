@@ -1029,164 +1029,183 @@ class reStalker:
     gliner_model = None
 
     def _analyze_chunk(self, body, origin=None):
+        """
+        Analyze a text chunk and extract entities using GLiNER and other methods.
+        This method yields different entity types based on enabled flags.
+        """
+        # Helper function to split entities that contain newlines
+        def split_entities(entity_list):
+            """Split entities that may contain newlines into separate items"""
+            result = []
+            for entity in entity_list:
+                for split_entity in entity.split('\n'):
+                    split_entity = split_entity.strip()
+                    if split_entity:
+                        result.append(split_entity)
+            return result
+        
         # Load GLiNER model if not loaded yet
         if reStalker.gliner_model is None:
-            # Disable tensorflow warnings if present
-            import sys
-            sys.modules['tensorflow'] = None
-            from gliner import GLiNER
-            # Use nvidia's GLiNER model for PII and entity detection
-            reStalker.gliner_model = GLiNER.from_pretrained('nvidia/gliner-PII')
+            from gliner2 import GLiNER2
+            reStalker.gliner_model = GLiNER2.from_pretrained('fastino/gliner2-large-v1')
 
-        if self.ner:
-            # Text pre-processing to remove tags and improve detection
-            cleaned_text = re.sub(
-                r'(?:Location|Organization|Person|Keyphrase|BitName):\s*', '', body)
-
-            # Pre-process to handle organization names with multiple words
-            preprocessed_text = re.sub(r'\s+Ltd\.?$', ' Limited', cleaned_text)
-            preprocessed_text = re.sub(
-                r'\s+Inc\.?$', ' Incorporated', preprocessed_text)
-            preprocessed_text = re.sub(
-                r'\s+Corp\.?$', ' Corporation', preprocessed_text)
-
-            # Define entity labels for GLiNER extraction
-            entity_labels = ['PERSON', 'ORGANIZATION', "LOC", "GPE", "FAC", "LOCATION", 'CITY', "USERNAME", 'PASSWORD']
+        # Extract entities with GLiNER if any NER-related feature is enabled
+        entities_dict = {}
+        needs_gliner = (self.ner or self.phone or self.username or self.password or 
+                       self.own_name or self.location or self.organization)
+        
+        if needs_gliner:
+            # Define entity labels for GLiNER2 extraction
+            entity_labels = ['PERSON', 'ORGANIZATION', 'LOC', 'GPE', 'FAC', 
+                           'LOCATION', 'CITY', 'USERNAME', 'PASSWORD', 'PHONE']
             
-            # Extract entities using GLiNER
-            entities = reStalker.gliner_model.predict_entities(
-                cleaned_text, entity_labels, threshold=0.5
-            )
+            # Extract entities using GLiNER2
+            result = reStalker.gliner_model.extract_entities(body, entity_labels)
             
-            # Also extract from preprocessed text for better organization detection
-            entities_preprocessed = reStalker.gliner_model.predict_entities(
-                preprocessed_text, entity_labels, threshold=0.5
-            )
+            # Access the nested 'entities' dict
+            if isinstance(result, dict) and 'entities' in result:
+                entities_dict = result['entities']
+            elif isinstance(result, dict):
+                entities_dict = result
 
-            if self.own_name:
-                # Extract PERSON entities
-                for ent in entities:
-                    if ent['label'] in ['PERSON']:
-                        person_name = ent['text']
-                        if person_name and not person_name.lower().startswith('person'):
-                            yield OwnName(value=person_name)
+        # ========================================================================
+        # PROCESS GLiNER ENTITIES
+        # ========================================================================
+        
+        # --- PERSON entities (OwnName) ---
+        if self.own_name:
+            person_entities = split_entities(entities_dict.get('PERSON', []))
+            for person_name in person_entities:
+                if not person_name.lower().startswith('person'):
+                    yield OwnName(value=person_name)
 
-            if self.organization:
-                # Extract ORGANIZATION entities from both passes
-                seen_orgs = set()
+        # --- ORGANIZATION entities ---
+        if self.organization:
+            seen_orgs = set()
+            # Words that indicate false positives
+            invalid_start_words = ['remember', 'that', 'we', 'need', 'this', 'for', 
+                                  'what', 'when', 'where', 'why', 'how', 'should', 
+                                  'would', 'could']
+            
+            org_entities = split_entities(entities_dict.get('ORGANIZATION', []))
+            for org_name in org_entities:
+                org_lower = org_name.lower()
+                org_words = org_name.split()
                 
-                # List of words that indicate this is not a valid organization name (only at start)
-                invalid_start_words = ['remember', 'that', 'we', 'need', 'this', 'for', 'what', 'when', 'where', 'why', 'how', 'should', 'would', 'could']
+                # Validate organization name
+                is_valid = (
+                    not org_lower.startswith('organization') and
+                    len(org_name) <= 100 and
+                    len(org_words) <= 10 and
+                    not any(org_lower.startswith(word + ' ') for word in invalid_start_words)
+                )
                 
-                for ent in entities + entities_preprocessed:
-                    if ent['label'] in ['ORGANIZATION']:
-                        org_name = ent['text'].strip()
-                        org_words = org_name.split()
-                        org_lower = org_name.lower()
-                        
-                        # Validations to filter false positives
-                        is_invalid = False
-                        for invalid_word in invalid_start_words:
-                            if org_lower.startswith(invalid_word + ' '):
-                                is_invalid = True
-                                break
-                        
-                        if (org_name and 
-                            not org_lower.startswith('organization') and
-                            len(org_name) <= 100 and  # Maximum reasonable length
-                            len(org_words) <= 10 and  # Maximum 10 words for an organization name
-                            not is_invalid and  # Does not start with common sentence words
-                            ent.get('score', 0) > 0.5):  # Moderate confidence
-                            if org_name not in seen_orgs:
-                                seen_orgs.add(org_name)
-                                yield Organization(value=org_name)
+                if is_valid and org_name not in seen_orgs:
+                    seen_orgs.add(org_name)
+                    yield Organization(value=org_name)
 
-            if self.location:
-                # Extract location entities
-                seen_locations = set()
-                for ent in entities:
-                    if ent['label'] in ['LOCATION', 'LOC', 'GPE', 'FAC']:
-                        location_text = ent['text'].strip()
-                        # Filter patterns that are not locations
-                        if (location_text and 
-                            not location_text.lower().startswith('location') and
-                            not re.match(r'^[\+\d\s\(\)\-\.]+$', location_text) and  # Not only phone numbers/symbols
-                            not re.match(r'^\d+\.\d+\.\d+', location_text) and  # Not an IP
-                            len(location_text) > 1):  # Minimum 2 characters
-                            if location_text not in seen_locations:
-                                seen_locations.add(location_text)
-                                yield Location(value=location_text)
+        # --- LOCATION entities (LOC, GPE, FAC) ---
+        if self.location:
+            seen_locations = set()
+            
+            # Collect from multiple location-related labels
+            for label in ['LOCATION', 'LOC', 'GPE', 'FAC', 'CITY']:
+                location_entities = split_entities(entities_dict.get(label, []))
+                for location_text in location_entities:
+                    # Validate location
+                    is_valid = (
+                        not location_text.lower().startswith('location') and
+                        not re.match(r'^[\+\d\s\(\)\-\.]+$', location_text) and  # Not only phone/symbols
+                        not re.match(r'^\d+\.\d+\.\d+', location_text) and  # Not an IP
+                        len(location_text) > 1
+                    )
+                    
+                    if is_valid and location_text not in seen_locations:
+                        seen_locations.add(location_text)
+                        yield Location(value=location_text)
 
-                # Search comma-separated potential locations
-                potential_locations = [loc.strip() for loc in cleaned_text.split(',')]
-                for loc_text in potential_locations:
-                    if (loc_text and 
-                        len(loc_text) > 2 and
-                        not re.match(r'^[\+\d\s\(\)\-\.]+$', loc_text)):  # Not only numbers
-                        loc_entities = reStalker.gliner_model.predict_entities(
-                            loc_text, ['LOCATION', 'LOC', 'GPE', 'FAC'], threshold=0.5
-                        )
-                        for ent in loc_entities:
-                            location_text = ent['text'].strip()
-                            if (location_text and 
-                                not location_text.lower().startswith('location') and
-                                not re.match(r'^[\+\d\s\(\)\-\.]+$', location_text)):
-                                if location_text not in seen_locations:
-                                    seen_locations.add(location_text)
-                                    yield Location(value=location_text)
-
-            # Extract USERNAME and PASSWORD entities from GLiNER
+        # --- USERNAME entities ---
+        if self.username:
             seen_usernames = set()
-            if self.username:
-                for ent in entities:
-                    if ent['label'] == 'USERNAME':
-                        username_text = ent['text'].strip()
-                        # Stricter validations for username
-                        if (username_text and 
-                            len(username_text) >= 3 and 
-                            len(username_text) <= 30 and
-                            not username_text.lower() in ['user', 'username', 'name', 'email', 'contact'] and
-                            ent.get('score', 0) > 0.6):  # Only high confidence
-                            seen_usernames.add(username_text)
-                            yield Username(value=username_text)
-            
+            username_entities = split_entities(entities_dict.get('USERNAME', []))
+            for username_text in username_entities:
+                username_lower = username_text.lower()
+                # Validate username
+                is_valid = (
+                    3 <= len(username_text) <= 30 and
+                    username_lower not in ['user', 'username', 'name', 'email', 'contact']
+                )
+                
+                if is_valid and username_text not in seen_usernames:
+                    seen_usernames.add(username_text)
+                    yield Username(value=username_text)
+        
+        # --- PASSWORD entities ---
+        if self.password:
             seen_passwords = set()
-            if self.password:
-                for ent in entities:
-                    if ent['label'] == 'PASSWORD':
-                        password_text = ent['text'].strip()
-                        # Stricter validations for password
-                        if (password_text and 
-                            len(password_text) >= 6 and 
-                            len(password_text) <= 128 and
-                            not password_text.lower() in ['password', 'pass', 'pwd', 'key'] and
-                            ent.get('score', 0) > 0.6):  # Only high confidence
-                            seen_passwords.add(password_text)
-                            yield Password(value=password_text)
+            password_entities = split_entities(entities_dict.get('PASSWORD', []))
+            for password_text in password_entities:
+                password_lower = password_text.lower()
+                # Validate password
+                is_valid = (
+                    6 <= len(password_text) <= 128 and
+                    password_lower not in ['password', 'pass', 'pwd', 'key']
+                )
+                
+                if is_valid and password_text not in seen_passwords:
+                    seen_passwords.add(password_text)
+                    yield Password(value=password_text)
 
-        # Keywords - simple keyword search
-        if len(self.keywords) > 0:
-            for k in self.keywords:
-                k = k.lower()
-                if body.lower().find(k) >= 0:
-                    yield Keyword(value=k)
-
-        # Keyphrase removed - relevant entities are detected with GLiNER
+        # ========================================================================
+        # PHONE DETECTION (GLiNER + phonenumbers library)
+        # ========================================================================
         
         if self.phone:
             import phonenumbers
-            phones = []
+            
+            seen_phones = set()
+            phones_to_yield = []
+            
+            # Method 1: Extract phones using phonenumbers library
             regions = phonenumbers.SUPPORTED_REGIONS
-    
             for region in regions:
-                m = phonenumbers.PhoneNumberMatcher(body, region, leniency=phonenumbers.Leniency.POSSIBLE)
-                for result in m:
-                    if result.raw_string not in phones:
-                        phones.append(result.raw_string)
+                matcher = phonenumbers.PhoneNumberMatcher(
+                    body, region, leniency=phonenumbers.Leniency.POSSIBLE
+                )
+                for result in matcher:
+                    phone_str = result.raw_string
+                    # Normalize for duplicate detection
+                    normalized = re.sub(r'[\s\-\(\)\.]', '', phone_str)
+                    if normalized not in seen_phones and len(phone_str) > 5:
+                        seen_phones.add(normalized)
+                        phones_to_yield.append(phone_str)
+            
+            # Method 2: Extract phones from GLiNER entities
+            phone_entities = split_entities(entities_dict.get('PHONE', []))
+            for phone_str in phone_entities:
+                # Normalize for duplicate detection
+                normalized = re.sub(r'[\s\-\(\)\.]', '', phone_str)
+                if normalized not in seen_phones and len(phone_str) > 5:
+                    seen_phones.add(normalized)
+                    phones_to_yield.append(phone_str)
+            
+            # Yield all unique phones
+            for phone in phones_to_yield:
+                yield Phone(value=phone)
 
-            for phone in phones:
-                if(len(phone) > 5):
-                    yield Phone(value=phone)
+        # ========================================================================
+        # KEYWORD SEARCH (simple text search)
+        # ========================================================================
+        
+        if len(self.keywords) > 0:
+            for keyword in self.keywords:
+                keyword_lower = keyword.lower()
+                if keyword_lower in body.lower():
+                    yield Keyword(value=keyword)
+        
+        # ========================================================================
+        # REGEX-BASED DETECTION (email, IBAN, wallets, etc.)
+        # ========================================================================
             
         if self.email:
             emails = re.findall(email_regex, body)
