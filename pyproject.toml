@@ -6,6 +6,11 @@ authors = ["Javier Junquera-Sánchez <javier@junquera.io>"]
 readme = "README.md"
 license = "MIT"
 
+[[tool.poetry.source]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
 [tool.poetry.dependencies]
 python = "^3.10"
 # Core dependencies
@@ -24,7 +29,7 @@ olefile = "*"
 
 # ML dependencies - CPU-only by default to minimize install size
 # For GPU support, use: poetry install --extras gpu (NVIDIA) or --extras amd-gpu (AMD)
-torch = ">=2.0.0"
+torch = {version = ">=2.0.0", source = "pytorch-cpu"}
 gliner = "*"
 
 [tool.poetry.extras]
