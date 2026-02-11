@@ -1130,10 +1130,12 @@ class reStalker:
             username_entities = split_entities(entities_dict.get('USERNAME', []))
             for username_text in username_entities:
                 username_lower = username_text.lower()
-                # Validate username
+                # Validate username - allow @ at start but not in middle
+                has_at_in_middle = '@' in username_text[1:] if len(username_text) > 1 else False
                 is_valid = (
                     3 <= len(username_text) <= 30 and
-                    username_lower not in ['user', 'username', 'name', 'email', 'contact']
+                    username_lower not in ['user', 'username', 'name', 'email', 'contact'] and
+                    not has_at_in_middle
                 )
                 
                 if is_valid and username_text not in seen_usernames:
