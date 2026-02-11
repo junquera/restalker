@@ -9,7 +9,7 @@ entity_labels = ['PERSON', 'ORGANIZATION', "LOC", "GPE", "FAC", "LOCATION", "USE
 
 text = ""
 
-with open('./testing/dummy_text.txt', 'r', encoding='utf-8') as file:
+with open('../fixtures/dummy_text.txt', 'r', encoding='utf-8') as file:
     text = file.read()
     file.close()
     

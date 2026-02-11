@@ -50,6 +50,75 @@ cpu = []
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
+pytest-cov = "*"
+
+[tool.pytest.ini_options]
+# Test discovery
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+
+# Output verbosity and coverage
+addopts = [
+    "-v",                           # Verbose: show each test name
+    "-ra",                          # Show summary of all outcomes (except passed)
+    "--tb=short",                   # Shorter tracebacks for failures
+    "--strict-markers",             # Fail on unknown markers
+    "--durations=10",               # Show 10 slowest tests
+    
+    # Coverage options
+    "--cov=restalker",              # Measure coverage for restalker package only
+    "--cov-branch",                 # Enable branch coverage (if/else paths)
+    "--cov-report=term-missing",    # Show missing lines in terminal
+    "--cov-report=term:skip-covered", # Skip 100% covered files in summary
+    
+    # Performance
+    "--maxfail=5",                  # Stop after 5 failures
+]
+
+# Test collection patterns
+norecursedirs = [
+    ".git",
+    ".pytest_cache",
+    "__pycache__",
+    "*.egg-info",
+    ".venv",
+    "venv",
+    "htmlcov",
+    "doc",
+    "scripts",
+    "tests/demos",
+    "tests/fixtures",
+]
+
+[tool.coverage.run]
+source = ["restalker"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/site-packages/*",
+    "*/doc/*",
+    "*/scripts/*",
+]
+branch = true
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+skip_empty = true
+
+# Exclude lines from coverage
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
