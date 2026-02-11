@@ -1,11 +1,33 @@
+# reStalker - CPU-only Requirements (Default)
+# Install with: pip install -r requirements.txt
+#
+# This is the default, lightweight installation with CPU-only PyTorch.
+# Disk Space: ~500MB
+# Performance: Good for most use cases, portable across all systems
+#
+# For GPU acceleration, use:
+#   - NVIDIA GPU: pip install -r requirements-gpu-cuda.txt
+#   - AMD GPU:    pip install -r requirements-gpu-rocm.txt
+#
+# Installation:
+#   pip install -r requirements.txt
+
+# Core dependencies
 based58
 bech32ref
 bip-utils
 bs4
 monero
-numpy
 web3
-bs4
 lxml
 gliner
 phonenumbers
+pyexifinfo
+python-magic
+PyPDF2
+olefile
+
+# PyTorch CPU-only (default)
+# Note: This installs the smallest PyTorch variant without GPU support
+--index-url https://download.pytorch.org/whl/cpu
+torch>=2.0.0

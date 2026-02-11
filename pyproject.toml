@@ -8,8 +8,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-numpy = "*"
-gliner = "*"
+# Core dependencies
 based58 = "*"
 web3 = "*"
 monero = "*"
@@ -18,8 +17,34 @@ bech32ref = "*"
 bs4 = "^0.0.2"
 lxml = "*"
 phonenumbers = "*"
+pyexifinfo = "*"
+python-magic = "*"
+PyPDF2 = "*"
+olefile = "*"
 
-[tool.poetry.dev-dependencies]
+# ML dependencies - CPU-only by default to minimize install size
+# For GPU support, use: poetry install --extras gpu (NVIDIA) or --extras amd-gpu (AMD)
+torch = ">=2.0.0"
+gliner = "*"
+
+[tool.poetry.extras]
+# NVIDIA GPU support (CUDA 11.8+)
+# Install with: poetry install --extras gpu
+# Disk space: ~3.2GB | Performance: 5-10x faster
+gpu = []
+
+# AMD GPU support (ROCm 5.x+)
+# Install with: poetry install --extras amd-gpu  
+# Disk space: ~3.5GB | Performance: 3-7x faster
+amd-gpu = []
+
+# Explicit CPU-only (default)
+# Install with: poetry install
+# Disk space: ~500MB | Portable, no GPU required
+cpu = []
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

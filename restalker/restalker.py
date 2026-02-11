@@ -970,7 +970,7 @@ class reStalker:
             # soup = BeautifulSoup(body, "html.parser")
             soup = BeautifulSoup(body, "lxml")
             if soup:
-                links = soup.findAll("a")
+                links = soup.find_all("a")
                 if links:
                     for url in links:
                         try:

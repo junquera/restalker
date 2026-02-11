@@ -122,24 +122,93 @@ for element in elements:
 
 ## 📦 Installation
 
-### 🚀 Quick Install
+### 🎯 Quick Start
+
+**CPU-only (Default, Recommended for Most Users):**
+```bash
+pip install restalker
+```
+
+**Or with Poetry:**
+```bash
+poetry add restalker
+```
+
+---
+
+### 🚀 GPU Acceleration (Optional)
+
+reStalker supports GPU acceleration for significantly faster entity extraction using GLiNER. Choose the appropriate installation method based on your hardware:
+
+#### 🔍 Automatic Detection (Recommended)
 
 ```bash
-pip3 install restalker
+# Clone or navigate to the repository
+git clone https://github.com/junquera/restalker.git
+cd restalker
+
+# Detect your GPU hardware
+python scripts/detect_gpu.py
+
+# Follow the recommended installation command shown
 ```
 
-### 📄 Requirements File
+#### 🎮 Manual GPU Installation
 
-**Production:**
+**NVIDIA GPU (CUDA 11.8+):**
 
-```txt
-restalker<3
+```bash
+# Using Poetry
+poetry install --extras gpu
+
+# Using pip with setup.py
+pip install -e .[gpu]
+
+# Using requirements file
+pip install -r requirements-gpu-cuda.txt
 ```
 
-**Development:**
+**AMD GPU (ROCm 5.x+, Linux only):**
 
-```txt
-git+https://github.com/junquera/restalker.git#egg=restalker
+```bash
+# First, install ROCm: https://rocm.docs.amd.com/
+
+# Using Poetry
+poetry install --extras amd-gpu
+
+# Using pip with setup.py
+pip install -e .[amd-gpu]
+
+# Using requirements file
+pip install -r requirements-gpu-rocm.txt
+```
+
+**CPU-only (Explicit):**
+
+```bash
+# Using Poetry
+poetry install
+
+# Using pip with requirements file
+pip install -r requirements.txt
+```
+
+#### 💾 Disk Space & Performance
+
+| Installation | Disk Space | Performance vs CPU | Best For |
+|--------------|------------|-------------------|----------|
+| **CPU-only** | ~500 MB | Baseline (1x) | Most users, portable systems |
+| **NVIDIA GPU** | ~3.2 GB | 5-10x faster | Systems with NVIDIA GPUs |
+| **AMD GPU** | ~3.5 GB | 3-7x faster | Linux systems with AMD GPUs |
+
+#### ✅ Verify GPU Installation
+
+After installing with GPU support, verify it's working:
+
+```python
+import torch
+print(f"CUDA available: {torch.cuda.is_available()}")
+print(f"Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
 ```
 
 ---
