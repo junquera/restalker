@@ -22,10 +22,7 @@ web3
 lxml
 gliner2
 phonenumbers
-pyexifinfo
 python-magic
-PyPDF2
-olefile
 
 # PyTorch CPU-only (default)
 # Note: This installs the smallest PyTorch variant without GPU support

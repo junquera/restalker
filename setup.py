@@ -24,10 +24,7 @@ setup(
         "web3",
         "lxml",
         "phonenumbers",
-        "pyexifinfo",
         "python-magic",
-        "PyPDF2",
-        "olefile",
     ],
     extras_require={
         # NVIDIA GPU support (CUDA)
