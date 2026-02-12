@@ -1627,7 +1627,12 @@ class reStalker:
                     try:
                         if isinstance(link, bytes):
                             link = link.decode('utf-8')
-                        link_item = UUF(link).full_url
+                        # Skip UUF normalization for custom skype: protocol URLs
+                        # Only normalize skype:// and https://join.skype.com URLs
+                        if link.startswith('skype:') and not link.startswith('skype://'):
+                            link_item = link  # Preserve original format
+                        else:
+                            link_item = UUF(link).full_url
                     except Exception as e:
                         print(f"[*] Error processing Skype URL: {e}")
                         link_item = link
