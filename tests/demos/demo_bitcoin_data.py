@@ -1,5 +1,6 @@
-import restalker
 import sys
+
+import restalker
 
 if len(sys.argv) > 1:
     with open(sys.argv[1]) as f:

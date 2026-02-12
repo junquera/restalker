@@ -1,14 +1,15 @@
-import based58
-from hashlib import sha256
-from bech32ref import segwit_addr
-from web3 import Web3
-from monero.address import address as xmr_address
-from bip_utils import SS58Decoder
-from .link_extractors import UUF
-from urllib.parse import urljoin
-from urllib.parse import urlparse
-from bs4 import BeautifulSoup
 import re
+from hashlib import sha256
+from urllib.parse import urljoin, urlparse
+
+import based58
+from bech32ref import segwit_addr
+from bip_utils import SS58Decoder
+from bs4 import BeautifulSoup
+from monero.address import address as xmr_address
+from web3 import Web3
+
+from .link_extractors import UUF
 
 
 class Item:
@@ -347,11 +348,11 @@ class URL(Item):
     def isvalid(url: str) -> bool:
         try:
             parsed = urlparse(url)
-            
+
             if parsed.scheme:
                 if parsed.scheme == 'file':
-                    return bool(parsed.path) 
-                
+                    return bool(parsed.path)
+
                 return bool(parsed.netloc) or (len(parsed.path) > 0)
 
             if url.startswith('www.') and len(url) > 4:
@@ -890,7 +891,7 @@ class reStalker:
         self.username = username or all
         self.password = password or all
         self.phone = phone or all
-        
+
         # NER is activated if any entity detected by GLiNER is enabled
         self.ner = self.own_name or self.location or self.organization or self.username or self.password or self.phone
 
@@ -1060,12 +1061,12 @@ class reStalker:
 
             # Define entity labels for GLiNER extraction
             entity_labels = ['PERSON', 'ORGANIZATION', "LOC", "GPE", "FAC", "LOCATION", 'CITY', "USERNAME", 'PASSWORD']
-            
+
             # Extract entities using GLiNER
             entities = reStalker.gliner_model.predict_entities(
                 cleaned_text, entity_labels, threshold=0.5
             )
-            
+
             # Also extract from preprocessed text for better organization detection
             entities_preprocessed = reStalker.gliner_model.predict_entities(
                 preprocessed_text, entity_labels, threshold=0.5
@@ -1082,24 +1083,24 @@ class reStalker:
             if self.organization:
                 # Extract ORGANIZATION entities from both passes
                 seen_orgs = set()
-                
+
                 # List of words that indicate this is not a valid organization name (only at start)
                 invalid_start_words = ['remember', 'that', 'we', 'need', 'this', 'for', 'what', 'when', 'where', 'why', 'how', 'should', 'would', 'could']
-                
+
                 for ent in entities + entities_preprocessed:
                     if ent['label'] in ['ORGANIZATION']:
                         org_name = ent['text'].strip()
                         org_words = org_name.split()
                         org_lower = org_name.lower()
-                        
+
                         # Validations to filter false positives
                         is_invalid = False
                         for invalid_word in invalid_start_words:
                             if org_lower.startswith(invalid_word + ' '):
                                 is_invalid = True
                                 break
-                        
-                        if (org_name and 
+
+                        if (org_name and
                             not org_lower.startswith('organization') and
                             len(org_name) <= 100 and  # Maximum reasonable length
                             len(org_words) <= 10 and  # Maximum 10 words for an organization name
@@ -1116,7 +1117,7 @@ class reStalker:
                     if ent['label'] in ['LOCATION', 'LOC', 'GPE', 'FAC']:
                         location_text = ent['text'].strip()
                         # Filter patterns that are not locations
-                        if (location_text and 
+                        if (location_text and
                             not location_text.lower().startswith('location') and
                             not re.match(r'^[\+\d\s\(\)\-\.]+$', location_text) and  # Not only phone numbers/symbols
                             not re.match(r'^\d+\.\d+\.\d+', location_text) and  # Not an IP
@@ -1128,7 +1129,7 @@ class reStalker:
                 # Search comma-separated potential locations
                 potential_locations = [loc.strip() for loc in cleaned_text.split(',')]
                 for loc_text in potential_locations:
-                    if (loc_text and 
+                    if (loc_text and
                         len(loc_text) > 2 and
                         not re.match(r'^[\+\d\s\(\)\-\.]+$', loc_text)):  # Not only numbers
                         loc_entities = reStalker.gliner_model.predict_entities(
@@ -1136,7 +1137,7 @@ class reStalker:
                         )
                         for ent in loc_entities:
                             location_text = ent['text'].strip()
-                            if (location_text and 
+                            if (location_text and
                                 not location_text.lower().startswith('location') and
                                 not re.match(r'^[\+\d\s\(\)\-\.]+$', location_text)):
                                 if location_text not in seen_locations:
@@ -1150,22 +1151,22 @@ class reStalker:
                     if ent['label'] == 'USERNAME':
                         username_text = ent['text'].strip()
                         # Stricter validations for username
-                        if (username_text and 
-                            len(username_text) >= 3 and 
+                        if (username_text and
+                            len(username_text) >= 3 and
                             len(username_text) <= 30 and
                             username_text.lower() not in ['user', 'username', 'name', 'email', 'contact'] and
                             ent.get('score', 0) > 0.6):  # Only high confidence
                             seen_usernames.add(username_text)
                             yield Username(value=username_text)
-            
+
             seen_passwords = set()
             if self.password:
                 for ent in entities:
                     if ent['label'] == 'PASSWORD':
                         password_text = ent['text'].strip()
                         # Stricter validations for password
-                        if (password_text and 
-                            len(password_text) >= 6 and 
+                        if (password_text and
+                            len(password_text) >= 6 and
                             len(password_text) <= 128 and
                             password_text.lower() not in ['password', 'pass', 'pwd', 'key'] and
                             ent.get('score', 0) > 0.6):  # Only high confidence
@@ -1180,12 +1181,12 @@ class reStalker:
                     yield Keyword(value=k)
 
         # Keyphrase removed - relevant entities are detected with GLiNER
-        
+
         if self.phone:
             import phonenumbers
             phones = []
             regions = phonenumbers.SUPPORTED_REGIONS
-    
+
             for region in regions:
                 m = phonenumbers.PhoneNumberMatcher(body, region, leniency=phonenumbers.Leniency.POSSIBLE)
                 for result in m:
@@ -1195,7 +1196,7 @@ class reStalker:
             for phone in phones:
                 if(len(phone) > 5):
                     yield Phone(value=phone)
-            
+
         if self.email:
             emails = re.findall(email_regex, body)
             for email in emails:
@@ -1343,11 +1344,11 @@ class reStalker:
 
         if self.url:
             seen_urls = set()
-            
+
             for match in re.finditer(any_url_regex, body):
                 url_candidate = match.group()
                 url_candidate = url_candidate.rstrip('.,;:!?"\')]}')
-                
+
                 if url_candidate not in seen_urls:
                     if URL.isvalid(url_candidate):
                         seen_urls.add(url_candidate)

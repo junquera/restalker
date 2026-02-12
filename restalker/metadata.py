@@ -1,11 +1,12 @@
-import pyexifinfo as p
-import uuid
 import io
 import os
-import magic
-from PyPDF2 import PdfFileReader
-import olefile
+import uuid
 from hashlib import sha256
+
+import magic
+import olefile
+import pyexifinfo as p
+from PyPDF2 import PdfFileReader
 
 
 def contains_metadata(byte_array):
@@ -27,7 +28,7 @@ def is_bin(b):
     """
     if isinstance(b, bytes):
         return False
-    
+
     try:
         b.decode('utf8')
         return False
