@@ -1038,180 +1038,324 @@ class reStalker:
     gliner_model = None
 
     def _analyze_chunk(self, body, origin=None):
+        """
+        Analyze a text chunk and extract entities using GLiNER and other methods.
+        This method yields different entity types based on enabled flags.
+        """
+        # Helper function to validate context - ensures matches are not substrings
+        def is_valid_context(text, value, start_pos=None, end_pos=None):
+            """
+            Check if a detected value has valid context (not surrounded by alphanumerics).
+            This prevents detecting substrings within larger words/hashes/codes.
+
+            Args:
+                text: The full text body
+                value: The detected value to validate
+                start_pos: Optional start position of the value in text
+                end_pos: Optional end position of the value in text
+
+            Returns:
+                True if value is properly isolated, False if it's part of a larger word
+            """
+            # If positions are not provided, find all occurrences
+            if start_pos is None or end_pos is None:
+                # Escape special regex characters in value
+                escaped_value = re.escape(value)
+                matches = list(re.finditer(escaped_value, text))
+                if not matches:
+                    return False
+                # Check if any occurrence has valid context
+                for match in matches:
+                    if is_valid_context(text, value, match.start(), match.end()):
+                        return True
+                return False
+
+            # Check character before
+            if start_pos > 0:
+                char_before = text[start_pos - 1]
+                if char_before.isalnum():
+                    return False
+
+            # Check character after
+            if end_pos < len(text):
+                char_after = text[end_pos]
+                if char_after.isalnum():
+                    return False
+
+            return True
+
+        # Helper function to split entities that contain newlines
+        def split_entities(entity_list):
+            """Split entities that may contain newlines into separate items"""
+            result = []
+            for entity in entity_list:
+                for split_entity in entity.split('\n'):
+                    split_entity = split_entity.strip()
+                    if split_entity:
+                        result.append(split_entity)
+            return result
+
         # Load GLiNER model if not loaded yet
         if reStalker.gliner_model is None:
-            # Disable tensorflow warnings if present
-            import sys
-            sys.modules['tensorflow'] = None
-            from gliner import GLiNER
-            # Use nvidia's GLiNER model for PII and entity detection
-            reStalker.gliner_model = GLiNER.from_pretrained('nvidia/gliner-PII')
+            from gliner2 import GLiNER2
+            reStalker.gliner_model = GLiNER2.from_pretrained('fastino/gliner2-large-v1')
 
-        if self.ner:
-            # Text pre-processing to remove tags and improve detection
-            cleaned_text = re.sub(
-                r'(?:Location|Organization|Person|Keyphrase|BitName):\s*', '', body)
+        # Extract entities with GLiNER if any NER-related feature is enabled
+        entities_dict = {}
+        needs_gliner = (self.ner or self.phone or self.username or self.password or
+                       self.own_name or self.location or self.organization)
 
-            # Pre-process to handle organization names with multiple words
-            preprocessed_text = re.sub(r'\s+Ltd\.?$', ' Limited', cleaned_text)
-            preprocessed_text = re.sub(
-                r'\s+Inc\.?$', ' Incorporated', preprocessed_text)
-            preprocessed_text = re.sub(
-                r'\s+Corp\.?$', ' Corporation', preprocessed_text)
+        if needs_gliner:
+            # Define entity labels for GLiNER2 extraction
+            entity_labels = ['PERSON', 'ORGANIZATION', 'LOC', 'GPE', 'FAC',
+                           'LOCATION', 'CITY', 'USERNAME', 'PASSWORD', 'PHONE']
 
-            # Define entity labels for GLiNER extraction
-            entity_labels = ['PERSON', 'ORGANIZATION', "LOC", "GPE", "FAC", "LOCATION", 'CITY', "USERNAME", 'PASSWORD']
+            # Extract entities using GLiNER2
+            result = reStalker.gliner_model.extract_entities(body, entity_labels)
 
-            # Extract entities using GLiNER
-            entities = reStalker.gliner_model.predict_entities(
-                cleaned_text, entity_labels, threshold=0.5
-            )
+            # Access the nested 'entities' dict
+            if isinstance(result, dict) and 'entities' in result:
+                entities_dict = result['entities']
+            elif isinstance(result, dict):
+                entities_dict = result
 
-            # Also extract from preprocessed text for better organization detection
-            entities_preprocessed = reStalker.gliner_model.predict_entities(
-                preprocessed_text, entity_labels, threshold=0.5
-            )
+        # ========================================================================
+        # PROCESS GLiNER ENTITIES
+        # ========================================================================
 
-            if self.own_name:
-                # Extract PERSON entities
-                for ent in entities:
-                    if ent['label'] in ['PERSON']:
-                        person_name = ent['text']
-                        if person_name and not person_name.lower().startswith('person'):
-                            yield OwnName(value=person_name)
+        # --- PERSON entities (OwnName) ---
+        if self.own_name:
+            person_entities = split_entities(entities_dict.get('PERSON', []))
+            for person_name in person_entities:
+                if not person_name.lower().startswith('person') and is_valid_context(body, person_name):
+                    yield OwnName(value=person_name)
 
-            if self.organization:
-                # Extract ORGANIZATION entities from both passes
-                seen_orgs = set()
+        # --- ORGANIZATION entities ---
+        if self.organization:
+            seen_orgs = set()
+            # Words that indicate false positives
+            invalid_start_words = ['remember', 'that', 'we', 'need', 'this', 'for',
+                                  'what', 'when', 'where', 'why', 'how', 'should',
+                                  'would', 'could']
 
-                # List of words that indicate this is not a valid organization name (only at start)
-                invalid_start_words = ['remember', 'that', 'we', 'need', 'this', 'for', 'what', 'when', 'where', 'why', 'how', 'should', 'would', 'could']
+            org_entities = split_entities(entities_dict.get('ORGANIZATION', []))
+            for org_name in org_entities:
+                org_lower = org_name.lower()
+                org_words = org_name.split()
 
-                for ent in entities + entities_preprocessed:
-                    if ent['label'] in ['ORGANIZATION']:
-                        org_name = ent['text'].strip()
-                        org_words = org_name.split()
-                        org_lower = org_name.lower()
+                # Validate organization name
+                is_valid = (
+                    not org_lower.startswith('organization') and
+                    len(org_name) <= 100 and
+                    len(org_words) <= 10 and
+                    not any(org_lower.startswith(word + ' ') for word in invalid_start_words)
+                )
 
-                        # Validations to filter false positives
-                        is_invalid = False
-                        for invalid_word in invalid_start_words:
-                            if org_lower.startswith(invalid_word + ' '):
-                                is_invalid = True
-                                break
+                if is_valid and org_name not in seen_orgs and is_valid_context(body, org_name):
+                    seen_orgs.add(org_name)
+                    yield Organization(value=org_name)
 
-                        if (org_name and
-                            not org_lower.startswith('organization') and
-                            len(org_name) <= 100 and  # Maximum reasonable length
-                            len(org_words) <= 10 and  # Maximum 10 words for an organization name
-                            not is_invalid and  # Does not start with common sentence words
-                            ent.get('score', 0) > 0.5):  # Moderate confidence
-                            if org_name not in seen_orgs:
-                                seen_orgs.add(org_name)
-                                yield Organization(value=org_name)
+        # --- LOCATION entities (LOC, GPE, FAC) ---
+        if self.location:
+            seen_locations = set()
 
-            if self.location:
-                # Extract location entities
-                seen_locations = set()
-                for ent in entities:
-                    if ent['label'] in ['LOCATION', 'LOC', 'GPE', 'FAC']:
-                        location_text = ent['text'].strip()
-                        # Filter patterns that are not locations
-                        if (location_text and
-                            not location_text.lower().startswith('location') and
-                            not re.match(r'^[\+\d\s\(\)\-\.]+$', location_text) and  # Not only phone numbers/symbols
-                            not re.match(r'^\d+\.\d+\.\d+', location_text) and  # Not an IP
-                            len(location_text) > 1):  # Minimum 2 characters
-                            if location_text not in seen_locations:
-                                seen_locations.add(location_text)
-                                yield Location(value=location_text)
+            # Collect from multiple location-related labels
+            for label in ['LOCATION', 'LOC', 'GPE', 'FAC', 'CITY']:
+                location_entities = split_entities(entities_dict.get(label, []))
+                for location_text in location_entities:
+                    # Validate location
+                    is_valid = (
+                        not location_text.lower().startswith('location') and
+                        not re.match(r'^[\+\d\s\(\)\-\.]+$', location_text) and  # Not only phone/symbols
+                        not re.match(r'^\d+\.\d+\.\d+', location_text) and  # Not an IP
+                        len(location_text) > 1
+                    )
 
-                # Search comma-separated potential locations
-                potential_locations = [loc.strip() for loc in cleaned_text.split(',')]
-                for loc_text in potential_locations:
-                    if (loc_text and
-                        len(loc_text) > 2 and
-                        not re.match(r'^[\+\d\s\(\)\-\.]+$', loc_text)):  # Not only numbers
-                        loc_entities = reStalker.gliner_model.predict_entities(
-                            loc_text, ['LOCATION', 'LOC', 'GPE', 'FAC'], threshold=0.5
-                        )
-                        for ent in loc_entities:
-                            location_text = ent['text'].strip()
-                            if (location_text and
-                                not location_text.lower().startswith('location') and
-                                not re.match(r'^[\+\d\s\(\)\-\.]+$', location_text)):
-                                if location_text not in seen_locations:
-                                    seen_locations.add(location_text)
-                                    yield Location(value=location_text)
+                    if is_valid and location_text not in seen_locations and is_valid_context(body, location_text):
+                        seen_locations.add(location_text)
+                        yield Location(value=location_text)
 
-            # Extract USERNAME and PASSWORD entities from GLiNER
+        # --- USERNAME entities ---
+        if self.username:
             seen_usernames = set()
-            if self.username:
-                for ent in entities:
-                    if ent['label'] == 'USERNAME':
-                        username_text = ent['text'].strip()
-                        # Stricter validations for username
-                        if (username_text and
-                            len(username_text) >= 3 and
-                            len(username_text) <= 30 and
-                            username_text.lower() not in ['user', 'username', 'name', 'email', 'contact'] and
-                            ent.get('score', 0) > 0.6):  # Only high confidence
-                            seen_usernames.add(username_text)
-                            yield Username(value=username_text)
+            username_entities = split_entities(entities_dict.get('USERNAME', []))
+            for username_text in username_entities:
+                username_lower = username_text.lower()
+                # Validate username - allow @ at start but not in middle
+                has_at_in_middle = '@' in username_text[1:] if len(username_text) > 1 else False
+                is_valid = (
+                    3 <= len(username_text) <= 30 and
+                    username_lower not in ['user', 'username', 'name', 'email', 'contact'] and
+                    not has_at_in_middle
+                )
 
+                if is_valid and username_text not in seen_usernames and is_valid_context(body, username_text):
+                    seen_usernames.add(username_text)
+                    yield Username(value=username_text)
+
+        # --- PASSWORD entities ---
+        if self.password:
             seen_passwords = set()
-            if self.password:
-                for ent in entities:
-                    if ent['label'] == 'PASSWORD':
-                        password_text = ent['text'].strip()
-                        # Stricter validations for password
-                        if (password_text and
-                            len(password_text) >= 6 and
-                            len(password_text) <= 128 and
-                            password_text.lower() not in ['password', 'pass', 'pwd', 'key'] and
-                            ent.get('score', 0) > 0.6):  # Only high confidence
-                            seen_passwords.add(password_text)
-                            yield Password(value=password_text)
+            password_entities = split_entities(entities_dict.get('PASSWORD', []))
+            for password_text in password_entities:
+                password_lower = password_text.lower()
+                # Validate password
+                is_valid = (
+                    6 <= len(password_text) <= 128 and
+                    password_lower not in ['password', 'pass', 'pwd', 'key']
+                )
 
-        # Keywords - simple keyword search
-        if len(self.keywords) > 0:
-            for k in self.keywords:
-                k = k.lower()
-                if body.lower().find(k) >= 0:
-                    yield Keyword(value=k)
+                if is_valid and password_text not in seen_passwords and is_valid_context(body, password_text):
+                    seen_passwords.add(password_text)
+                    yield Password(value=password_text)
 
-        # Keyphrase removed - relevant entities are detected with GLiNER
+        # ========================================================================
+        # PHONE DETECTION (GLiNER + phonenumbers library)
+        # ========================================================================
 
         if self.phone:
             import phonenumbers
-            phones = []
+
+            seen_phones = set()
+            phones_to_yield = []
+
+            # Method 1: Extract phones using phonenumbers library
             regions = phonenumbers.SUPPORTED_REGIONS
-
             for region in regions:
-                m = phonenumbers.PhoneNumberMatcher(body, region, leniency=phonenumbers.Leniency.POSSIBLE)
-                for result in m:
-                    if result.raw_string not in phones:
-                        phones.append(result.raw_string)
+                matcher = phonenumbers.PhoneNumberMatcher(
+                    body, region, leniency=phonenumbers.Leniency.POSSIBLE
+                )
+                for result in matcher:
+                    phone_str = result.raw_string
+                    start = result.start
+                    end = result.end
 
-            for phone in phones:
-                if(len(phone) > 5):
-                    yield Phone(value=phone)
+                    # Validate context - not surrounded by alphanumerics
+                    if not is_valid_context(body, phone_str, start, end):
+                        continue
+
+                    # Check if the phone string itself looks like hex code
+                    # Remove common phone separators first
+                    clean_phone = re.sub(r'[\s\-\(\)\.\+]', '', phone_str)
+                    if clean_phone:
+                        # Count alphanumeric chars that are hex (0-9, A-F, a-f)
+                        alnum_chars = [c for c in clean_phone if c.isalnum()]
+                        if alnum_chars:
+                            hex_chars_in_phone = sum(1 for c in alnum_chars if c in '0123456789ABCDEFabcdef')
+                            hex_ratio_self = hex_chars_in_phone / len(alnum_chars)
+                            # If the phone itself is mostly hex AND has letters, likely a hex code
+                            has_hex_letters = any(c in 'ABCDEFabcdef' for c in clean_phone)
+                            if hex_ratio_self > 0.95 and has_hex_letters and len(clean_phone) >= 8:
+                                continue
+
+                    # Additional check: if surrounded by hex characters, likely part of a hash
+                    # Check a wider context (up to 10 chars before/after)
+                    hex_context_before = ""
+                    hex_context_after = ""
+
+                    if start > 0:
+                        hex_start = max(0, start - 10)
+                        hex_context_before = body[hex_start:start]
+
+                    if end < len(body):
+                        hex_end = min(len(body), end + 10)
+                        hex_context_after = body[end:hex_end]
+
+                    # If surrounded by mostly hex chars (A-F0-9), likely part of hash
+                    combined_context = hex_context_before + hex_context_after
+                    if combined_context:
+                        hex_chars = sum(1 for c in combined_context if c in '0123456789ABCDEFabcdef')
+                        hex_ratio = hex_chars / len(combined_context)
+                        # If more than 80% hex chars in surrounding context, skip it
+                        if hex_ratio > 0.8:
+                            continue
+
+                    # Normalize for duplicate detection
+                    normalized = re.sub(r'[\s\-\(\)\.]', '', phone_str)
+                    if normalized not in seen_phones and len(phone_str) > 5:
+                        seen_phones.add(normalized)
+                        phones_to_yield.append(phone_str)
+
+            # Method 2: Extract phones from GLiNER entities
+            phone_entities = split_entities(entities_dict.get('PHONE', []))
+            for phone_str in phone_entities:
+                # Validate context
+                if not is_valid_context(body, phone_str):
+                    continue
+
+                # Check if the phone string itself looks like hex code
+                clean_phone = re.sub(r'[\s\-\(\)\.\+]', '', phone_str)
+                if clean_phone:
+                    alnum_chars = [c for c in clean_phone if c.isalnum()]
+                    if alnum_chars:
+                        hex_chars_in_phone = sum(1 for c in alnum_chars if c in '0123456789ABCDEFabcdef')
+                        hex_ratio_self = hex_chars_in_phone / len(alnum_chars)
+                        has_hex_letters = any(c in 'ABCDEFabcdef' for c in clean_phone)
+                        if hex_ratio_self > 0.95 and has_hex_letters and len(clean_phone) >= 8:
+                            continue
+
+                # Additional hex context check for GLiNER results too
+                # Find position of phone_str in body
+                pos = body.find(phone_str)
+                if pos != -1:
+                    hex_context_before = ""
+                    hex_context_after = ""
+
+                    if pos > 0:
+                        hex_start = max(0, pos - 10)
+                        hex_context_before = body[hex_start:pos]
+
+                    if pos + len(phone_str) < len(body):
+                        hex_end = min(len(body), pos + len(phone_str) + 10)
+                        hex_context_after = body[pos + len(phone_str):hex_end]
+
+                    combined_context = hex_context_before + hex_context_after
+                    if combined_context:
+                        hex_chars = sum(1 for c in combined_context if c in '0123456789ABCDEFabcdef')
+                        hex_ratio = hex_chars / len(combined_context)
+                        if hex_ratio > 0.8:
+                            continue
+
+                # Normalize for duplicate detection
+                normalized = re.sub(r'[\s\-\(\)\.]', '', phone_str)
+                if normalized not in seen_phones and len(phone_str) > 5:
+                    seen_phones.add(normalized)
+                    phones_to_yield.append(phone_str)
+
+            # Yield all unique phones
+            for phone in phones_to_yield:
+                yield Phone(value=phone)
+
+        # ========================================================================
+        # KEYWORD SEARCH (simple text search)
+        # ========================================================================
+
+        if len(self.keywords) > 0:
+            for keyword in self.keywords:
+                keyword_lower = keyword.lower()
+                if keyword_lower in body.lower():
+                    yield Keyword(value=keyword)
+
+        # ========================================================================
+        # REGEX-BASED DETECTION (email, IBAN, wallets, etc.)
+        # ========================================================================
 
         if self.email:
-            emails = re.findall(email_regex, body)
-            for email in emails:
-                yield Email(value=email)
+            for match in re.finditer(email_regex, body):
+                email = match.group()
+                if is_valid_context(body, email, match.start(), match.end()):
+                    yield Email(value=email)
 
         if self.iban_address:
-            iban_addresses = re.findall(iban_address_regex, body)
-            for iban_address in iban_addresses:
-                if IBAN_Address.isvalid(address=iban_address):
+            for match in re.finditer(iban_address_regex, body):
+                iban_address = match.group()
+                if is_valid_context(body, iban_address, match.start(), match.end()) and IBAN_Address.isvalid(address=iban_address):
                     yield IBAN_Address(value=iban_address)
 
         if self.ipv4:
-            ipv4_addresses = re.findall(ipv4_address_regex, body)
-            for ipv4_address in ipv4_addresses:
-                if IPV4_Address.isvalid(address=ipv4_address):
+            for match in re.finditer(ipv4_address_regex, body):
+                ipv4_address = match.group()
+                if is_valid_context(body, ipv4_address, match.start(), match.end()) and IPV4_Address.isvalid(address=ipv4_address):
                     yield IPV4_Address(value=ipv4_address)
 
         if self.ipv6:
@@ -1238,7 +1382,7 @@ class reStalker:
                     if ip_str in seen_ips or ip_to_validate in seen_ips:
                         continue
 
-                    if IPV6_Address.isvalid(address=ip_str):
+                    if is_valid_context(body, ip_str, match.start(), match.end()) and IPV6_Address.isvalid(address=ip_str):
                         seen_ips.add(ip_str)
 
                         if '%' in ip_str:
@@ -1247,61 +1391,69 @@ class reStalker:
                         yield IPV6_Address(value=ip_str)
 
         if self.btc_wallet:
-            btc_wallets = re.findall(btc_wallet_regex, body)
-            btc_wallets.extend(re.findall(btc_wallet_bech32_regex, body))
-            for btc_wallet in btc_wallets:
-                if BTC_Wallet.isvalid(address=btc_wallet):
+            for match in re.finditer(btc_wallet_regex, body):
+                btc_wallet = match.group()
+                if is_valid_context(body, btc_wallet, match.start(), match.end()) and BTC_Wallet.isvalid(address=btc_wallet):
+                    yield BTC_Wallet(value=btc_wallet)
+            for match in re.finditer(btc_wallet_bech32_regex, body):
+                btc_wallet = match.group()
+                if is_valid_context(body, btc_wallet, match.start(), match.end()) and BTC_Wallet.isvalid(address=btc_wallet):
                     yield BTC_Wallet(value=btc_wallet)
 
         if self.eth_wallet:
-            eth_wallets = re.findall(eth_wallet_regex, body)
-            for eth_wallet in eth_wallets:
-                if ETH_Wallet.isvalid(address=eth_wallet):
+            for match in re.finditer(eth_wallet_regex, body):
+                eth_wallet = match.group()
+                if is_valid_context(body, eth_wallet, match.start(), match.end()) and ETH_Wallet.isvalid(address=eth_wallet):
                     yield ETH_Wallet(value=eth_wallet)
 
         if self.xmr_wallet:
-            xmr_wallets = re.findall(xmr_wallet_regex, body)
-            for xmr_wallet in xmr_wallets:
-                if XMR_Wallet.isvalid(address=xmr_wallet):
+            for match in re.finditer(xmr_wallet_regex, body):
+                xmr_wallet = match.group()
+                if is_valid_context(body, xmr_wallet, match.start(), match.end()) and XMR_Wallet.isvalid(address=xmr_wallet):
                     yield XMR_Wallet(value=xmr_wallet)
 
         if self.zec_wallet:
-            zec_wallets = re.findall(zec_wallet_transparent_regex, body)
-            zec_wallets.extend(re.findall(zec_wallet_private_regex, body))
-            zec_wallets.extend(re.findall(
-                zec_wallet_private_sapling_regex, body))
-            for zec_wallet in zec_wallets:
-                if ZEC_Wallet.isvalid(address=zec_wallet):
+            for match in re.finditer(zec_wallet_transparent_regex, body):
+                zec_wallet = match.group()
+                if is_valid_context(body, zec_wallet, match.start(), match.end()) and ZEC_Wallet.isvalid(address=zec_wallet):
+                    yield ZEC_Wallet(value=zec_wallet)
+            for match in re.finditer(zec_wallet_private_regex, body):
+                zec_wallet = match.group()
+                if is_valid_context(body, zec_wallet, match.start(), match.end()) and ZEC_Wallet.isvalid(address=zec_wallet):
+                    yield ZEC_Wallet(value=zec_wallet)
+            for match in re.finditer(zec_wallet_private_sapling_regex, body):
+                zec_wallet = match.group()
+                if is_valid_context(body, zec_wallet, match.start(), match.end()) and ZEC_Wallet.isvalid(address=zec_wallet):
                     yield ZEC_Wallet(value=zec_wallet)
 
         if self.dash_wallet:
-            dash_wallets = re.findall(dash_wallet_regex, body)
-            for dash_wallet in dash_wallets:
-                if DASH_Wallet.isvalid(address=dash_wallet):
+            for match in re.finditer(dash_wallet_regex, body):
+                dash_wallet = match.group()
+                if is_valid_context(body, dash_wallet, match.start(), match.end()) and DASH_Wallet.isvalid(address=dash_wallet):
                     yield DASH_Wallet(value=dash_wallet)
 
         if self.dot_wallet:
-            dot_wallets = re.findall(dot_wallet_regex, body)
-            for dot_wallet in dot_wallets:
-                if DOT_Wallet.isvalid(address=dot_wallet):
+            for match in re.finditer(dot_wallet_regex, body):
+                dot_wallet = match.group()
+                if is_valid_context(body, dot_wallet, match.start(), match.end()) and DOT_Wallet.isvalid(address=dot_wallet):
                     yield DOT_Wallet(value=dot_wallet)
 
         if self.xrp_wallet:
-            xrp_wallets = re.findall(xrp_wallet_regex, body)
-            for xrp_wallet in xrp_wallets:
-                if XRP_Wallet.isvalid(address=xrp_wallet):
+            for match in re.finditer(xrp_wallet_regex, body):
+                xrp_wallet = match.group()
+                if is_valid_context(body, xrp_wallet, match.start(), match.end()) and XRP_Wallet.isvalid(address=xrp_wallet):
                     yield XRP_Wallet(value=xrp_wallet)
 
         if self.bnb_wallet:
-            bnb_wallets = re.findall(bnb_wallet_regex, body)
-            for bnb_wallet in bnb_wallets:
-                if BNB_Wallet.isvalid(address=bnb_wallet):
+            for match in re.finditer(bnb_wallet_regex, body):
+                bnb_wallet = match.group()
+                if is_valid_context(body, bnb_wallet, match.start(), match.end()) and BNB_Wallet.isvalid(address=bnb_wallet):
                     yield BNB_Wallet(value=bnb_wallet)
 
         if self.credit_card:
-            card_numbers = re.findall(all_card_regex, body)
-            for card_number in card_numbers:
-                if Card_Number.isvalid(card_number):
+            for match in re.finditer(all_card_regex, body):
+                card_number = match.group()
+                if is_valid_context(body, card_number, match.start(), match.end()) and Card_Number.isvalid(card_number):
                     companies = []
                     for company, regex in card_regex.items():
                         if re.match(regex, card_number):
@@ -1310,20 +1462,24 @@ class reStalker:
 
         # Add BIN/IIN extraction
         if self.bin_number:
-            for bin_candidate in re.findall(bin_regex, body):
-                yield Item(value=f"BIN/IIN={bin_candidate}")
+            for match in re.finditer(bin_regex, body):
+                bin_candidate = match.group()
+                if is_valid_context(body, bin_candidate, match.start(), match.end()):
+                    yield Item(value=f"BIN/IIN={bin_candidate}")
 
         # Add generic CCN extraction
         if self.ccn_number:
-            for ccn_candidate in re.findall(ccn_regex, body):
+            for match in re.finditer(ccn_regex, body):
+                ccn_candidate = match.group()
                 # Avoid duplicates with card_numbers
-                if not (self.credit_card and re.match(all_card_regex, ccn_candidate)):
+                if is_valid_context(body, ccn_candidate, match.start(), match.end()) and not (self.credit_card and re.match(all_card_regex, ccn_candidate)):
                     yield Item(value=f"CCN={ccn_candidate}")
 
         if self.twitter:
-            tw_accounts = re.findall(tw_account_regex, body)
-            for tw_account in tw_accounts:
-                yield TW_Account(value=tw_account)
+            for match in re.finditer(tw_account_regex, body):
+                tw_account = match.group()
+                if is_valid_context(body, tw_account, match.start(), match.end()):
+                    yield TW_Account(value=tw_account)
 
         if self.i2p:
             i2p_links = self.extract_links(
@@ -1349,7 +1505,7 @@ class reStalker:
                 url_candidate = match.group()
                 url_candidate = url_candidate.rstrip('.,;:!?"\')]}')
 
-                if url_candidate not in seen_urls:
+                if url_candidate not in seen_urls and is_valid_context(body, url_candidate, match.start(), match.end()):
                     if URL.isvalid(url_candidate):
                         seen_urls.add(url_candidate)
                         yield URL(value=url_candidate)
@@ -1380,141 +1536,157 @@ class reStalker:
                 yield Tor_URL(value=link_item)
 
         if self.freenet:
-            freenet_links = re.findall(freenet_hidden_url, body, re.DOTALL)
-            for link in freenet_links:
-                yield Freenet_URL(value=link)
+            for match in re.finditer(freenet_hidden_url, body, re.DOTALL):
+                link = match.group()
+                if is_valid_context(body, link, match.start(), match.end()):
+                    yield Freenet_URL(value=link)
         if self.zeronet:
             # TODO Experimental
             if self.zeronet_ctxt and False:
                 if body.find("zeronet") < 0:
                     pass
 
-            zeronet_links = re.findall(zeronet_hidden_url, body, re.DOTALL)
-            zeronet_links = extract_elements(zeronet_links)
-
-            for link in zeronet_links:
-                yield Zeronet_URL(value=link)
+            for match in re.finditer(zeronet_hidden_url, body, re.DOTALL):
+                link = match.group()
+                extracted_links = extract_elements(link)
+                for extracted_link in extracted_links:
+                    if is_valid_context(body, extracted_link):
+                        yield Zeronet_URL(value=extracted_link)
 
         if self.bitname:
-            bitname_links = re.findall(bitname_url, body, re.DOTALL)
-            bitname_links = extract_elements(bitname_links)
-
-            for link in bitname_links:
-                yield Bitname_URL(value=link)
+            for match in re.finditer(bitname_url, body, re.DOTALL):
+                link = match.group()
+                extracted_links = extract_elements(link)
+                for extracted_link in extracted_links:
+                    if is_valid_context(body, extracted_link):
+                        yield Bitname_URL(value=extracted_link)
 
         if self.pgp:
-            pgp_keys = re.findall(pgp_key, body, re.DOTALL)
-            for k in pgp_keys:
-                yield PGP(value=k)
+            for match in re.finditer(pgp_key, body, re.DOTALL):
+                k = match.group()
+                if is_valid_context(body, k, match.start(), match.end()):
+                    yield PGP(value=k)
 
         if self.ipfs:
-
-            ipfs_links = re.findall(ipfs_url, body, re.DOTALL)
-            ipfs_links = extract_elements(ipfs_links)
-            for link in ipfs_links:
-                yield IPFS_URL(value=link)
+            for match in re.finditer(ipfs_url, body, re.DOTALL):
+                link = match.group()
+                extracted_links = extract_elements(link)
+                for extracted_link in extracted_links:
+                    if is_valid_context(body, extracted_link):
+                        yield IPFS_URL(value=extracted_link)
 
         if self.whatsapp:
-            whatsapp_links = re.findall(whatsapp_url_regex, body)
-            whatsapp_links = extract_elements(whatsapp_links)
-            for link in whatsapp_links:
-                try:
-                    if isinstance(link, bytes):
-                        link = link.decode('utf-8')
-                    link_item = UUF(link).full_url
-                except Exception as e:
-                    print(f"[*] Error processing WhatsApp URL: {e}")
-                    link_item = link
-                yield Whatsapp_URL(value=link_item)
+            for match in re.finditer(whatsapp_url_regex, body):
+                link = match.group()
+                extracted_links = extract_elements(link)
+                for extracted_link in extracted_links:
+                    if is_valid_context(body, extracted_link):
+                        try:
+                            if isinstance(extracted_link, bytes):
+                                extracted_link = extracted_link.decode('utf-8')
+                            link_item = UUF(extracted_link).full_url
+                        except Exception as e:
+                            print(f"[*] Error processing WhatsApp URL: {e}")
+                            link_item = extracted_link
+                        yield Whatsapp_URL(value=link_item)
 
         if self.discord:
-            discord_links = re.findall(discord_url_regex, body)
-            discord_links = extract_elements(discord_links)
-            for link in discord_links:
-                try:
-                    if isinstance(link, bytes):
-                        link = link.decode('utf-8')
-                    link_item = UUF(link).full_url
-                except Exception as e:
-                    print(f"[*] Error processing Discord URL: {e}")
-                    link_item = link
-                yield Discord_URL(value=link_item)
+            for match in re.finditer(discord_url_regex, body):
+                link = match.group()
+                extracted_links = extract_elements(link)
+                for extracted_link in extracted_links:
+                    if is_valid_context(body, extracted_link):
+                        try:
+                            if isinstance(extracted_link, bytes):
+                                extracted_link = extracted_link.decode('utf-8')
+                            link_item = UUF(extracted_link).full_url
+                        except Exception as e:
+                            print(f"[*] Error processing Discord URL: {e}")
+                            link_item = extracted_link
+                        yield Discord_URL(value=link_item)
 
         if self.telegram:
-            telegram_links = re.findall(telegram_url_regex, body)
-            telegram_links = extract_elements(telegram_links)
-            for link in telegram_links:
-                try:
-                    if isinstance(link, bytes):
-                        link = link.decode('utf-8')
-                    link_item = UUF(link).full_url
-                except Exception as e:
-                    print(f"[*] Error processing Telegram URL: {e}")
-                    link_item = link
-                yield Telegram_URL(value=link_item)
+            for match in re.finditer(telegram_url_regex, body):
+                link = match.group()
+                extracted_links = extract_elements(link)
+                for extracted_link in extracted_links:
+                    if is_valid_context(body, extracted_link):
+                        try:
+                            if isinstance(extracted_link, bytes):
+                                extracted_link = extracted_link.decode('utf-8')
+                            link_item = UUF(extracted_link).full_url
+                        except Exception as e:
+                            print(f"[*] Error processing Telegram URL: {e}")
+                            link_item = extracted_link
+                        yield Telegram_URL(value=link_item)
 
         if self.skype:
-            skype_links = re.findall(skype_url_regex, body)
-            for link in skype_links:
-                try:
-                    if isinstance(link, bytes):
-                        link = link.decode('utf-8')
-                    link_item = UUF(link).full_url
-                except Exception as e:
-                    print(f"[*] Error processing Skype URL: {e}")
-                    link_item = link
-                yield Skype_URL(value=link_item)
+            for match in re.finditer(skype_url_regex, body):
+                link = match.group()
+                if is_valid_context(body, link, match.start(), match.end()):
+                    try:
+                        if isinstance(link, bytes):
+                            link = link.decode('utf-8')
+                        link_item = UUF(link).full_url
+                    except Exception as e:
+                        print(f"[*] Error processing Skype URL: {e}")
+                        link_item = link
+                    yield Skype_URL(value=link_item)
 
         # Username ONLY detected with GLiNER (see NER section above)
         # No regex fallback
 
         if self.paste:
-            pastes = re.findall(paste_url_regex, body)
-            for pst in pastes:
-                yield Paste(value=pst)
+            for match in re.finditer(paste_url_regex, body):
+                pst = match.group()
+                if is_valid_context(body, pst, match.start(), match.end()):
+                    yield Paste(value=pst)
 
         # Password ONLY detected with GLiNER (see NER section above)
         # No regex fallback
 
         if self.base64:
-            base64s = re.findall(base64_regex, body)
-            for b64 in base64s:
-                yield Base64(value=b64)
+            for match in re.finditer(base64_regex, body):
+                b64 = match.group()
+                if is_valid_context(body, b64, match.start(), match.end()):
+                    yield Base64(value=b64)
 
         if self.md5:
-            md5s = re.findall(md5_regex, body)
-            for md5 in md5s:
-                yield MD5(value=md5)
+            for match in re.finditer(md5_regex, body):
+                md5 = match.group()
+                if is_valid_context(body, md5, match.start(), match.end()):
+                    yield MD5(value=md5)
 
         if self.sha1:
-            sha1s = re.findall(sha1_regex, body)
-            for sha1 in sha1s:
-                yield SHA1(value=sha1)
+            for match in re.finditer(sha1_regex, body):
+                sha1 = match.group()
+                if is_valid_context(body, sha1, match.start(), match.end()):
+                    yield SHA1(value=sha1)
 
         if self.sha256:
-            sha256s = re.findall(sha256_regex, body)
-            for sha256 in sha256s:
-                yield SHA256(value=sha256)
+            for match in re.finditer(sha256_regex, body):
+                sha256 = match.group()
+                if is_valid_context(body, sha256, match.start(), match.end()):
+                    yield SHA256(value=sha256)
 
         if self.tox:
-            tox_ids = re.findall(tox_id_regex, body)
-            for tox_id in tox_ids:
-                if Tox_ID.isvalid(tox_id):
+            for match in re.finditer(tox_id_regex, body):
+                tox_id = match.group()
+                if is_valid_context(body, tox_id, match.start(), match.end()) and Tox_ID.isvalid(tox_id):
                     yield Tox_ID(value=tox_id)
 
         if self.gatc:
-            gatc = re.findall(ga_tracking_code_regex, body)
-            for g in gatc:
-                if GA_Tracking_Code.isvalid(g):
+            for match in re.finditer(ga_tracking_code_regex, body):
+                g = match.group()
+                if is_valid_context(body, g, match.start(), match.end()) and GA_Tracking_Code.isvalid(g):
                     yield GA_Tracking_Code(value=g)
 
         if self.session_id:
-            session_ids = re.findall(session_id_regex, body)
-            for sid in session_ids:
+            for match in re.finditer(session_id_regex, body):
+                sid = match.group()
                 session_id_value = sid
-                if Session_ID.isvalid(session_id_value):
+                if is_valid_context(body, session_id_value, match.start(), match.end()) and Session_ID.isvalid(session_id_value):
                     yield Session_ID(value=session_id_value)
-
     def parse(self, body, origin=None, buff_size=20480):
 
         i = 0
