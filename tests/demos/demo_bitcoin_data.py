@@ -1702,7 +1702,7 @@ And please do not start your first letter to us with the words:
 ""It's a mistake !! Our company is just trimming and grooming little dogs. We don't have money at all.""
 ""There is a big mistake on our site !
 We are not leaders in our industry and all our competitors don't suck our huge dick.
-We're just 
+We're just
  small company, and we are dying because of hard competition.""
 ""We are not the Super Mega International Corporation ltd., we are just a nursery etc.""
 We see it 5 times a day. This shit doesn't work at all !!!

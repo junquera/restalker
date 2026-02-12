@@ -46,5 +46,5 @@ setup(
             "torch>=2.0.0",  # Will install CPU-only variant
         ],
     },
-    entry_points=dict(console_scripts=["restalker=restalker.restalker:main"]),
+    entry_points={"console_scripts": ["restalker=restalker.restalker:main"]},
 )

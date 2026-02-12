@@ -585,7 +585,7 @@ def test_zeronet_detection(sample_social_media):
 
     # Get URLs for both Bitcoin-style and Bitname formats
     zeronet = [r.value for r in results if isinstance(r, Zeronet_URL)]
-    zeronet_urls = set(zeronet)  # Remove duplicates
+    zeronet_urls = {z for z in zeronet if z is not None}  # Filter None values and remove duplicates
 
     # Print results for debugging
     print(f"ZeroNet URLs found: {len(zeronet_urls)}")
@@ -862,6 +862,7 @@ def test_session_id_detection():
 
     # Verify all detected Session IDs are valid
     for sid in session_ids:
+        assert sid.value is not None, "Session ID value should not be None"
         assert Session_ID.isvalid(sid.value)
 
     # Check that specific valid Session IDs are detected
@@ -994,5 +995,5 @@ def test_keyword_extraction():
     # Print the keyphrases found
     print(f"Key phrases found: {[k.value for k in keyphrases]}")
 
-    keyphrase_values = [k.value.lower() for k in keyphrases]
+    keyphrase_values = [k.value.lower() for k in keyphrases if k.value is not None]
     assert keyphrase_values == []

@@ -5,7 +5,7 @@ from urllib.parse import urljoin, urlparse
 import based58
 from bech32ref import segwit_addr
 from bip_utils import SS58Decoder
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from monero.address import address as xmr_address
 from web3 import Web3
 
@@ -13,7 +13,7 @@ from .link_extractors import UUF
 
 
 class Item:
-    def __init__(self, value=None):
+    def __init__(self, value: str | None = None):
         self.value = value
 
     def __eq__(self, other):
@@ -996,6 +996,9 @@ class reStalker:
                 links = soup.find_all("a")
                 if links:
                     for url in links:
+                        # Type check: ensure url is a Tag object (not PageElement or NavigableString)
+                        if not isinstance(url, Tag):
+                            continue
                         try:
                             href = url.get("href")
                             if href:
