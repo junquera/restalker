@@ -1,3 +1,5 @@
+# ruff: noqa: I001
+# Import order: restalker must come before link_extractors to avoid circular import
 from .restalker import (
     I2P_URL,
     IPFS_URL,
@@ -45,7 +47,7 @@ from . import link_extractors as link_extractors
 # GLiNER model is loaded automatically when needed by TextAnalysis class
 # No need for explicit model loading function
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 
 # Explicitly define the public API
 __all__ = [
