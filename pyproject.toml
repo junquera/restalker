@@ -138,6 +138,8 @@ select = [
 [tool.ruff.lint.per-file-ignores]
 # Allow imports after code in demo files
 "tests/demos/demo_gliner.py" = ["E402"]
+# Allow imports after GLiNER2 initialization and long test data strings
+"tests/test_restalker.py" = ["E402", "E501"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

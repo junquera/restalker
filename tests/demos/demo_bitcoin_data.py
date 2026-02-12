@@ -1737,7 +1737,7 @@ Man is the master of everything and decides everything.","Note",0,1563490038,"",
 "5d30f4bc-f5c0-4866-9224-390b68f8e8cf",1204,"Payload delivery","sha1","a019e0ff24d773592c42443d5e51473219e8b874","",1,1563489468,"sha1","","5d30f4bc-5284-463e-ab2f-390b68f8e8cf","file","file"
 "5d30f4bc-50d0-4dd2-bbcf-390b68f8e8cf",1204,"Payload delivery","sha256","8b7aa0b20a97f3b19894b87a436ad94b80635a5e5336208f4dc59525ce9287d8","",1,1563489468,"sha256","","5d30f4bc-5284-463e-ab2f-390b68f8e8cf","file","file"
 "5d30f4bc-0384-460a-9818-390b68f8e8cf",1204,"Other","size-in-bytes",743424,"",0,1563489468,"size-in-bytes","","5d30f4bc-5284-463e-ab2f-390b68f8e8cf","file","file"
-MegaCortex Ransomware: 
+MegaCortex Ransomware:
 MD5: c12ab67f2835b3a867af6c91aa3d3039
 
 mbedtls_cipher_setup
@@ -3178,7 +3178,7 @@ RSCDsvc
 LRSDRVX
 msvsmon90
 IDriverT
-MSMQ 
+MSMQ
 
 Internal name:
 payload.dll
@@ -3189,17 +3189,17 @@ x5gj5_gmG8.log
 
 vssadmin delete shadows /all /for=
 \vssadmin.exe
-cipher /W: 
+cipher /W:
 \\cipher.exe
 processed:
-available VM: 
+available VM:
 x5gj5_gmG8
  failed.
  KiB
- KiB/s 
+ KiB/s
 start
-KiB 
-scaning 
+KiB
+scaning
  processed:
 
 Note:
@@ -3227,7 +3227,7 @@ And please do not start your first letter to us with the words:
 "It's a mistake !! Our company is just trimming and grooming little dogs. We don't have money at all."
 "There is a big mistake on our site !
 We are not leaders in our industry and all our competitors don't suck our huge dick.
-We're just 
+We're just
  small company, and we are dying because of hard competition."
 "We are not the Super Mega International Corporation ltd., we are just a nursery etc."
 We see it 5 times a day. This shit doesn't work at all !!!
@@ -3316,7 +3316,7 @@ for p in result:
 # Test adicional para reconocimiento de entidades nombradas
 print("\n--- Named Entity Recognition Test with NLP AI ---")
 test_text = """
-Google Inc. ha abierto una nueva oficina en Madrid, España. 
+Google Inc. ha abierto una nueva oficina en Madrid, España.
 El CEO de Microsoft, Satya Nadella, visitará Barcelona el próximo mes.
 Apple está trabajando en un nuevo producto que revolucionará el mercado.
 La Universidad Autónoma de Madrid y el CSIC han firmado un acuerdo de colaboración.
