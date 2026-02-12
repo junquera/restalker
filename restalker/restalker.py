@@ -5,7 +5,7 @@ from urllib.parse import urljoin, urlparse
 import based58
 from bech32ref import segwit_addr
 from bip_utils import SS58Decoder
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from monero.address import address as xmr_address
 from web3 import Web3
 
@@ -13,7 +13,7 @@ from .link_extractors import UUF
 
 
 class Item:
-    def __init__(self, value=None):
+    def __init__(self, value: str | None = None):
         self.value = value
 
     def __eq__(self, other):
@@ -559,7 +559,7 @@ tw_account_regex = r"[^a-zA-Z0-9]@([a-zA-Z0-9_]{3,15})"
 
 telegram_url_regex = r"((?:https?\:\/\/)?(?:t\.me|telegram\.me|telegram\.dog)(?:\/(?:joinchat|c|\+)?[a-zA-Z0-9_-]+(?:\/[0-9]+)?)+)"
 
-whatsapp_url_regex = r"((?:https?\:\/\/)?(?:wa\.me|api\.whatsapp\.com\/send|chat\.whatsapp\.com)(?:\/(?:invite\/)?[a-zA-Z0-9_-]+)*(?:\?(?:[^=]+=[^&\s]+)(?:&[^=]+=[^&\s]+)*)?)"
+whatsapp_url_regex = r"((?:https?\:\/\/)?(?:wa\.me|api\.whatsapp\.com\/send|chat\.whatsapp\.com)(?:\/(?:invite\/)?[a-zA-Z0-9_-]+)*(?:\?(?:[^=]+=[^&\s\"\']+)(?:&[^=]+=[^&\s\"\']+)*)?)"
 
 discord_url_regex = (
     r"((?:https?\:\/\/)?(?:discord(?:app)?\.(?:gg|com|io|me)|discord\.(?:com\/invite))(?:\/[a-zA-Z0-9_-]+)+)"
@@ -853,6 +853,7 @@ def extract_elements(x):
 class reStalker:
     def __init__(
         self,
+        use_ner,
         phone=False,
         email=False,
         iban_address=False,
@@ -901,6 +902,8 @@ class reStalker:
         all=False,
     ):
 
+        self.use_ner = use_ner
+        
         self.own_name = own_name or all
         self.location = location or all
         self.organization = organization or all
@@ -996,6 +999,9 @@ class reStalker:
                 links = soup.find_all("a")
                 if links:
                     for url in links:
+                        # Type check: ensure url is a Tag object (not PageElement or NavigableString)
+                        if not isinstance(url, Tag):
+                            continue
                         try:
                             href = url.get("href")
                             if href:
@@ -1111,15 +1117,16 @@ class reStalker:
                         result.append(split_entity)
             return result
 
-        # Load GLiNER model if not loaded yet
-        if reStalker.gliner_model is None:
-            from gliner2 import GLiNER2
-            reStalker.gliner_model = GLiNER2.from_pretrained('fastino/gliner2-large-v1')
+        # Load GLiNER model if not loaded yet and use_ner is enabled
+        if self.use_ner:
+            if reStalker.gliner_model is None:
+                from gliner2 import GLiNER2
+                reStalker.gliner_model = GLiNER2.from_pretrained('fastino/gliner2-large-v1')
 
         # Extract entities with GLiNER if any NER-related feature is enabled
         entities_dict = {}
-        needs_gliner = (self.ner or self.phone or self.username or self.password or
-                       self.own_name or self.location or self.organization)
+        needs_gliner = (self.use_ner and (self.ner or self.phone or self.username or self.password or
+                       self.own_name or self.location or self.organization))
 
         if needs_gliner:
             # Define entity labels for GLiNER2 extraction
@@ -1136,18 +1143,18 @@ class reStalker:
                 entities_dict = result
 
         # ========================================================================
-        # PROCESS GLiNER ENTITIES
+        # PROCESS GLiNER ENTITIES (only if use_ner is enabled)
         # ========================================================================
 
         # --- PERSON entities (OwnName) ---
-        if self.own_name:
+        if self.use_ner and self.own_name:
             person_entities = split_entities(entities_dict.get('PERSON', []))
             for person_name in person_entities:
                 if not person_name.lower().startswith('person') and is_valid_context(body, person_name):
                     yield OwnName(value=person_name)
 
         # --- ORGANIZATION entities ---
-        if self.organization:
+        if self.use_ner and self.organization:
             seen_orgs = set()
             # Words that indicate false positives
             invalid_start_words = ['remember', 'that', 'we', 'need', 'this', 'for',
@@ -1172,7 +1179,7 @@ class reStalker:
                     yield Organization(value=org_name)
 
         # --- LOCATION entities (LOC, GPE, FAC) ---
-        if self.location:
+        if self.use_ner and self.location:
             seen_locations = set()
 
             # Collect from multiple location-related labels
@@ -1192,7 +1199,7 @@ class reStalker:
                         yield Location(value=location_text)
 
         # --- USERNAME entities ---
-        if self.username:
+        if self.use_ner and self.username:
             seen_usernames = set()
             username_entities = split_entities(entities_dict.get('USERNAME', []))
             for username_text in username_entities:
@@ -1210,7 +1217,7 @@ class reStalker:
                     yield Username(value=username_text)
 
         # --- PASSWORD entities ---
-        if self.password:
+        if self.use_ner and self.password:
             seen_passwords = set()
             password_entities = split_entities(entities_dict.get('PASSWORD', []))
             for password_text in password_entities:
@@ -1292,51 +1299,52 @@ class reStalker:
                         seen_phones.add(normalized)
                         phones_to_yield.append(phone_str)
 
-            # Method 2: Extract phones from GLiNER entities
-            phone_entities = split_entities(entities_dict.get('PHONE', []))
-            for phone_str in phone_entities:
-                # Validate context
-                if not is_valid_context(body, phone_str):
-                    continue
+            # Method 2: Extract phones from GLiNER entities (only if use_ner is enabled)
+            if self.use_ner:
+                phone_entities = split_entities(entities_dict.get('PHONE', []))
+                for phone_str in phone_entities:
+                    # Validate context
+                    if not is_valid_context(body, phone_str):
+                        continue
 
-                # Check if the phone string itself looks like hex code
-                clean_phone = re.sub(r'[\s\-\(\)\.\+]', '', phone_str)
-                if clean_phone:
-                    alnum_chars = [c for c in clean_phone if c.isalnum()]
-                    if alnum_chars:
-                        hex_chars_in_phone = sum(1 for c in alnum_chars if c in '0123456789ABCDEFabcdef')
-                        hex_ratio_self = hex_chars_in_phone / len(alnum_chars)
-                        has_hex_letters = any(c in 'ABCDEFabcdef' for c in clean_phone)
-                        if hex_ratio_self > 0.95 and has_hex_letters and len(clean_phone) >= 8:
-                            continue
+                    # Check if the phone string itself looks like hex code
+                    clean_phone = re.sub(r'[\s\-\(\)\.\+]', '', phone_str)
+                    if clean_phone:
+                        alnum_chars = [c for c in clean_phone if c.isalnum()]
+                        if alnum_chars:
+                            hex_chars_in_phone = sum(1 for c in alnum_chars if c in '0123456789ABCDEFabcdef')
+                            hex_ratio_self = hex_chars_in_phone / len(alnum_chars)
+                            has_hex_letters = any(c in 'ABCDEFabcdef' for c in clean_phone)
+                            if hex_ratio_self > 0.95 and has_hex_letters and len(clean_phone) >= 8:
+                                continue
 
-                # Additional hex context check for GLiNER results too
-                # Find position of phone_str in body
-                pos = body.find(phone_str)
-                if pos != -1:
-                    hex_context_before = ""
-                    hex_context_after = ""
+                    # Additional hex context check for GLiNER results too
+                    # Find position of phone_str in body
+                    pos = body.find(phone_str)
+                    if pos != -1:
+                        hex_context_before = ""
+                        hex_context_after = ""
 
-                    if pos > 0:
-                        hex_start = max(0, pos - 10)
-                        hex_context_before = body[hex_start:pos]
+                        if pos > 0:
+                            hex_start = max(0, pos - 10)
+                            hex_context_before = body[hex_start:pos]
 
-                    if pos + len(phone_str) < len(body):
-                        hex_end = min(len(body), pos + len(phone_str) + 10)
-                        hex_context_after = body[pos + len(phone_str):hex_end]
+                        if pos + len(phone_str) < len(body):
+                            hex_end = min(len(body), pos + len(phone_str) + 10)
+                            hex_context_after = body[pos + len(phone_str):hex_end]
 
-                    combined_context = hex_context_before + hex_context_after
-                    if combined_context:
-                        hex_chars = sum(1 for c in combined_context if c in '0123456789ABCDEFabcdef')
-                        hex_ratio = hex_chars / len(combined_context)
-                        if hex_ratio > 0.8:
-                            continue
+                        combined_context = hex_context_before + hex_context_after
+                        if combined_context:
+                            hex_chars = sum(1 for c in combined_context if c in '0123456789ABCDEFabcdef')
+                            hex_ratio = hex_chars / len(combined_context)
+                            if hex_ratio > 0.8:
+                                continue
 
-                # Normalize for duplicate detection
-                normalized = re.sub(r'[\s\-\(\)\.]', '', phone_str)
-                if normalized not in seen_phones and len(phone_str) > 5:
-                    seen_phones.add(normalized)
-                    phones_to_yield.append(phone_str)
+                    # Normalize for duplicate detection
+                    normalized = re.sub(r'[\s\-\(\)\.]', '', phone_str)
+                    if normalized not in seen_phones and len(phone_str) > 5:
+                        seen_phones.add(normalized)
+                        phones_to_yield.append(phone_str)
 
             # Yield all unique phones
             for phone in phones_to_yield:
@@ -1738,7 +1746,7 @@ def main():
     import sys
 
     parse_file = sys.argv[1]
-    s = reStalker(all=True)
+    s = reStalker(use_ner=True, all=True)
     with open(parse_file) as f:
         parser = s.parse(f.read())
     for element in parser:

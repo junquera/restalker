@@ -4,7 +4,7 @@ from restalker.restalker import Card_Number, reStalker
 
 
 def test_bin_extraction():
-    s = reStalker(bin_number=True, credit_card=False, ccn_number=False)
+    s = reStalker(use_ner=False, bin_number=True, credit_card=False, ccn_number=False)
     text = "My BIN is 123456 and another is 87654321. Not a BIN: 12345 or 123456789."
     results = list(s.parse(text))
     bins = [r.value for r in results if r.value.startswith("BIN/IIN=")]
@@ -15,7 +15,7 @@ def test_bin_extraction():
     assert "BIN/IIN=123456789" not in bins
 
 def test_ccn_extraction():
-    s = reStalker(ccn_number=True, credit_card=False, bin_number=False)
+    s = reStalker(use_ner=False, ccn_number=True, credit_card=False, bin_number=False)
     text = "Valid: 123456789012, 1234567890123456789. Invalid: 1234567, 12345678901234567890."
     results = list(s.parse(text))
     ccns = [r.value for r in results if r.value.startswith("CCN=")]
@@ -28,7 +28,7 @@ def test_ccn_extraction():
 def test_credit_card_and_ccn_no_duplicate():
     # 16-digit Visa, should be detected as credit card, not as generic CCN
     visa = "4111111111111111"
-    s = reStalker(credit_card=True, ccn_number=True)
+    s = reStalker(use_ner=False, credit_card=True, ccn_number=True)
     results = list(s.parse(visa))
     ccns = [r.value for r in results if r.value.startswith("CCN=")]
     cards = [r.value for r in results if r.value.startswith("Companies=")]
@@ -39,7 +39,7 @@ def test_credit_card_luhn():
     # Should only yield if Luhn valid
     valid = "4111111111111111"  # Visa test
     invalid = "4111111111111121"
-    s = reStalker(credit_card=True)
+    s = reStalker(use_ner=False, credit_card=True)
     results_valid = list(s.parse(valid))
     results_invalid = list(s.parse(invalid))
     assert any(isinstance(r, Card_Number) for r in results_valid)

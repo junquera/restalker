@@ -19,7 +19,7 @@ class TestPhoneVsHashDetection:
         # but is actually part of a cryptographic hash
         text = "56A1ADE4B65B86BCD51CC73E2CD4E542179F47959FE3E0E21B4B0ACDADE518"
 
-        stalker = reStalker(phone=True)
+        stalker = reStalker(use_gliner=False, phone=True)
         results = list(stalker.parse(text))
         phones = [r for r in results if isinstance(r, Phone)]
 
@@ -32,7 +32,7 @@ class TestPhoneVsHashDetection:
         # Real SHA256 hash that might contain phone-like patterns
         text = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
-        stalker = reStalker(phone=True)
+        stalker = reStalker(use_gliner=False, phone=True)
         results = list(stalker.parse(text))
         phones = [r for r in results if isinstance(r, Phone)]
 
@@ -45,7 +45,7 @@ class TestPhoneVsHashDetection:
         # MD5 hash
         text = "5d41402abc4b2a76b9719d911017c592"
 
-        stalker = reStalker(phone=True)
+        stalker = reStalker(use_gliner=False, phone=True)
         results = list(stalker.parse(text))
         phones = [r for r in results if isinstance(r, Phone)]
 
@@ -57,7 +57,7 @@ class TestPhoneVsHashDetection:
         """Real phone number in normal text should be detected."""
         text = "Contact me at +1-555-123-4567 for more information."
 
-        stalker = reStalker(phone=True)
+        stalker = reStalker(use_gliner=False, phone=True)
         results = list(stalker.parse(text))
         phones = [r for r in results if isinstance(r, Phone)]
 
@@ -75,7 +75,7 @@ class TestPhoneVsHashDetection:
         """Phone number with spaces in normal text should be detected."""
         text = "Call me: +44 20 7946 0958"
 
-        stalker = reStalker(phone=True)
+        stalker = reStalker(use_gliner=False, phone=True)
         results = list(stalker.parse(text))
         phones = [r for r in results if isinstance(r, Phone)]
 
@@ -89,7 +89,7 @@ class TestPhoneVsHashDetection:
         Support: +44 20 7946 0958
         """
 
-        stalker = reStalker(phone=True)
+        stalker = reStalker(use_gliner=False, phone=True)
         results = list(stalker.parse(text))
         phones = [r for r in results if isinstance(r, Phone)]
 
@@ -117,7 +117,7 @@ class TestPhoneVsHashDetection:
         # Bitcoin addresses can contain numbers that look like phones
         text = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
 
-        stalker = reStalker(phone=True)
+        stalker = reStalker(use_gliner=False, phone=True)
         results = list(stalker.parse(text))
         phones = [r for r in results if isinstance(r, Phone)]
 
@@ -129,7 +129,7 @@ class TestPhoneVsHashDetection:
         """Ethereum address should not be detected as phone."""
         text = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
 
-        stalker = reStalker(phone=True)
+        stalker = reStalker(use_gliner=False, phone=True)
         results = list(stalker.parse(text))
         phones = [r for r in results if isinstance(r, Phone)]
 
@@ -141,7 +141,7 @@ class TestPhoneVsHashDetection:
         """Phone-like pattern at the start of a hex string should NOT be detected."""
         text = "4567890ABCDEF1234567890ABCDEF1234567890ABCDEF12"
 
-        stalker = reStalker(phone=True)
+        stalker = reStalker(use_gliner=False, phone=True)
         results = list(stalker.parse(text))
         phones = [r for r in results if isinstance(r, Phone)]
 
@@ -153,7 +153,7 @@ class TestPhoneVsHashDetection:
         """Phone-like pattern at the end of a hex string should NOT be detected."""
         text = "ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890"
 
-        stalker = reStalker(phone=True)
+        stalker = reStalker(use_gliner=False, phone=True)
         results = list(stalker.parse(text))
         phones = [r for r in results if isinstance(r, Phone)]
 
@@ -169,7 +169,7 @@ class TestPhoneContextValidation:
         """Phone-like number surrounded by letters should NOT be detected."""
         text = "abc1234567890xyz"
 
-        stalker = reStalker(phone=True)
+        stalker = reStalker(use_gliner=False, phone=True)
         results = list(stalker.parse(text))
         phones = [r for r in results if isinstance(r, Phone)]
 
@@ -186,7 +186,7 @@ class TestPhoneContextValidation:
             "(555) 123-4567",
         ]
 
-        stalker = reStalker(phone=True)
+        stalker = reStalker(use_gliner=False, phone=True)
 
         for phone_text in test_cases:
             text = f"Call me at {phone_text} today."

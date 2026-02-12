@@ -24,10 +24,7 @@ setup(
         "web3",
         "lxml",
         "phonenumbers",
-        "pyexifinfo",
         "python-magic",
-        "PyPDF2",
-        "olefile",
         "torch>=2.0.0",  # CPU-only by default from PyPI
     ],
     extras_require={
