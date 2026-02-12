@@ -1,0 +1,36 @@
+# reStalker - NVIDIA GPU (CUDA) Requirements
+# Install with: pip install -r requirements-gpu-cuda.txt
+#
+# System Requirements:
+#   - NVIDIA GPU with CUDA Compute Capability 3.5+
+#   - NVIDIA Driver 450.80.02+ (Linux) or 452.39+ (Windows)
+#   - CUDA 11.8+ or CUDA 12.x
+#
+# Disk Space: ~3.2GB
+# Performance: 5-10x faster than CPU for entity extraction
+#
+# Installation:
+#   pip install -r requirements-gpu-cuda.txt
+#
+# Verify GPU is detected:
+#   python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
+
+# Core dependencies
+based58
+bech32ref
+bip-utils
+bs4
+monero
+web3
+lxml
+gliner
+phonenumbers
+pyexifinfo
+python-magic
+PyPDF2
+olefile
+
+# PyTorch with CUDA support
+# Note: This will install CUDA libraries (~2.5GB) automatically
+--index-url https://download.pytorch.org/whl/cu121
+torch>=2.0.0

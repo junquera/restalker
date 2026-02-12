@@ -41,6 +41,7 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+.pytest_cache/
 nosetests.xml
 coverage.xml
 *.cover
@@ -105,3 +106,5 @@ ENV/
 
 # Visual Studio Code
 .vscode
+
+*.lock

@@ -1,15 +1,19 @@
 [tool.poetry]
 name = "restalker"
-version = "2.1.0"
+version = "2.1.1"
 description = "Text analyzer package"
 authors = ["Javier Junquera-Sánchez <javier@junquera.io>"]
 readme = "README.md"
 license = "MIT"
 
+[[tool.poetry.source]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
 [tool.poetry.dependencies]
 python = "^3.10"
-numpy = "*"
-gliner = "*"
+# Core dependencies
 based58 = "*"
 web3 = "*"
 monero = "*"
@@ -18,8 +22,103 @@ bech32ref = "*"
 bs4 = "^0.0.2"
 lxml = "*"
 phonenumbers = "*"
+pyexifinfo = "*"
+python-magic = "*"
+PyPDF2 = "*"
+olefile = "*"
 
-[tool.poetry.dev-dependencies]
+# ML dependencies - CPU-only by default to minimize install size
+# For GPU support, use: poetry install --extras gpu (NVIDIA) or --extras amd-gpu (AMD)
+torch = {version = ">=2.0.0", source = "pytorch-cpu"}
+gliner = "*"
+
+[tool.poetry.extras]
+# NVIDIA GPU support (CUDA 11.8+)
+# Install with: poetry install --extras gpu
+# Disk space: ~3.2GB | Performance: 5-10x faster
+gpu = []
+
+# AMD GPU support (ROCm 5.x+)
+# Install with: poetry install --extras amd-gpu  
+# Disk space: ~3.5GB | Performance: 3-7x faster
+amd-gpu = []
+
+# Explicit CPU-only (default)
+# Install with: poetry install
+# Disk space: ~500MB | Portable, no GPU required
+cpu = []
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+pytest-cov = "*"
+
+[tool.pytest.ini_options]
+# Test discovery
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+
+# Output verbosity and coverage
+addopts = [
+    "-v",                           # Verbose: show each test name
+    "-ra",                          # Show summary of all outcomes (except passed)
+    "--tb=short",                   # Shorter tracebacks for failures
+    "--strict-markers",             # Fail on unknown markers
+    "--durations=10",               # Show 10 slowest tests
+    
+    # Coverage options
+    "--cov=restalker",              # Measure coverage for restalker package only
+    "--cov-branch",                 # Enable branch coverage (if/else paths)
+    "--cov-report=term-missing",    # Show missing lines in terminal
+    "--cov-report=term:skip-covered", # Skip 100% covered files in summary
+    
+    # Performance
+    "--maxfail=5",                  # Stop after 5 failures
+]
+
+# Test collection patterns
+norecursedirs = [
+    ".git",
+    ".pytest_cache",
+    "__pycache__",
+    "*.egg-info",
+    ".venv",
+    "venv",
+    "htmlcov",
+    "doc",
+    "scripts",
+    "tests/demos",
+    "tests/fixtures",
+]
+
+[tool.coverage.run]
+source = ["restalker"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/site-packages/*",
+    "*/doc/*",
+    "*/scripts/*",
+]
+branch = true
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+skip_empty = true
+
+# Exclude lines from coverage
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

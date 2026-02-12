@@ -1,0 +1,58 @@
+# reStalker - AMD GPU (ROCm) Requirements
+# Install with: pip install -r requirements-gpu-rocm.txt
+#
+# ⚠️  COMPATIBILITY WARNING ⚠️
+# ROCm support is LIMITED to specific AMD GPUs. Before installing, verify your GPU is supported:
+#
+# SUPPORTED AMD GPUs (as of ROCm 7.2):
+#   - Discrete GPUs: Radeon RX 7900/7800/7700/7600 series, RX 9000 series
+#   - Ryzen APUs: ONLY Ryzen AI Max+/Max (gfx1150/gfx1151 architecture)
+#     • Ryzen AI Max+ 395
+#     • Ryzen AI Max 390/385
+#     • Ryzen AI 9 HX 375/370/365/475/470/465
+#
+# NOT SUPPORTED:
+#   - Integrated GPUs: Barcelo, Renoir, Cezanne, Lucienne, Picasso, Raven Ridge
+#   - Older Ryzen APUs (Ryzen 3000/5000/7000 series integrated graphics)
+#   - Consumer laptops with integrated graphics (most models)
+#
+# Check compatibility: https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html
+#
+# If your GPU is NOT supported, use CPU-only installation instead:
+#   pip install -r requirements.txt
+#
+# System Requirements:
+#   - AMD GPU with ROCm support (see list above)
+#   - ROCm 6.0 or newer installed
+#   - Linux only (ROCm not available on Windows/macOS)
+#
+# Disk Space: ~3.5GB
+# Performance: 3-7x faster than CPU for entity extraction
+#
+# Installation:
+#   # First, verify GPU compatibility above
+#   # Then install ROCm from AMD: https://rocm.docs.amd.com/
+#   pip install -r requirements-gpu-rocm.txt
+#
+# Verify GPU is detected:
+#   python -c "import torch; print(f'ROCm available: {torch.cuda.is_available()}')"
+
+# Core dependencies
+based58
+bech32ref
+bip-utils
+bs4
+monero
+web3
+lxml
+gliner
+phonenumbers
+pyexifinfo
+python-magic
+PyPDF2
+olefile
+
+# PyTorch with ROCm support
+# Note: ROCm must be installed on your system first
+--index-url https://download.pytorch.org/whl/rocm6.0
+torch>=2.0.0

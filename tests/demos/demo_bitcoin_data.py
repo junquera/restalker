@@ -1,6 +1,5 @@
 import restalker
 import sys
-import spacy
 
 if len(sys.argv) > 1:
     with open(sys.argv[1]) as f:
@@ -3303,17 +3302,7 @@ tg://resource?id=blablabla
 
 """
 
-# Cargar modelo de spaCy - puede que necesites descargarlo primero con:
-# python -m spacy download es_core_news_sm
-try:
-    nlp = spacy.load("es_core_news_md")
-except OSError:
-    try:
-        nlp = spacy.load("en_core_web_md")
-    except OSError:
-        print("Descargando modelo de spaCy...")
-        spacy.cli.download("en_core_web_sm")
-        nlp = spacy.load("en_core_web_sm")
+# Spacy model loading removed - no longer used
 
 #s = restalker.reStalker(telegram=True)
 # Test para reconocimiento de URLs de Tor

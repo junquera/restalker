@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="restalker",
-    version="2.1.0",
+    version="2.1.1",
     description="Text analyzer package",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -21,11 +21,31 @@ setup(
         "bip-utils",
         "bs4",
         "gliner",
-        "numpy",
         "monero",
         "web3",
         "lxml",
         "phonenumbers",
+        "pyexifinfo",
+        "python-magic",
+        "PyPDF2",
+        "olefile",
     ],
+    extras_require={
+        # NVIDIA GPU support (CUDA)
+        # Install with: pip install restalker[gpu]
+        "gpu": [
+            "torch>=2.0.0",  # Will install CUDA variant from PyTorch index
+        ],
+        # AMD GPU support (ROCm)
+        # Install with: pip install restalker[amd-gpu]
+        "amd-gpu": [
+            "torch>=2.0.0",  # Will install ROCm variant from PyTorch index
+        ],
+        # CPU-only (default)
+        # Install with: pip install restalker or pip install restalker[cpu]
+        "cpu": [
+            "torch>=2.0.0",  # Will install CPU-only variant
+        ],
+    },
     entry_points=dict(console_scripts=["restalker=restalker.restalker:main"]),
 )
