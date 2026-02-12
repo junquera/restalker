@@ -1,11 +1,12 @@
-import pyexifinfo as p
-import uuid
 import io
 import os
-import magic
-from PyPDF2 import PdfFileReader
-import olefile
+import uuid
 from hashlib import sha256
+
+import magic
+import olefile
+import pyexifinfo as p
+from PyPDF2 import PdfFileReader
 
 
 def contains_metadata(byte_array):
@@ -27,7 +28,7 @@ def is_bin(b):
     """
     if isinstance(b, bytes):
         return False
-    
+
     try:
         b.decode('utf8')
         return False
@@ -35,15 +36,15 @@ def is_bin(b):
         # If can't be decoded as UTF-8, is probably binary
         return True
     except AttributeError:
-        # If there isn't a decode() method, we asume its not binary
+        # If there isn't a decode() method, we assume it's not binary
         return False
 
 
 class Metadata():
 
-    def __init__(self, signature=None, tags={}):
+    def __init__(self, signature=None, tags=None):
         self.signature = signature
-        self.tags = tags
+        self.tags = tags if tags is not None else {}
 
     def __str__(self):
         return ("%s: %s" % (self.signature, self.tags))
@@ -149,11 +150,3 @@ def format_metadata(tags):
     for tag in tags.keys():
         res += '%s\t%s\n' % (tag, tags[tag])
     return res
-
-
-t = TmpFile('abcde'.encode('utf-8'))
-t.safe_delete()
-#
-#
-# with open('/home/junquera/Imágenes/stranger-kids-portada.jpg', 'rb') as f:
-#     print(get_metadata(f.read()))

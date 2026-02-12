@@ -23,7 +23,7 @@ bs4
 monero
 web3
 lxml
-gliner
+gliner2
 phonenumbers
 pyexifinfo
 python-magic

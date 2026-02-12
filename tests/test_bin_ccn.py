@@ -1,5 +1,7 @@
 import pytest
-from restalker.restalker import reStalker, Item, Card_Number
+
+from restalker.restalker import Card_Number, reStalker
+
 
 def test_bin_extraction():
     s = reStalker(bin_number=True, credit_card=False, ccn_number=False)

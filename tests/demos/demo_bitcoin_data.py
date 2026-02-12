@@ -1,5 +1,6 @@
-import restalker
 import sys
+
+import restalker
 
 if len(sys.argv) > 1:
     with open(sys.argv[1]) as f:
@@ -3189,7 +3190,7 @@ x5gj5_gmG8.log
 vssadmin delete shadows /all /for=
 \vssadmin.exe
 cipher /W: 
-\cipher.exe
+\\cipher.exe
 processed:
 available VM: 
 x5gj5_gmG8
@@ -3305,7 +3306,7 @@ tg://resource?id=blablabla
 # Spacy model loading removed - no longer used
 
 #s = restalker.reStalker(telegram=True)
-# Test para reconocimiento de URLs de Tor
+# Test for Tor URL recognition
 s = restalker.reStalker(tor=True)
 result = list(s.parse(target))
 print(f"Len: {len(result)}")
@@ -3313,7 +3314,7 @@ for p in result:
     print(p)
 
 # Test adicional para reconocimiento de entidades nombradas
-print("\n--- Test de reconocimiento de entidades con spaCy ---")
+print("\n--- Named Entity Recognition Test with NLP AI ---")
 test_text = """
 Google Inc. ha abierto una nueva oficina en Madrid, España. 
 El CEO de Microsoft, Satya Nadella, visitará Barcelona el próximo mes.
@@ -3323,12 +3324,12 @@ La Universidad Autónoma de Madrid y el CSIC han firmado un acuerdo de colaborac
 
 s_ner = restalker.reStalker(organization=True, location=True, own_name=True)
 result_ner = list(s_ner.parse(test_text))
-print(f"Entidades encontradas: {len(result_ner)}")
+print(f"Entities found: {len(result_ner)}")
 for entity in result_ner:
     print(entity)
 
-# Test para extracción de frases clave
-print("\n--- Test de extracción de frases clave con spaCy ---")
+# Test for key phrase extraction
+print("\n--- Key Phrase Extraction Test with NLP AI ---")
 test_keywords = """
 La inteligencia artificial está transformando la forma en que interactuamos con la tecnología.
 El procesamiento de lenguaje natural permite a las máquinas entender el lenguaje humano.
@@ -3337,6 +3338,6 @@ Los modelos de aprendizaje automático pueden analizar grandes cantidades de dat
 
 s_keys = restalker.reStalker(keyphrase=True)
 result_keys = list(s_keys.parse(test_keywords))
-print(f"Frases clave encontradas: {len(result_keys)}")
+print(f"Key phrases found: {len(result_keys)}")
 for key in result_keys:
     print(key)

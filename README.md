@@ -18,6 +18,7 @@ A powerful Python library for extracting Indicators of Compromise (IOCs) and var
 - [🚀 Quick Start](#-quick-start)
 - [🎯 Detection Capabilities](#-detection-capabilities)
 - [📦 Installation](#-installation)
+- [🧠 GLiNER2 Named Entity Recognition](#-gliner2-named-entity-recognition)
 - [💻 Usage Examples](#-usage-examples)
 - [📖 Documentation](#-documentation)
 - [🤝 Contributing](#-contributing)
@@ -138,7 +139,7 @@ poetry add restalker
 
 ### 🚀 GPU Acceleration (Optional)
 
-reStalker supports GPU acceleration for significantly faster entity extraction using GLiNER. Choose the appropriate installation method based on your hardware:
+reStalker supports GPU acceleration for significantly faster entity extraction using **GLiNER2**. Choose the appropriate installation method based on your hardware:
 
 #### 🔍 Automatic Detection (Recommended)
 
@@ -210,6 +211,80 @@ import torch
 print(f"CUDA available: {torch.cuda.is_available()}")
 print(f"Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
 ```
+
+---
+
+## 🧠 GLiNER2 Named Entity Recognition
+
+reStalker uses **GLiNER2** (Generalized Named Entity Recognition v2) for advanced entity extraction. This AI-powered system provides context-aware detection of personal information, organizations, locations, and more.
+
+### What is GLiNER2?
+
+GLiNER2 is a state-of-the-art zero-shot Named Entity Recognition model that can identify entities without task-specific training. It understands context and relationships between words, making it highly accurate for extracting:
+
+- **Personal names** (people mentioned in text)
+- **Organizations** (companies, agencies, groups)
+- **Locations** (cities, countries, addresses)
+- **Phone numbers** (with context validation)
+- **Email addresses**
+- **Keyphrases** (important multi-word expressions)
+
+### Model Used
+
+reStalker v2.2.0+ uses the **`fastino/gliner2-large-v1`** model (~340MB):
+- 340M parameters for high accuracy
+- Optimized for cybersecurity and OSINT use cases
+- No TensorFlow dependency required
+- Runs efficiently on CPU or GPU
+
+### Enhanced Phone Detection
+
+GLiNER2 includes advanced phone number detection with **hex filtering** to prevent false positives:
+
+```python
+import restalker
+
+# Phone numbers in cryptographic hashes are NOT detected
+stalker = restalker.reStalker(phone=True)
+text = "Hash: a1b2c3d4567890abcdef"  # Contains "567890" but not a phone
+results = stalker.parse(text)
+# No phone detected ✓
+
+# Real phone numbers ARE detected
+text = "Contact: +1-555-123-4567"
+results = stalker.parse(text)
+# Phone detected: +1-555-123-4567 ✓
+```
+
+This enhancement prevents crypto wallet addresses, hashes (MD5, SHA1, SHA256), and hex strings from being incorrectly identified as phone numbers.
+
+### Context-Aware Extraction
+
+GLiNER2 validates entity context to ensure accurate extraction:
+
+```python
+# Prevents substring matches
+text = "myemail@example.com"  # "example" is part of email, not a person
+stalker = restalker.reStalker(own_name=True, email=True)
+results = stalker.parse(text)
+# Extracts email, but "example" is not extracted as a name ✓
+
+# Handles multi-line entities
+text = """
+Name: John
+Doe
+"""
+results = stalker.parse(text)
+# Correctly splits "John" and "Doe" as separate entities ✓
+```
+
+### Migration from GLiNER v0.2.x
+
+If you're upgrading from reStalker v2.1.x (which used GLiNER v0.2.25), the changes are seamless:
+- **No API changes** - All your existing code works as-is
+- **Better accuracy** - Improved entity detection with fewer false positives
+- **Faster performance** - GLiNER2 is more optimized
+- **No TensorFlow** - Reduced dependencies and installation size
 
 ---
 

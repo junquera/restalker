@@ -2,39 +2,35 @@ import pytest
 
 """  README
 
-For testing, the GLiNER model will be automatically downloaded from HuggingFace on first use.
+For testing, the GLiNER2 model will be automatically downloaded from HuggingFace on first use.
 Make sure you have internet connectivity for the initial model download.
 
-The model used is: nvidia/gliner-PII
+The model used is: fastino/gliner2-large-v1
 
-No additional setup is required - GLiNER will handle model download automatically.
+No additional setup is required - GLiNER2 will handle model download automatically.
 """
 
-# Function to initialize GLiNER model for tests
+# Function to initialize GLiNER2 model for tests
 def initialize_gliner_model():
     """
-    Initialize and load the GLiNER model for testing.
+    Initialize and load the GLiNER2 model for testing.
     Returns the loaded model or None if the model could not be loaded.
     """
     try:
-        # Disable tensorflow warnings if present
-        import sys
-        sys.modules['tensorflow'] = None
-        
-        from gliner import GLiNER
+        from gliner2 import GLiNER2
         try:
-            # Load nvidia's GLiNER model for PII detection
-            return GLiNER.from_pretrained('nvidia/gliner-PII')
+            # Load fastino's GLiNER2 large model
+            return GLiNER2.from_pretrained('fastino/gliner2-large-v1')
         except Exception as e:
-            print(f"Warning: Could not load GLiNER model. NER tests may fail. Error: {e}")
+            print(f"Warning: Could not load GLiNER2 model. NER tests may fail. Error: {e}")
             print("Please ensure you have internet connectivity for the first download.")
             return None
     except ImportError:
-        print("Warning: GLiNER not installed. NER tests may fail.")
-        print("Please run: pip install gliner")
+        print("Warning: GLiNER2 not installed. NER tests may fail.")
+        print("Please run: pip install gliner2")
         return None
 
-# Try to load the GLiNER model for testing
+# Try to load the GLiNER2 model for testing
 gliner_model = initialize_gliner_model()
 
 
@@ -44,44 +40,44 @@ def require_gliner():
 
 
 from restalker import (
-    reStalker,
-    Item,
-    BTC_Wallet,
-    ETH_Wallet,
-    XMR_Wallet,
-    ZEC_Wallet,
-    DASH_Wallet,
-    DOT_Wallet,
-    XRP_Wallet,
-    BNB_Wallet,
-    Email,
-    Phone,
-    PGP,
-    GA_Tracking_Code,
-    Tor_URL,
     I2P_URL,
     IPFS_URL,
-    Base64,
-    Username,
-    Password,
-    Zeronet_URL,
-    Bitname_URL,
-    Paste,
-    TW_Account,
-    Location,
-    Organization,
-    Keyphrase,
-    Keyword,
-    OwnName,
-    Whatsapp_URL,
-    Discord_URL,
-    Telegram_URL,
-    Skype_URL,
     MD5,
+    PGP,
     SHA1,
     SHA256,
+    Base64,
+    Bitname_URL,
+    BNB_Wallet,
+    BTC_Wallet,
+    DASH_Wallet,
+    Discord_URL,
+    DOT_Wallet,
+    Email,
+    ETH_Wallet,
+    GA_Tracking_Code,
+    Item,
+    Keyphrase,
+    Keyword,
+    Location,
+    Organization,
+    OwnName,
+    Password,
+    Paste,
+    Phone,
     Session_ID,
+    Skype_URL,
+    Telegram_URL,
+    Tor_URL,
     Tox_ID,
+    TW_Account,
+    Username,
+    Whatsapp_URL,
+    XMR_Wallet,
+    XRP_Wallet,
+    ZEC_Wallet,
+    Zeronet_URL,
+    reStalker,
 )
 
 
@@ -932,9 +928,9 @@ def test_gliner_ner_functionality():
     La Universidad de Stanford colaborará en la investigación.
     """
 
-    # Test NER with GLiNER directly to verify model works
+    # Test NER with GLiNER2 directly to verify model works
     entity_labels = ["PERSON", "ORGANIZATION", "LOCATION", "LOC", "GPE", "FAC"]
-    entities_found = gliner_model.predict_entities(
+    entities_found = gliner_model.extract_entities(
         test_text, entity_labels, threshold=0.5
     )
     assert len(entities_found) > 0
@@ -959,7 +955,7 @@ def test_gliner_ner_functionality():
     # Verify that at least one location was detected
     assert len(locations) > 0
 
-    # Verify person detection with spaCy
+    # Verify person detection with NLP
     # Exact detection may vary depending on the model, but should find some person
     if len(persons) > 0:
         print(f"Persons detected: {[p.value for p in persons]}")
@@ -995,7 +991,7 @@ def test_keyword_extraction():
     assert len(keyphrases) == 0
 
     # Print the keyphrases found
-    print(f"Frases clave encontradas: {[k.value for k in keyphrases]}")
+    print(f"Key phrases found: {[k.value for k in keyphrases]}")
 
     keyphrase_values = [k.value.lower() for k in keyphrases]
     assert keyphrase_values == []

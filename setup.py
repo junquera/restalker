@@ -1,6 +1,5 @@
 from setuptools import setup
 
-
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
@@ -20,7 +19,7 @@ setup(
         "bech32ref",
         "bip-utils",
         "bs4",
-        "gliner",
+        "gliner2",
         "monero",
         "web3",
         "lxml",

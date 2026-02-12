@@ -1,9 +1,6 @@
-import sys 
-sys.modules['tensorflow'] = None
+from gliner2 import GLiNER2
 
-from gliner import GLiNER
-
-model = GLiNER.from_pretrained('nvidia/gliner-PII')
+model = GLiNER2.from_pretrained('fastino/gliner2-large-v1')
 
 entity_labels = ['PERSON', 'ORGANIZATION', "LOC", "GPE", "FAC", "LOCATION", "USERNAME", 'PASSWORD']
 
@@ -12,8 +9,8 @@ text = ""
 with open('../fixtures/dummy_text.txt', 'r', encoding='utf-8') as file:
     text = file.read()
     file.close()
-    
-results = model.predict_entities(text, entity_labels)
+
+results = model.extract_entities(text, entity_labels)
 
 for result in results:
     print(result)

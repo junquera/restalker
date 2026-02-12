@@ -107,4 +107,8 @@ ENV/
 # Visual Studio Code
 .vscode
 
-*.lock
+# Package manager locks (keep poetry.lock for reproducibility)
+# Ignore JavaScript/Node.js lock files if they appear
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

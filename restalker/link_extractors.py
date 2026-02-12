@@ -1,7 +1,8 @@
-from urllib.parse import urlparse
-from hashlib import md5
-from . import restalker
 import re
+from hashlib import md5
+from urllib.parse import urlparse
+
+from . import restalker
 
 
 def looks_like_link(link: str):
