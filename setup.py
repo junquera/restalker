@@ -19,7 +19,7 @@ setup(
         "bech32ref",
         "bip-utils",
         "bs4",
-        "gliner",
+        "gliner2",
         "monero",
         "web3",
         "lxml",

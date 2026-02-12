@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "restalker"
-version = "2.1.1"
+version = "2.2.0"
 description = "Text analyzer package"
 authors = ["Javier Junquera-Sánchez <javier@junquera.io>"]
 readme = "README.md"
@@ -30,7 +30,7 @@ olefile = "*"
 # ML dependencies - CPU-only by default to minimize install size
 # For GPU support, use: poetry install --extras gpu (NVIDIA) or --extras amd-gpu (AMD)
 torch = {version = ">=2.0.0", source = "pytorch-cpu"}
-gliner = "*"
+gliner2 = "*"
 
 [tool.poetry.extras]
 # NVIDIA GPU support (CUDA 11.8+)
@@ -136,9 +136,7 @@ select = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-# Allow imports after code in files with tensorflow suppression
-# TensorFlow MUST be suppressed before importing GLiNER to prevent warnings
-"restalker/textan.py" = ["E402"]
+# Allow imports after code in demo files
 "tests/demos/demo_gliner.py" = ["E402"]
 
 [build-system]
