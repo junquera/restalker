@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "restalker"
-version = "2.2.0"
+version = "2.2.1"
 description = "Text analyzer package"
 authors = ["Javier Junquera-Sánchez <javier@junquera.io>"]
 readme = "README.md"
