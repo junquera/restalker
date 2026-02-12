@@ -1564,6 +1564,20 @@ tokenizers = ["camel_tools", "indic-nlp-library", "janome", "jieba3", "langdetec
 training = ["accelerate"]
 
 [[package]]
+name = "gliner2"
+version = "1.2.4"
+description = ""
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "gliner2-1.2.4-py3-none-any.whl", hash = "sha256:5dd04c62fc7045a7abcdafc770017fc4842425f6cf37f645a04681d53f6a871e"},
+    {file = "gliner2-1.2.4.tar.gz", hash = "sha256:ce816debc4b6f24f1d57e25d2c437bef82ebdfbf7bbc024c66c82db80c1c105f"},
+]
+
+[package.dependencies]
+gliner = "*"
+
+[[package]]
 name = "h11"
 version = "0.16.0"
 description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
@@ -4080,4 +4094,4 @@ gpu = []
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "dbf2cb2eec25afae7eceb42e1611e1a74b5c4bc44518964cbfbb931550c14ff8"
+content-hash = "0a7d9e5c00a39b9cbfb0bed082b9fc9d3a0c91f5824021e2e4b6e8e3e08f80cb"
