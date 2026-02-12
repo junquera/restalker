@@ -82,9 +82,10 @@ class IBAN_Address(Item):
 
             # IBAN if valid if mod 97 == 1
             ret = int(numeric) % 97 == 1
+        except Exception:
+            ret = False
 
-        finally:
-            return ret
+        return ret
 
 
 class BTC_Wallet(Item):
@@ -102,8 +103,10 @@ class BTC_Wallet(Item):
                 hrpgot, data, spec = segwit_addr.bech32_decode(address)
                 ret = (hrpgot is not None) and (
                     data is not None) and (spec is not None)
-        finally:
-            return ret
+        except Exception:
+            ret = False
+
+        return ret
 
 
 class ETH_Wallet(Item):
@@ -112,7 +115,7 @@ class ETH_Wallet(Item):
         ret = False
         try:
             ret = Web3.is_address(address)
-        except:
+        except Exception:
             ret = False
         return ret
 
@@ -125,7 +128,7 @@ class XMR_Wallet(Item):
             # Remove any whitespace from the address
             clean_address = ''.join(address.split())
             ret = xmr_address(clean_address) is not None
-        except:
+        except Exception:
             ret = False
         return ret
 
@@ -147,8 +150,10 @@ class ZEC_Wallet(Item):
                 hrpgot, data, spec = segwit_addr.bech32_decode(address)
                 ret = (hrpgot is not None) and (
                     data is not None) and (spec is not None)
-        finally:
-            return ret
+        except Exception:
+            ret = False
+
+        return ret
 
 
 class DASH_Wallet(Item):
@@ -163,8 +168,10 @@ class DASH_Wallet(Item):
                     decode_address[-4:] == sha256(
                         sha256(decode_address[:-4]).digest()).digest()[:4]
                 )
-        finally:
-            return ret
+        except Exception:
+            ret = False
+
+        return ret
 
 
 class DOT_Wallet(Item):
@@ -176,8 +183,10 @@ class DOT_Wallet(Item):
             if match and match[0] == address:
                 prefix, decode = SS58Decoder.Decode(address)
                 ret = prefix == 0
-        finally:
-            return ret
+        except Exception:
+            ret = False
+
+        return ret
 
 
 class XRP_Wallet(Item):
@@ -192,8 +201,10 @@ class XRP_Wallet(Item):
                     alphabet=based58.Alphabet.RIPPLE,
                 )
                 ret = True
-        finally:
-            return ret
+        except Exception:
+            ret = False
+
+        return ret
 
 
 class BNB_Wallet(Item):
@@ -205,8 +216,10 @@ class BNB_Wallet(Item):
             if match and match[0] == address:
                 hrpgot, data, spec = segwit_addr.bech32_decode(address)
                 ret = hrpgot == "bnb"
-        finally:
-            return ret
+        except Exception:
+            ret = False
+
+        return ret
 
 
 class TW_Account(Item):
@@ -237,9 +250,10 @@ class IPV4_Address(Item):
                     return False
 
             ret = True
+        except Exception:
+            ret = False
 
-        finally:
-            return ret
+        return ret
 
 
 class IPV6_Address(Item):
@@ -299,9 +313,11 @@ class IPV6_Address(Item):
 
         except ValueError:
             # Catches conversion errors (e.g.: non-hex characters like 'g', 'z')
-            return False
-        finally:
-            return ret
+            ret = False
+        except Exception:
+            ret = False
+
+        return ret
 
 
 class I2P_URL(Item):
@@ -359,7 +375,7 @@ class URL(Item):
                 return True
 
             return False
-        except:
+        except Exception:
             return False
 
 class Whatsapp_URL(Item):
@@ -677,14 +693,14 @@ def port_regex(p):
     return r"(?:\:%d)?" % (p)
 
 
-zeronet_params = dict(
-    http=http_regex,
-    localhost=localhost_regex,
-    port=port_regex(43110),
-    path=path_regex,
-    bitcoin=btc_wallet_regex,
-    bitname=bitname_domain_regex,
-)
+zeronet_params = {
+    "http": http_regex,
+    "localhost": localhost_regex,
+    "port": port_regex(43110),
+    "path": path_regex,
+    "bitcoin": btc_wallet_regex,
+    "bitname": bitname_domain_regex,
+}
 
 
 bitname_url = r"((?:{http})?(?:{bitcoin}|{bitname})(?:{port})?(?:{path})?)".format(
@@ -724,35 +740,35 @@ Create freenet sites:
     http://localhost:8888/freenet:USK@spOnEa2YvAoNfreZPfoy0tVNCzQghLdWaaNM10GEiEM,QRKjyaBkOX5Qw~aEml19WIDaJJo2X3hU9mGz8GcUuKc,AQACAAE/freesite_es/11/
 """
 
-freenet_terms = dict(
-    file_hash=alnum_join,
-    decryption_key=alnum_join,
-    crypto_settings=r"[A-Z]+(?:\-\-[0-9]+)?",
-    public_key=alnum_join,
-    user_selected_name=r"[a-zA-Z0-9\\_]+",
-    version=number_regex,
-    file_name=file_name,
-)
+freenet_terms = {
+    "file_hash": alnum_join,
+    "decryption_key": alnum_join,
+    "crypto_settings": r"[A-Z]+(?:\-\-[0-9]+)?",
+    "public_key": alnum_join,
+    "user_selected_name": r"[a-zA-Z0-9\\_]+",
+    "version": number_regex,
+    "file_name": file_name,
+}
 
-freenet_keys = dict(
-    chk="CHK@{file_hash},{decryption_key},{crypto_settings}",
-    ssk="SSK@{public_key},{decryption_key},{crypto_settings}\\/{user_selected_name}\\-{version}",
-    usk="USK@{public_key},{decryption_key},{crypto_settings}\\/{user_selected_name}\\/{version}",
-    ksk="KSK@{file_name}",
-)
+freenet_keys = {
+    "chk": "CHK@{file_hash},{decryption_key},{crypto_settings}",
+    "ssk": "SSK@{public_key},{decryption_key},{crypto_settings}\\/{user_selected_name}\\-{version}",
+    "usk": "USK@{public_key},{decryption_key},{crypto_settings}\\/{user_selected_name}\\/{version}",
+    "ksk": "KSK@{file_name}",
+}
 
 for k in freenet_keys:
     freenet_keys[k] = freenet_keys[k].format(**freenet_terms)
 
 freenet_hash = r"(?:{chk}|{ssk}|{usk}|{ksk})".format(**freenet_keys)
 
-freenet_params = dict(
-    http=http_regex,
-    localhost=localhost_regex,
-    port=port_regex(8888),
-    path=path_regex,
-    freenet_hash=freenet_hash,
-)
+freenet_params = {
+    "http": http_regex,
+    "localhost": localhost_regex,
+    "port": port_regex(8888),
+    "path": path_regex,
+    "freenet_hash": freenet_hash,
+}
 freenet_hidden_url = r"(?:(?:{http}?{localhost}{port})\/)?(?:freenet\:)?((?:{freenet_hash})(?:{path}))".format(
     **freenet_params
 )
@@ -829,7 +845,7 @@ def extract_elements(x):
             for element in extract_elements(piece):
                 if element is not None and element != '':
                     result.append(element)
-        return set(el for el in result if el)  # Filters out empty elements
+        return {el for el in result if el}  # Filters out empty elements
     else:
         return [x] if x is not None and x != '' else []
 
@@ -867,7 +883,7 @@ class reStalker:
         location=False,
         organization=False,
         keyphrase=False,
-        keywords=[],
+        keywords=None,
         pgp=False,
         gatc=False,
         base64=False,
@@ -896,7 +912,7 @@ class reStalker:
         self.ner = self.own_name or self.location or self.organization or self.username or self.password or self.phone
 
         self.keyphrase = keyphrase or all
-        self.keywords = keywords
+        self.keywords = keywords if keywords is not None else []
         self.email = email or all
         self.twitter = twitter or all
 

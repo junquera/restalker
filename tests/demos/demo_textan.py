@@ -11,7 +11,7 @@ y visión artificial.
 
 El aprendizaje automático es una rama de la inteligencia artificial que permite que las aplicaciones
 se vuelvan más precisas en la predicción de resultados sin ser explícitamente programadas.
-"""
+"""  # noqa: E501
 
 # Create TextAnalysis instance with test text
 ta = TextAnalysis(test_text)
