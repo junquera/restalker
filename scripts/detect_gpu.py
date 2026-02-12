@@ -97,7 +97,7 @@ def print_detailed_info(info):
     print()
     
     # System information
-    print(f"📊 System Information:")
+    print("📊 System Information:")
     print(f"   Platform: {info['platform']}")
     print()
     

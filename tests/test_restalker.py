@@ -959,7 +959,7 @@ def test_gliner_ner_functionality():
     # Verify that at least one location was detected
     assert len(locations) > 0
 
-    # Verify person detection with spaCy
+    # Verify person detection with NLP
     # Exact detection may vary depending on the model, but should find some person
     if len(persons) > 0:
         print(f"Persons detected: {[p.value for p in persons]}")
@@ -995,7 +995,7 @@ def test_keyword_extraction():
     assert len(keyphrases) == 0
 
     # Print the keyphrases found
-    print(f"Frases clave encontradas: {[k.value for k in keyphrases]}")
+    print(f"Key phrases found: {[k.value for k in keyphrases]}")
 
     keyphrase_values = [k.value.lower() for k in keyphrases]
     assert keyphrase_values == []

@@ -51,6 +51,7 @@ cpu = []
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
 pytest-cov = "*"
+ruff = "^0.15.0"
 
 [tool.pytest.ini_options]
 # Test discovery

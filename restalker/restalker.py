@@ -25,10 +25,12 @@ class Item:
         return hash(type(self).__name__ + str(self.value))
 
     def __str__(self):
-        return f"{type(self).__name__}({self.value[:128]})"
+        value_str = self.value[:128] if self.value is not None else 'None'
+        return f"{type(self).__name__}({value_str})"
 
     def __repr__(self):
-        return f"{type(self).__name__}({self.value[:128]})"
+        value_str = self.value[:128] if self.value is not None else 'None'
+        return f"{type(self).__name__}({value_str})"
 
 
 class Phone(Item):
@@ -153,7 +155,8 @@ class DASH_Wallet(Item):
     def isvalid(address: str) -> bool:
         ret = False
         try:
-            if re.search(dash_wallet_regex, address)[0] == address:
+            match = re.search(dash_wallet_regex, address)
+            if match and match[0] == address:
                 decode_address = based58.b58decode(address.encode("utf-8"))
                 ret = (
                     decode_address[-4:] == sha256(
@@ -168,7 +171,8 @@ class DOT_Wallet(Item):
     def isvalid(address: str) -> bool:
         ret = False
         try:
-            if re.search(dot_wallet_regex, address)[0] == address:
+            match = re.search(dot_wallet_regex, address)
+            if match and match[0] == address:
                 prefix, decode = SS58Decoder.Decode(address)
                 ret = prefix == 0
         finally:
@@ -180,7 +184,8 @@ class XRP_Wallet(Item):
     def isvalid(address: str) -> bool:
         ret = False
         try:
-            if re.search(xrp_wallet_regex, address)[0] == address:
+            match = re.search(xrp_wallet_regex, address)
+            if match and match[0] == address:
                 based58.b58decode_check(
                     address.encode("utf-8"),
                     alphabet=based58.Alphabet.RIPPLE,
@@ -195,7 +200,8 @@ class BNB_Wallet(Item):
     def isvalid(address: str) -> bool:
         ret = False
         try:
-            if re.search(bnb_wallet_regex, address)[0] == address:
+            match = re.search(bnb_wallet_regex, address)
+            if match and match[0] == address:
                 hrpgot, data, spec = segwit_addr.bech32_decode(address)
                 ret = hrpgot == "bnb"
         finally:
@@ -218,14 +224,14 @@ class IPV4_Address(Item):
             if not address:
                 return False
 
-            address = address.split('.')
+            blocks = address.split('.')
 
             # IPv4 has 4 blocks separated by a dot (192.168.1.1)
-            if len(address) != 4:
+            if len(blocks) != 4:
                 return False
 
             # Each block will be between 0 and 255
-            for block in address:
+            for block in blocks:
                 if int(block) < 0 or int(block) > 255:
                     return False
 
@@ -474,7 +480,7 @@ class Tox_ID(Item):
                 ret = (actual_checksum == calculated_checksum)
             else:
                 ret = False
-        except Exception as e:
+        except Exception:
             ret = False
         return ret
 
@@ -976,13 +982,15 @@ class reStalker:
                         try:
                             href = url.get("href")
                             if href:
+                                # Ensure href is a string (BeautifulSoup can return lists for multi-valued attributes)
+                                href_str = href if isinstance(href, str) else str(href)
                                 if origin is not None:
                                     # Make sure origin is a string
                                     if isinstance(origin, bytes):
                                         origin = origin.decode('utf-8')
-                                    full_url = urljoin(origin, href)
+                                    full_url = urljoin(origin, href_str)
                                 else:
-                                    full_url = href
+                                    full_url = href_str
 
                                 urls.add(UUF(full_url).rebuild())
                         except AttributeError:
@@ -1145,7 +1153,7 @@ class reStalker:
                         if (username_text and 
                             len(username_text) >= 3 and 
                             len(username_text) <= 30 and
-                            not username_text.lower() in ['user', 'username', 'name', 'email', 'contact'] and
+                            username_text.lower() not in ['user', 'username', 'name', 'email', 'contact'] and
                             ent.get('score', 0) > 0.6):  # Only high confidence
                             seen_usernames.add(username_text)
                             yield Username(value=username_text)
@@ -1159,7 +1167,7 @@ class reStalker:
                         if (password_text and 
                             len(password_text) >= 6 and 
                             len(password_text) <= 128 and
-                            not password_text.lower() in ['password', 'pass', 'pwd', 'key'] and
+                            password_text.lower() not in ['password', 'pass', 'pwd', 'key'] and
                             ent.get('score', 0) > 0.6):  # Only high confidence
                             seen_passwords.add(password_text)
                             yield Password(value=password_text)
