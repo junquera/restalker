@@ -1,6 +1,6 @@
 from restalker import restalker
 
-stalker = restalker.reStalker(all=True)
+stalker = restalker.reStalker(use_ner=True, all=True)
 
 text = ""
 

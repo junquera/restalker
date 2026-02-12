@@ -22,10 +22,7 @@ bech32ref = "*"
 bs4 = "^0.0.2"
 lxml = "*"
 phonenumbers = "*"
-pyexifinfo = "*"
 python-magic = "*"
-PyPDF2 = "*"
-olefile = "*"
 
 # ML dependencies - CPU-only by default to minimize install size
 # For GPU support, use: poetry install --extras gpu (NVIDIA) or --extras amd-gpu (AMD)

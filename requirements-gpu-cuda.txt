@@ -25,10 +25,7 @@ web3
 lxml
 gliner2
 phonenumbers
-pyexifinfo
 python-magic
-PyPDF2
-olefile
 
 # PyTorch with CUDA support
 # Note: This will install CUDA libraries (~2.5GB) automatically

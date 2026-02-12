@@ -387,14 +387,14 @@ def test_pgp_key_handling(sample_pgp_data):
 
 def test_restalker_initialization():
     # Test default initialization
-    stalker = reStalker()
+    stalker = reStalker(use_ner=False)
     for attr in dir(stalker):
         if "_" not in attr and attr not in ["parse", "nlp"]:
             val = getattr(stalker, attr)
             assert not val or val == []
 
     # Test all=True initialization
-    stalker = reStalker(all=True)
+    stalker = reStalker(use_ner=True, all=True)
     for attr in dir(stalker):
         if "_" not in attr and attr not in ["parse", "nlp"]:
             val = getattr(stalker, attr)
@@ -402,7 +402,7 @@ def test_restalker_initialization():
 
 
 def test_email_detection(sample_communication_data):
-    stalker = reStalker(email=True)
+    stalker = reStalker(use_ner=False, email=True)
     results = list(stalker.parse(sample_communication_data))
     emails = [r for r in results if isinstance(r, Email)]
     assert len(emails) > 0
@@ -410,7 +410,7 @@ def test_email_detection(sample_communication_data):
 
 
 def test_phone_detection(sample_communication_data):
-    stalker = reStalker(phone=True)
+    stalker = reStalker(use_ner=False, phone=True)
     results = list(stalker.parse(sample_communication_data))
     phones = [r for r in results if isinstance(r, Phone)]
     assert len(phones) > 0
@@ -419,6 +419,7 @@ def test_phone_detection(sample_communication_data):
 
 def test_crypto_detection(sample_crypto_data):
     stalker = reStalker(
+        use_ner=False,
         btc_wallet=True,
         eth_wallet=True,
         xmr_wallet=True,
@@ -460,7 +461,7 @@ def test_crypto_detection(sample_crypto_data):
 
 
 def test_url_detection(sample_url_data):
-    stalker = reStalker(tor=True, i2p=True, ipfs=True)
+    stalker = reStalker(use_ner=False, tor=True, i2p=True, ipfs=True)
     results = list(stalker.parse(sample_url_data))
 
     tor = [r for r in results if isinstance(r, Tor_URL)]
@@ -474,7 +475,7 @@ def test_url_detection(sample_url_data):
 
 def test_analytics_code_detection():
     data = "Google Analytics: UA-12345678-9 and G-ABCDEFGHIJ www.website.com/UXF8qo74PzHxW3oSkcJt2DG-nqZGb38pCiYTIHyDa0[/HIDEREACT]"
-    stalker = reStalker(gatc=True)
+    stalker = reStalker(use_ner=False, gatc=True)
     results = list(stalker.parse(data))
     codes = [r for r in results if isinstance(r, GA_Tracking_Code)]
     assert len(codes) == 2
@@ -483,7 +484,7 @@ def test_analytics_code_detection():
 
 def test_credentials_detection(sample_communication_data):
     require_gliner()
-    stalker = reStalker(username=True, password=True)
+    stalker = reStalker(use_ner=True, username=True, password=True)
     results = list(stalker.parse(sample_communication_data))
 
     usernames = [r for r in results if isinstance(r, Username)]
@@ -512,7 +513,7 @@ def test_credentials_detection(sample_communication_data):
 
 def test_base64_detection():
     data = "SGVsbG8gV29ybGQ="  # "Hello World" in base64
-    stalker = reStalker(base64=True)
+    stalker = reStalker(use_ner=False, base64=True)
     results = list(stalker.parse(data))
     b64 = [r for r in results if isinstance(r, Base64)]
     assert len(b64) > 0
@@ -520,7 +521,7 @@ def test_base64_detection():
 
 
 def test_multiple_bitcoin_addresses(sample_bitcoin_addresses):
-    stalker = reStalker(btc_wallet=True)
+    stalker = reStalker(use_ner=False, btc_wallet=True)
     results = list(stalker.parse(sample_bitcoin_addresses))
 
     btc_wallets = [r for r in results if isinstance(r, BTC_Wallet)]
@@ -531,7 +532,7 @@ def test_multiple_bitcoin_addresses(sample_bitcoin_addresses):
 
 
 def test_ethereum_address_case_sensitivity(sample_eth_addresses):
-    stalker = reStalker(eth_wallet=True)
+    stalker = reStalker(use_ner=False, eth_wallet=True)
     results = list(stalker.parse(sample_eth_addresses))
 
     eth_wallets = [r for r in results if isinstance(r, ETH_Wallet)]
@@ -550,7 +551,7 @@ def test_ethereum_address_case_sensitivity(sample_eth_addresses):
 
 
 def test_monero_address_validation(sample_monero_addresses):
-    stalker = reStalker(xmr_wallet=True)
+    stalker = reStalker(use_ner=False, xmr_wallet=True)
     results = list(stalker.parse(sample_monero_addresses))
 
     xmr_wallets = [r for r in results if isinstance(r, XMR_Wallet)]
@@ -560,7 +561,7 @@ def test_monero_address_validation(sample_monero_addresses):
 
 
 def test_i2p_url_detection(sample_i2p_addresses):
-    stalker = reStalker(i2p=True)
+    stalker = reStalker(use_ner=False, i2p=True)
     results = list(stalker.parse(sample_i2p_addresses))
 
     i2p_urls = [r for r in results if isinstance(r, I2P_URL)]
@@ -569,7 +570,7 @@ def test_i2p_url_detection(sample_i2p_addresses):
 
 
 def test_pgp_key_analysis(sample_pgp_block):
-    stalker = reStalker(pgp=True)
+    stalker = reStalker(use_ner=False, pgp=True)
     results = list(stalker.parse(sample_pgp_block))
 
     pgp_keys = [r for r in results if isinstance(r, PGP)]
@@ -580,7 +581,7 @@ def test_pgp_key_analysis(sample_pgp_block):
 
 
 def test_zeronet_detection(sample_social_media):
-    stalker = reStalker(zeronet=True)
+    stalker = reStalker(use_ner=False, zeronet=True)
     results = list(stalker.parse(sample_social_media))
 
     # Get URLs for both Bitcoin-style and Bitname formats
@@ -607,7 +608,7 @@ def test_zeronet_detection(sample_social_media):
 
 
 def test_zeronet_context_and_bitname(sample_contextual_data):
-    stalker = reStalker(zeronet_ctxt=True, bitname=True)
+    stalker = reStalker(use_ner=False, zeronet_ctxt=True, bitname=True)
     results = list(stalker.parse(sample_contextual_data))
 
     bitnames = [r for r in results if isinstance(r, Bitname_URL)]
@@ -616,7 +617,7 @@ def test_zeronet_context_and_bitname(sample_contextual_data):
 
 
 def test_paste_detection(sample_social_media):
-    stalker = reStalker(paste=True)
+    stalker = reStalker(use_ner=False, paste=True)
     results = list(stalker.parse(sample_social_media))
 
     pastes = [r for r in results if isinstance(r, Paste)]
@@ -625,7 +626,7 @@ def test_paste_detection(sample_social_media):
 
 
 def test_twitter_detection(sample_social_media):
-    stalker = reStalker(twitter=True)
+    stalker = reStalker(use_ner=False, twitter=True)
     results = list(stalker.parse(sample_social_media))
 
     twitter = [r for r in results if isinstance(r, TW_Account)]
@@ -635,7 +636,7 @@ def test_twitter_detection(sample_social_media):
 
 def test_contextual_information(sample_contextual_data):
     require_gliner()
-    stalker = reStalker(location=True, organization=True, keyphrase=True, own_name=True)
+    stalker = reStalker(use_ner=True, location=True, organization=True, keyphrase=True, own_name=True)
     results = list(stalker.parse(sample_contextual_data))
 
     locations = [r for r in results if isinstance(r, Location)]
@@ -650,7 +651,7 @@ def test_contextual_information(sample_contextual_data):
 
 
 def test_messaging_platforms(sample_communication_platforms):
-    stalker = reStalker(whatsapp=True, discord=True, telegram=True, skype=True)
+    stalker = reStalker(use_ner=False, whatsapp=True, discord=True, telegram=True, skype=True)
     results = list(stalker.parse(sample_communication_platforms))
 
     whatsapp = [r for r in results if isinstance(r, Whatsapp_URL)]
@@ -758,7 +759,7 @@ def test_messaging_platforms(sample_communication_platforms):
 
 
 def test_hash_detection(sample_hashes):
-    stalker = reStalker(md5=True, sha1=True, sha256=True)
+    stalker = reStalker(use_ner=False, md5=True, sha1=True, sha256=True)
     results = list(stalker.parse(sample_hashes))
 
     md5_hashes = [r for r in results if isinstance(r, MD5)]
@@ -773,7 +774,7 @@ def test_hash_detection(sample_hashes):
 
 
 def test_tox_id_detection(sample_tox_ids):
-    stalker = reStalker(tox=True)
+    stalker = reStalker(use_ner=False, tox=True)
     results = list(stalker.parse(sample_tox_ids))
 
     tox_ids = [r for r in results if isinstance(r, Tox_ID)]
@@ -852,7 +853,7 @@ def test_session_id_detection():
     Contact: session://15ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789
     """
 
-    stalker = reStalker(session_id=True)
+    stalker = reStalker(use_ner=False, session_id=True)
     results = list(stalker.parse(sample_data))
 
     session_ids = [r for r in results if isinstance(r, Session_ID)]
@@ -885,7 +886,7 @@ def test_session_id_edge_cases():
     """Test Session ID detection edge cases"""
 
     # Test with all=True
-    stalker_all = reStalker(all=True)
+    stalker_all = reStalker(use_ner=True, all=True)
     sample_with_session_id = (
         "My ID: 05010203040506070809a0b0c0d0e0f0ff010203040506070809a0b0c0d0e0f0ff"
     )
@@ -894,7 +895,7 @@ def test_session_id_edge_cases():
     assert len(session_ids) == 1
 
     # Test with session_id=False (should not detect)
-    stalker_no_session = reStalker(session_id=False)
+    stalker_no_session = reStalker(use_ner=False, session_id=False)
     results = list(stalker_no_session.parse(sample_with_session_id))
     session_ids = [r for r in results if isinstance(r, Session_ID)]
     assert len(session_ids) == 0
@@ -905,7 +906,7 @@ def test_session_id_edge_cases():
     With invalid hex char: 05ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF012345678G
     """
 
-    stalker = reStalker(session_id=True)
+    stalker = reStalker(use_ner=False, session_id=True)
     results = list(stalker.parse(boundary_cases))
     session_ids = [r for r in results if isinstance(r, Session_ID)]
 
@@ -938,7 +939,7 @@ def test_gliner_ner_functionality():
     assert len(entities_found) > 0
 
     # Now test integration with reStalker
-    stalker = reStalker(organization=True, location=True, own_name=True)
+    stalker = reStalker(use_ner=True, organization=True, location=True, own_name=True)
     results = list(stalker.parse(test_text))
 
     organizations = [r for r in results if isinstance(r, Organization)]
@@ -975,7 +976,7 @@ def test_keyword_extraction():
     """
 
     # Test keyphrase extraction
-    stalker = reStalker(keyphrase=True)
+    stalker = reStalker(use_ner=False, keyphrase=True)
     stalker.add_keyword("inteligencia artificial")
     stalker.add_keyword("aprendizaje automático")
 

@@ -3307,7 +3307,7 @@ tg://resource?id=blablabla
 
 #s = restalker.reStalker(telegram=True)
 # Test for Tor URL recognition
-s = restalker.reStalker(tor=True)
+s = restalker.reStalker(use_ner=False, tor=True)
 result = list(s.parse(target))
 print(f"Len: {len(result)}")
 for p in result:
@@ -3322,7 +3322,7 @@ Apple está trabajando en un nuevo producto que revolucionará el mercado.
 La Universidad Autónoma de Madrid y el CSIC han firmado un acuerdo de colaboración.
 """
 
-s_ner = restalker.reStalker(organization=True, location=True, own_name=True)
+s_ner = restalker.reStalker(use_ner=True, organization=True, location=True, own_name=True)
 result_ner = list(s_ner.parse(test_text))
 print(f"Entities found: {len(result_ner)}")
 for entity in result_ner:
@@ -3336,7 +3336,7 @@ El procesamiento de lenguaje natural permite a las máquinas entender el lenguaj
 Los modelos de aprendizaje automático pueden analizar grandes cantidades de datos.
 """
 
-s_keys = restalker.reStalker(keyphrase=True)
+s_keys = restalker.reStalker(use_ner=False, keyphrase=True)
 result_keys = list(s_keys.parse(test_keywords))
 print(f"Key phrases found: {len(result_keys)}")
 for key in result_keys:
