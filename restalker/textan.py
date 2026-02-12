@@ -1,13 +1,8 @@
-# Disable tensorflow warnings if present
-import sys
-
-sys.modules['tensorflow'] = None
-
 import re
 import string
 from collections import Counter
 
-from gliner import GLiNER
+from gliner2 import GLiNER2
 
 
 class TextAnalysis():
@@ -15,10 +10,10 @@ class TextAnalysis():
     model = None
 
     def __init__(self, body):
-        # Load GLiNER model if not already loaded
+        # Load GLiNER2 model if not already loaded
         if TextAnalysis.model is None:
-            # Use nvidia's GLiNER model for PII detection
-            TextAnalysis.model = GLiNER.from_pretrained('nvidia/gliner-PII')
+            # Use fastino's GLiNER2 large model for entity detection
+            TextAnalysis.model = GLiNER2.from_pretrained('fastino/gliner2-large-v1')
 
         self.body = body
         self._extract_keywords()
@@ -43,7 +38,7 @@ class TextAnalysis():
         self.word_freq = Counter(keywords)
 
         # Create degree dict (for compatibility with previous implementation)
-        self.word_degrees = {word: freq for word, freq in self.word_freq.items()}
+        self.word_degrees = dict(self.word_freq.items())
 
         # Extract phrases using simple n-gram approach
         self.phrases = []
