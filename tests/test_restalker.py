@@ -104,16 +104,16 @@ def sample_communication_data():
     # Basic pass: format
     pass:myP4ssw0rd
     Pass:Secr3t123
-    
+
     # Full password: format
     password:TestP4ss
     Password:Secr3t456
-    
+
     # Custom prefixes
     admin:Adm1n123
     user_1:MyPwd123
     p:Test_123
-    
+
     # With special chars
     pass:my$pwd,123
     password:test;456
@@ -123,16 +123,16 @@ def sample_communication_data():
     # Basic pass: format
     pass: myP4ssw0rd
     Pass: Secr3t123
-    
+
     # Full password: format
     password: TestP4ss
     Password: Secr3t456
-    
+
     # Custom prefixes
     admin: Adm1n123
     user_1: MyPwd123
     p: Test_123
-    
+
     # With special chars
     pass: my$pwd,123
     password: test;456
@@ -222,15 +222,15 @@ def sample_i2p_addresses():
     example.i2p
     blog.example.i2p
     sub.domain.example.i2p
-    
+
     # With protocol
     http://example.i2p
     https://example.i2p
-    
+
     # With ports
     example.i2p:8080
     http://example.i2p:8081
-    
+
     # With paths
     http://example.i2p/path
     https://sub.example.i2p:8080/path/to/resource
@@ -265,14 +265,14 @@ def sample_communication_platforms():
     https://wa.me/34666777888?text=Hello
     https://api.whatsapp.com/send?phone=34666777888
     https://chat.whatsapp.com/invite/abc123
-    
+
     # Discord URLs
     https://discord.gg/abcd1234
     https://discord.com/invite/abcd1234
     https://discordapp.com/invite/abcd1234
     https://discord.me/server
     https://discord.io/server
-    
+
     # Telegram URLs
     https://t.me/telegramchannel
     https://telegram.me/telegramchannel
@@ -280,7 +280,7 @@ def sample_communication_platforms():
     https://t.me/joinchat/abcdef123456
     https://t.me/+abcdef123456
     https://t.me/c/123456789/1234
-    
+
     # Skype URLs
     skype://join?id=abcd1234
     skype:echo123?call
@@ -318,14 +318,14 @@ def sample_social_media():
     https://twitter.com/username
     https://twitter.com/@username
     twitter.com/username
-    
+
     # ZeroNet Bitcoin-style addresses
     ZeroNet: 1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D
     http://localhost:43110/1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D
     http://127.0.0.1:43110/1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D
     1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D/blog
     http://localhost:43110/1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D/blog
-    
+
     # ZeroNet Bitname addresses
     example.bit
     blog.example.bit
@@ -333,7 +333,7 @@ def sample_social_media():
     http://127.0.0.1:43110/example.bit
     example.bit/blog
     http://localhost:43110/example.bit/blog
-    
+
     Paste: https://pastebin.com/abc123
     """
 
@@ -366,23 +366,23 @@ def test_btc_wallet_validation():
     valid_btc = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
     invalid_btc = "1invalid"
 
-    assert BTC_Wallet.isvalid(valid_btc) == True
-    assert BTC_Wallet.isvalid(invalid_btc) == False
+    assert BTC_Wallet.isvalid(valid_btc)
+    assert not BTC_Wallet.isvalid(invalid_btc)
 
 
 def test_eth_wallet_validation():
     valid_eth = "0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97"
     invalid_eth = "0xinvalid"
 
-    assert ETH_Wallet.isvalid(valid_eth) == True
-    assert ETH_Wallet.isvalid(invalid_eth) == False
+    assert ETH_Wallet.isvalid(valid_eth)
+    assert not ETH_Wallet.isvalid(invalid_eth)
 
 
 def test_pgp_key_handling(sample_pgp_data):
     pgp = PGP(sample_pgp_data)
     assert "PUBLIC KEY" in pgp.value
-    assert pgp.is_public_key() == True
-    assert pgp.is_private_key() == False
+    assert pgp.is_public_key()
+    assert not pgp.is_private_key()
 
 
 def test_restalker_initialization():
@@ -391,14 +391,14 @@ def test_restalker_initialization():
     for attr in dir(stalker):
         if "_" not in attr and attr not in ["parse", "nlp"]:
             val = getattr(stalker, attr)
-            assert val == False or val == []
+            assert not val or val == []
 
     # Test all=True initialization
     stalker = reStalker(all=True)
     for attr in dir(stalker):
         if "_" not in attr and attr not in ["parse", "nlp"]:
             val = getattr(stalker, attr)
-            assert val == True or val == []
+            assert val or val == []
 
 
 def test_email_detection(sample_communication_data):
@@ -786,10 +786,10 @@ def test_tox_id_detection(sample_tox_ids):
     valid_id = ids[0]  # First is valid
     invalid_ids = ids[1:4]  # Last 3 are invalid examples
 
-    assert Tox_ID.isvalid(valid_id) == True
+    assert Tox_ID.isvalid(valid_id)
 
     for invalid_id in invalid_ids:
-        assert Tox_ID.isvalid(invalid_id) == False
+        assert not Tox_ID.isvalid(invalid_id)
 
 
 def test_session_id_validation():
@@ -824,11 +824,11 @@ def test_session_id_validation():
 
     # Test valid Session IDs
     for session_id in valid_session_ids:
-        assert Session_ID.isvalid(session_id) == True, f"Should be valid: {session_id}"
+        assert Session_ID.isvalid(session_id), f"Should be valid: {session_id}"
 
     # Test invalid Session IDs
     for session_id in invalid_session_ids:
-        assert Session_ID.isvalid(session_id) == False, (
+        assert not Session_ID.isvalid(session_id), (
             f"Should be invalid: {session_id}"
         )
 
@@ -837,16 +837,16 @@ def test_session_id_detection():
     """Test Session ID detection in text"""
     sample_data = """
     Here are some Session IDs for testing:
-    
+
     Valid Session IDs:
     05010203040506070809a0b0c0d0e0f0ff010203040506070809a0b0c0d0e0f0ff
     15abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789
     25FEDCBA9876543210FEDCBA9876543210FEDCBA9876543210FEDCBA9876543210
-    
+
     Invalid ones (should not be detected):
     01010203040506070809a0b0c0d0e0f0ff010203040506070809a0b0c0d0e0f0ffff
     05010203040506070809a0b0c0d0e0f0ff01020304050607080
-    
+
     Mixed with other content:
     My Session ID is 050123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef please contact me
     Contact: session://15ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789
@@ -862,7 +862,7 @@ def test_session_id_detection():
 
     # Verify all detected Session IDs are valid
     for sid in session_ids:
-        assert Session_ID.isvalid(sid.value) == True
+        assert Session_ID.isvalid(sid.value)
 
     # Check that specific valid Session IDs are detected
     detected_values = [sid.value for sid in session_ids]
@@ -919,10 +919,11 @@ def test_session_id_edge_cases():
 def test_gliner_ner_functionality():
     """Test NER functionality with GLiNER models"""
     require_gliner()
+    assert gliner_model is not None, "GLiNER2 model must be initialized for this test"
 
     # Test text with various entities
     test_text = """
-    Apple Inc. ha anunciado un nuevo producto en su sede de Cupertino, California. 
+    Apple Inc. ha anunciado un nuevo producto en su sede de Cupertino, California.
     El CEO Tim Cook presentó el dispositivo durante una conferencia en San Francisco.
     Microsoft y Google también están trabajando en tecnologías similares.
     La Universidad de Stanford colaborará en la investigación.
