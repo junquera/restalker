@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="restalker",
-    version="2.1.1",
+    version="2.2.0",
     description="Text analyzer package",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -28,6 +28,7 @@ setup(
         "python-magic",
         "PyPDF2",
         "olefile",
+        "torch>=2.0.0",  # CPU-only by default from PyPI
     ],
     extras_require={
         # NVIDIA GPU support (CUDA)
@@ -46,5 +47,5 @@ setup(
             "torch>=2.0.0",  # Will install CPU-only variant
         ],
     },
-    entry_points=dict(console_scripts=["restalker=restalker.restalker:main"]),
+    entry_points={"console_scripts": ["restalker=restalker.restalker:main"]},
 )
