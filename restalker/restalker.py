@@ -1529,6 +1529,10 @@ class reStalker:
                 url_candidate = match.group()
                 url_candidate = url_candidate.rstrip('.,;:!?"\')]}')
 
+                # Excluir URLs con esquema bitname:// (se procesan en la sección de bitname)
+                if url_candidate.lower().startswith('bitname://'):
+                    continue
+
                 if url_candidate not in seen_urls and is_valid_context(body, url_candidate, match.start(), match.end()):
                     if URL.isvalid(url_candidate):
                         seen_urls.add(url_candidate)
@@ -1578,12 +1582,21 @@ class reStalker:
                         yield Zeronet_URL(value=extracted_link)
 
         if self.bitname:
+            # Detectar bitname URLs con el esquema bitname://
+            for match in re.finditer(r'bitname://[^\s]+', body):
+                bitname_link = match.group()
+                if is_valid_context(body, bitname_link, match.start(), match.end()):
+                    yield Bitname_URL(value=bitname_link)
+            
+            # Detectar bitname URLs con el regex original (dominios .bit)
             for match in re.finditer(bitname_url, body, re.DOTALL):
                 link = match.group()
                 extracted_links = extract_elements(link)
                 for extracted_link in extracted_links:
-                    if is_valid_context(body, extracted_link):
-                        yield Bitname_URL(value=extracted_link)
+                    # Las bitname URLs deben contener el dominio .bit
+                    # Las direcciones Bitcoin puras no son bitname
+                    if '.bit' in extracted_link.lower() and is_valid_context(body, extracted_link):
+                       yield Bitname_URL(value=extracted_link)
 
         if self.pgp:
             for match in re.finditer(pgp_key, body, re.DOTALL):
