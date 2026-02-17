@@ -1237,10 +1237,7 @@ class reStalker:
         # ========================================================================
 
         if self.phone:
-        
             import phonenumbers
-            
-            print("HOLA MUNDOs")
 
             seen_phones = set()
             phones_to_yield = []
