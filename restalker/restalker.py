@@ -853,7 +853,7 @@ def extract_elements(x):
 class reStalker:
     def __init__(
         self,
-        use_ner,
+        use_ner=False,
         phone=False,
         email=False,
         iban_address=False,

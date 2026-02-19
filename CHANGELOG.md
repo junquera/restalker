@@ -5,7 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.2.0] - 2025-02-12
+## [2.2.1] - 2026-02-13
+
+### Added
+
+- **`use_ner` parameter** - New optional boolean parameter in `reStalker.__init__()` (default: `False`)
+  - Set `use_ner=True` to enable GLiNER2-based extraction (person names, organizations, locations)
+  - Set `use_ner=False` (default) to use only regex-based extraction (faster, no model loading)
+  - Existing code without `use_ner` continues to work unchanged
+
+### Fixed
+
+- **BTC/Bitname Detection** (PR #50 by [@robeertosv](https://github.com/robeertosv)): Bitcoin Legacy addresses no longer incorrectly detected as Bitname URLs. Added `.bit` domain validation for Bitname URLs and explicit `bitname://` scheme support.
+- **Trailing Punctuation** (PR #51 by [@robeertosv](https://github.com/robeertosv)): Email addresses and all cryptocurrency wallet addresses (BTC, ETH, XMR, ZEC, DASH, DOT, XRP, BNB) now strip trailing `.`, `,`, `;` characters from matched values.
+
+### Removed
+
+- **Metadata Extraction**: Removed `restalker/metadata.py` module. The feature was not part of the core IOC extraction functionality.
+  - Related dependencies removed: `pyexifinfo`, `PyPDF2`, `olefile`
+  - **Alternative**: Use dedicated libraries directly (`exiftool`, `PyPDF2`, `python-docx`) if you need metadata extraction.
+
+---
+
+## [2.2.0] - 2026-02-12
 
 ### 🎉 Major Update: GLiNER2 Integration
 
@@ -56,7 +78,7 @@ results = stalker.parse(input_text)
 
 #### Known Issues
 
-- **Skype URL Parsing**: The regex for Skype URLs currently adds extra slashes (`skype:echo123?call` → `skype://echo123/?call`). This is a pre-existing issue unrelated to GLiNER2 and will be addressed in a future patch.
+- None at time of release.
 
 ### Credits
 
@@ -79,8 +101,8 @@ This release incorporates significant improvements from **PR #47** by [@contribu
 
 **Test Coverage:**
 - Total tests: 46
-- Passing: 45 (97.8%)
-- Coverage: 66.98%
+- Passing: 46 (100%)
+- Coverage: 70.53%
 
 ---
 
@@ -102,6 +124,7 @@ This release incorporates significant improvements from **PR #47** by [@contribu
 
 ---
 
+[2.2.1]: https://github.com/junquera/restalker/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/junquera/restalker/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/junquera/restalker/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/junquera/restalker/releases/tag/v2.1.0
