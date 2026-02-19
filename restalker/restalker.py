@@ -1366,13 +1366,13 @@ class reStalker:
 
         if self.email:
             for match in re.finditer(email_regex, body):
-                email = match.group()
+                email = match.group().rstrip('.,;')
                 if is_valid_context(body, email, match.start(), match.end()):
                     yield Email(value=email)
 
         if self.iban_address:
             for match in re.finditer(iban_address_regex, body):
-                iban_address = match.group()
+                iban_address = match.group().rstrip('.,;')
                 if is_valid_context(body, iban_address, match.start(), match.end()) and IBAN_Address.isvalid(address=iban_address):
                     yield IBAN_Address(value=iban_address)
 
@@ -1416,61 +1416,61 @@ class reStalker:
 
         if self.btc_wallet:
             for match in re.finditer(btc_wallet_regex, body):
-                btc_wallet = match.group()
+                btc_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, btc_wallet, match.start(), match.end()) and BTC_Wallet.isvalid(address=btc_wallet):
                     yield BTC_Wallet(value=btc_wallet)
             for match in re.finditer(btc_wallet_bech32_regex, body):
-                btc_wallet = match.group()
+                btc_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, btc_wallet, match.start(), match.end()) and BTC_Wallet.isvalid(address=btc_wallet):
                     yield BTC_Wallet(value=btc_wallet)
 
         if self.eth_wallet:
             for match in re.finditer(eth_wallet_regex, body):
-                eth_wallet = match.group()
+                eth_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, eth_wallet, match.start(), match.end()) and ETH_Wallet.isvalid(address=eth_wallet):
                     yield ETH_Wallet(value=eth_wallet)
 
         if self.xmr_wallet:
             for match in re.finditer(xmr_wallet_regex, body):
-                xmr_wallet = match.group()
+                xmr_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, xmr_wallet, match.start(), match.end()) and XMR_Wallet.isvalid(address=xmr_wallet):
                     yield XMR_Wallet(value=xmr_wallet)
 
         if self.zec_wallet:
             for match in re.finditer(zec_wallet_transparent_regex, body):
-                zec_wallet = match.group()
+                zec_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, zec_wallet, match.start(), match.end()) and ZEC_Wallet.isvalid(address=zec_wallet):
                     yield ZEC_Wallet(value=zec_wallet)
             for match in re.finditer(zec_wallet_private_regex, body):
-                zec_wallet = match.group()
+                zec_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, zec_wallet, match.start(), match.end()) and ZEC_Wallet.isvalid(address=zec_wallet):
                     yield ZEC_Wallet(value=zec_wallet)
             for match in re.finditer(zec_wallet_private_sapling_regex, body):
-                zec_wallet = match.group()
+                zec_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, zec_wallet, match.start(), match.end()) and ZEC_Wallet.isvalid(address=zec_wallet):
                     yield ZEC_Wallet(value=zec_wallet)
 
         if self.dash_wallet:
             for match in re.finditer(dash_wallet_regex, body):
-                dash_wallet = match.group()
+                dash_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, dash_wallet, match.start(), match.end()) and DASH_Wallet.isvalid(address=dash_wallet):
                     yield DASH_Wallet(value=dash_wallet)
 
         if self.dot_wallet:
             for match in re.finditer(dot_wallet_regex, body):
-                dot_wallet = match.group()
+                dot_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, dot_wallet, match.start(), match.end()) and DOT_Wallet.isvalid(address=dot_wallet):
                     yield DOT_Wallet(value=dot_wallet)
 
         if self.xrp_wallet:
             for match in re.finditer(xrp_wallet_regex, body):
-                xrp_wallet = match.group()
+                xrp_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, xrp_wallet, match.start(), match.end()) and XRP_Wallet.isvalid(address=xrp_wallet):
                     yield XRP_Wallet(value=xrp_wallet)
 
         if self.bnb_wallet:
             for match in re.finditer(bnb_wallet_regex, body):
-                bnb_wallet = match.group()
+                bnb_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, bnb_wallet, match.start(), match.end()) and BNB_Wallet.isvalid(address=bnb_wallet):
                     yield BNB_Wallet(value=bnb_wallet)
 
@@ -1529,6 +1529,10 @@ class reStalker:
                 url_candidate = match.group()
                 url_candidate = url_candidate.rstrip('.,;:!?"\')]}')
 
+                # Excluir URLs con esquema bitname:// (se procesan en la sección de bitname)
+                if url_candidate.lower().startswith('bitname://'):
+                    continue
+
                 if url_candidate not in seen_urls and is_valid_context(body, url_candidate, match.start(), match.end()):
                     if URL.isvalid(url_candidate):
                         seen_urls.add(url_candidate)
@@ -1578,12 +1582,21 @@ class reStalker:
                         yield Zeronet_URL(value=extracted_link)
 
         if self.bitname:
+            # Detectar bitname URLs con el esquema bitname://
+            for match in re.finditer(r'bitname://[^\s]+', body):
+                bitname_link = match.group()
+                if is_valid_context(body, bitname_link, match.start(), match.end()):
+                    yield Bitname_URL(value=bitname_link)
+            
+            # Detectar bitname URLs con el regex original (dominios .bit)
             for match in re.finditer(bitname_url, body, re.DOTALL):
                 link = match.group()
                 extracted_links = extract_elements(link)
                 for extracted_link in extracted_links:
-                    if is_valid_context(body, extracted_link):
-                        yield Bitname_URL(value=extracted_link)
+                    # Las bitname URLs deben contener el dominio .bit
+                    # Las direcciones Bitcoin puras no son bitname
+                    if '.bit' in extracted_link.lower() and is_valid_context(body, extracted_link):
+                       yield Bitname_URL(value=extracted_link)
 
         if self.pgp:
             for match in re.finditer(pgp_key, body, re.DOTALL):

@@ -47,7 +47,7 @@ from . import link_extractors as link_extractors
 # GLiNER model is loaded automatically when needed by TextAnalysis class
 # No need for explicit model loading function
 
-__version__ = "2.2.0"
+__version__ = "2.2.1"
 
 # Explicitly define the public API
 __all__ = [
