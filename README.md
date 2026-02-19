@@ -20,6 +20,7 @@ A powerful Python library for extracting Indicators of Compromise (IOCs) and var
 - [📦 Installation](#-installation)
 - [🧠 GLiNER2 Named Entity Recognition](#-gliner2-named-entity-recognition)
 - [💻 Usage Examples](#-usage-examples)
+- [🔄 Migration Guide](#-migration-guide)
 - [📖 Documentation](#-documentation)
 - [🤝 Contributing](#-contributing)
 - [🙏 Acknowledgements](#-acknowledgements)
@@ -31,12 +32,16 @@ A powerful Python library for extracting Indicators of Compromise (IOCs) and var
 ```python
 import restalker
 
-# Define which elements we desire (e.g., Tor URLs)
+# Regex-only (fast, no ML model - recommended for IOC extraction)
 s = restalker.reStalker(tor=True, i2p=True)
 elements = s.parse(input_text)
 
 for element in elements:
     print(f"[*] Darknet IOC found: {element}")
+
+# With GLiNER2 AI (for person names, orgs, locations)
+s = restalker.reStalker(use_ner=True, own_name=True, organization=True)
+elements = s.parse(input_text)
 ```
 
 ---
@@ -236,6 +241,7 @@ reStalker v2.2.0+ uses the **`fastino/gliner2-large-v1`** model (~340MB):
 - Optimized for cybersecurity and OSINT use cases
 - No TensorFlow dependency required
 - Runs efficiently on CPU or GPU
+- Only loaded when `use_ner=True` is set
 
 ### Enhanced Phone Detection
 
@@ -290,13 +296,14 @@ If you're upgrading from reStalker v2.1.x (which used GLiNER v0.2.25), the chang
 
 ## 💻 Usage Examples
 
-### Basic Usage
+### Basic Usage (Regex-Only, Fastest)
 
 ```python
 import restalker
 
-# Create a reStalker instance with specific detection types
-stalker = restalker.reStalker(tor=True, i2p=True, btc=True)
+# Regex-only: fast IOC extraction, no ML model loaded
+# use_ner defaults to False, so this is equivalent to use_ner=False
+stalker = restalker.reStalker(tor=True, i2p=True, btc_wallet=True)
 
 # Parse input text for IOCs
 elements = stalker.parse(input_text)
@@ -306,32 +313,72 @@ for element in elements:
     print(f"[*] IOC found: {element}")
 ```
 
-### Advanced Configuration
+### Advanced Configuration (With GLiNER2 AI)
 
 ```python
 import restalker
 
-# Enable multiple detection types
+# Enable GLiNER2 for AI-powered entity extraction
+# use_ner=True is required for: own_name, organization, location, username, password
 stalker = restalker.reStalker(
-    tor=True,           # Tor .onion URLs
-    i2p=True,           # I2P URLs
-    btc=True,           # Bitcoin addresses
-    eth=True,           # Ethereum addresses
-    email=True,         # Email addresses
-    telegram=True,      # Telegram URLs
-    base64=True         # Base64 encoded data
+    use_ner=True,           # Enable GLiNER2 NER model
+    own_name=True,          # Person names (requires use_ner=True)
+    organization=True,      # Organizations (requires use_ner=True)
+    location=True,          # Locations (requires use_ner=True)
+    tor=True,               # Tor .onion URLs
+    i2p=True,               # I2P URLs
+    btc_wallet=True,        # Bitcoin addresses
+    eth_wallet=True,        # Ethereum addresses
+    email=True,             # Email addresses
+    telegram=True,          # Telegram URLs
+    base64=True             # Base64 encoded data
 )
 
 # Process your data
 with open('data.txt', 'r') as f:
     content = f.read()
-    
+
 results = stalker.parse(content)
 
 # Categorize results
 for result in results:
     print(f"Type: {result.type}, Value: {result.value}")
 ```
+
+### Choosing `use_ner=True` vs `use_ner=False`
+
+| Feature | `use_ner=False` (default) | `use_ner=True` |
+|---------|---------------------------|----------------|
+| **Speed** | Fast (no model loading) | Slower (~340MB model loads on first use) |
+| **Person Names** | Not available | Available (`own_name=True`) |
+| **Organizations** | Not available | Available (`organization=True`) |
+| **Locations** | Not available | Available (`location=True`) |
+| **Usernames / Passwords** | Not available | Available |
+| **Phone Detection** | Regex-based | Enhanced with GLiNER2 context validation |
+| **Memory Usage** | ~50MB | ~400MB |
+| **Best For** | IOC extraction, crypto wallets, URLs | OSINT, entity extraction, person tracking |
+
+---
+
+## 🔄 Migration Guide
+
+### Upgrading from v2.1.x to v2.2.x
+
+#### `use_ner` Parameter (v2.2.1+)
+
+v2.2.1 adds the optional `use_ner` parameter (default: `False`). **All existing code continues to work unchanged** - you only need to add `use_ner=True` if you want GLiNER2 AI features.
+
+```python
+# v2.1.x code - still works in v2.2.x
+stalker = reStalker(phone=True, email=True, btc_wallet=True)
+
+# Explicitly opting into GLiNER2 AI features
+stalker = reStalker(use_ner=True, own_name=True, organization=True, location=True)
+```
+
+#### GLiNER2 Model Download (v2.2.0)
+
+On first use of `use_ner=True`, reStalker downloads the `fastino/gliner2-large-v1` model (~340MB) from HuggingFace. This is a one-time download cached locally.
 
 ---
 
