@@ -247,6 +247,8 @@ reStalker v2.2.0+ uses the **`fastino/gliner2-large-v1`** model (~340MB):
 
 GLiNER2 includes advanced phone number detection with **hex filtering** to prevent false positives:
 
+- As of **v2.2.2**, phone parsing uses stricter `EXACT_GROUPING` validation in `phonenumbers` to reduce loosely formatted false positives.
+
 ```python
 import restalker
 

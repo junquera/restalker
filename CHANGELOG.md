@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.2] - 2026-03-02
+
+### Fixed
+
+- **Phone Number Detection Precision** (PR #53 by [@robeertosv](https://github.com/robeertosv)): Updated `phonenumbers.PhoneNumberMatcher` leniency from `POSSIBLE` to `EXACT_GROUPING` to reduce false positives from loosely grouped number sequences.
+
+---
+
 ## [2.2.1] - 2026-02-13
 
 ### Added
@@ -124,6 +132,7 @@ This release incorporates significant improvements from **PR #47** by [@contribu
 
 ---
 
+[2.2.2]: https://github.com/junquera/restalker/compare/v2.2.1...v2.2.2
 [2.2.1]: https://github.com/junquera/restalker/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/junquera/restalker/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/junquera/restalker/compare/v2.1.0...v2.1.1
