@@ -4,9 +4,20 @@ from urllib.parse import urlparse
 
 from . import restalker
 
+# Lazy-compiled regex to avoid circular import issues
+_any_url_compiled = None
+
+
+def _get_any_url_compiled():
+    """Lazy compilation of any_url regex to avoid circular import."""
+    global _any_url_compiled
+    if _any_url_compiled is None:
+        _any_url_compiled = re.compile(restalker.any_url)
+    return _any_url_compiled
+
 
 def looks_like_link(link: str):
-    if re.match(restalker.any_url, link):
+    if _get_any_url_compiled().match(link):
         return True
     else:
         proto = link.split('://')
