@@ -1246,7 +1246,7 @@ class reStalker:
             regions = phonenumbers.SUPPORTED_REGIONS
             for region in regions:
                 matcher = phonenumbers.PhoneNumberMatcher(
-                    body, region, leniency=phonenumbers.Leniency.POSSIBLE
+                    body, region, leniency=phonenumbers.Leniency.EXACT_GROUPING
                 )
                 for result in matcher:
                     phone_str = result.raw_string
