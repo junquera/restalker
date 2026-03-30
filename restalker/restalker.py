@@ -853,7 +853,8 @@ def extract_elements(x):
 class reStalker:
     def __init__(
         self,
-        use_ner=False,
+        use_ner,
+        gliner_model=None,
         phone=False,
         email=False,
         iban_address=False,
@@ -903,6 +904,7 @@ class reStalker:
     ):
 
         self.use_ner = use_ner
+        self.gliner_model = gliner_model
         
         self.own_name = own_name or all
         self.location = location or all
@@ -1056,9 +1058,6 @@ class reStalker:
 
         return text
 
-    # GLiNER model for Named Entity Recognition - loaded once and reused
-    gliner_model = None
-
     def _analyze_chunk(self, body, origin=None):
         """
         Analyze a text chunk and extract entities using GLiNER and other methods.
@@ -1119,9 +1118,12 @@ class reStalker:
 
         # Load GLiNER model if not loaded yet and use_ner is enabled
         if self.use_ner:
-            if reStalker.gliner_model is None:
-                from gliner2 import GLiNER2
-                reStalker.gliner_model = GLiNER2.from_pretrained('fastino/gliner2-large-v1')
+            from gliner2 import GLiNER2
+            if self.gliner_model is None:
+                self.gliner_model = GLiNER2.from_pretrained('fastino/gliner2-large-v1')
+            else:
+                self.gliner_model = GLiNER2.from_pretrained(self.gliner_model)
+            
 
         # Extract entities with GLiNER if any NER-related feature is enabled
         entities_dict = {}
@@ -1134,7 +1136,7 @@ class reStalker:
                            'LOCATION', 'CITY', 'USERNAME', 'PASSWORD', 'PHONE']
 
             # Extract entities using GLiNER2
-            result = reStalker.gliner_model.extract_entities(body, entity_labels)
+            result = self.gliner_model.extract_entities(body, entity_labels)
 
             # Access the nested 'entities' dict
             if isinstance(result, dict) and 'entities' in result:
