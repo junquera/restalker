@@ -1121,9 +1121,8 @@ class reStalker:
             from gliner2 import GLiNER2
             if self.gliner_model is None:
                 self.gliner_model = GLiNER2.from_pretrained('fastino/gliner2-large-v1')
-            else:
+            elif isinstance(self.gliner_model, str):
                 self.gliner_model = GLiNER2.from_pretrained(self.gliner_model)
-            
 
         # Extract entities with GLiNER if any NER-related feature is enabled
         entities_dict = {}

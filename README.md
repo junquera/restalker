@@ -1,6 +1,6 @@
 # 🕵️ reStalker
 
-![reStalker Logo](https://github.com/junquera/restalker/blob/develop/doc/img/icon.png)
+![reStalker Logo](https://raw.githubusercontent.com/junquera/restalker/develop/doc/img/icon.png)
 
 **IOC and Entities Extractor**
 
