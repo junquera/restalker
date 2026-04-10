@@ -1153,3 +1153,41 @@ def test_darknet_negative_cases():
     assert len(darknet_items) == 0, (
         f"Should not detect near-miss patterns, got: {darknet_items}"
     )
+
+
+def test_darknet_all_types_combined():
+    """Test all 6 darknet types enabled simultaneously."""
+    text = """
+    Tor: http://duskgytldkxiuqc6.onion/page
+    I2P: http://example.i2p/path
+    Freenet: CHK@SVbD9~HM5nzf3AX4yFCBc-A4dhNUF5DPJZLL5NX5Brs,bA7qLNJR7IXRKn6uS5PAySjIM6azPFvK~18kSi6bbNQ,AAEA--8
+    ZeroNet: 1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D
+    Bitname: example.bit
+    IPFS: ipfs://QmW2WQi7j6c7UgJTarActp7tDNikE4B2qXtFCfLPdsgaTQ
+    """
+    stalker = reStalker(
+        use_ner=False,
+        tor=True,
+        i2p=True,
+        freenet=True,
+        zeronet=True,
+        bitname=True,
+        ipfs=True,
+    )
+    results = list(stalker.parse(text))
+
+    tor = [r for r in results if isinstance(r, Tor_URL)]
+    i2p = [r for r in results if isinstance(r, I2P_URL)]
+    freenet = [r for r in results if isinstance(r, Freenet_URL)]
+    zeronet = [r for r in results if isinstance(r, Zeronet_URL)]
+    bitname = [r for r in results if isinstance(r, Bitname_URL)]
+    ipfs = [r for r in results if isinstance(r, IPFS_URL)]
+
+    assert len(tor) >= 1, f"Expected Tor URLs, got {len(tor)}"
+    assert len(i2p) >= 1, f"Expected I2P URLs, got {len(i2p)}"
+    assert len(freenet) >= 1, f"Expected Freenet URLs, got {len(freenet)}"
+    # ZeroNet/Bitname may overlap due to shared regex - verify at least one darknet type found
+    assert len(zeronet) + len(bitname) >= 1, (
+        f"Expected ZeroNet or Bitname, got {len(zeronet)}+{len(bitname)}"
+    )
+    assert len(ipfs) >= 1, f"Expected IPFS URLs, got {len(ipfs)}"

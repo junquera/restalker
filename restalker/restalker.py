@@ -588,7 +588,7 @@ tor_hidden_domain = (
 tor_hidden_url = r"((?:https?:\/\/)?%s\b(?:\/[a-zA-Z0-9_-]*)*(?:\?[^\s#]*)?)" % tor_hidden_domain[:-1]
 
 i2p_hidden_domain = r"(?:[a-zA-Z0-9]+\.){1,5}i2p(?:\:[0-9]{2,5})?$"
-i2p_hidden_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*(?:\?[^\s#]*)?)" % i2p_hidden_domain[:-1]
+i2p_hidden_url = r"((?:https?:\/\/)?%s\b(?:\/[a-zA-Z0-9_-]*)*(?:\?[^\s#]*)?)" % i2p_hidden_domain[:-1]
 
 card_regex = {
     # American Express - 34, 37 - length 15
