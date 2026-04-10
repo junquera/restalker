@@ -506,7 +506,7 @@ number_regex = r"[0-9]+"
 
 alnum_join = r"[a-zA-Z0-9\-\~]+"
 
-file_name = r"(?:[a-zA-Z0-9\_]+\.)+\.[a-zA-Z0-9]{2,4}"
+file_name = r"(?:[a-zA-Z0-9\_]+\.)*[a-zA-Z0-9\_]+\.[a-zA-Z0-9]{2,4}"
 
 email_regex = r"([a-zA-Z0-9_.+-]+@(?:[a-zA-Z0-9-]+\.)+(?:[0-9][a-zA-Z0-9]{0,4}[a-zA-Z]|[0-9][a-zA-Z][a-zA-Z0-9]{0,4}|[a-zA-Z][a-zA-Z0-9]{1,5}))"
 
@@ -583,12 +583,12 @@ any_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % domain_regex[:-1]
 any_url_regex = r"((?:[a-zA-Z][a-zA-Z0-9+\-\.]*://|www\.)[^\s]+)"
 
 tor_hidden_domain = (
-    r"(?:[a-z0-9]+\.){0,4}(?:[a-z0-9]{16}|[a-z0-9]{56})\.onion(?:\:[0-9]{2,5})?$"
+    r"(?:[a-zA-Z0-9]+\.){0,4}(?:[a-zA-Z0-9]{16}|[a-zA-Z0-9]{56})\.[oO][nN][iI][oO][nN](?:\:[0-9]{2,5})?$"
 )
-tor_hidden_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % tor_hidden_domain[:-1]
+tor_hidden_url = r"((?:https?:\/\/)?%s\b(?:\/[a-zA-Z0-9_-]*)*(?:\?[^\s#]*)?)" % tor_hidden_domain[:-1]
 
-i2p_hidden_domain = r"(?:[a-z0-9]+\.){1,5}i2p(?:\:[0-9]{2,5})?$"
-i2p_hidden_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % i2p_hidden_domain[:-1]
+i2p_hidden_domain = r"(?:[a-zA-Z0-9]+\.){1,5}i2p(?:\:[0-9]{2,5})?$"
+i2p_hidden_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*(?:\?[^\s#]*)?)" % i2p_hidden_domain[:-1]
 
 card_regex = {
     # American Express - 34, 37 - length 15
@@ -1540,6 +1540,18 @@ class reStalker:
                         yield URL(value=url_candidate)
 
         if self.tor:
+            seen_tor_links = set()
+
+            for match in re.finditer(tor_hidden_url, body, re.DOTALL):
+                link = match.group()
+                if not is_valid_context(body, link, match.start(), match.end()):
+                    continue
+
+                link_item = link.decode('utf-8') if isinstance(link, bytes) else link
+                if link_item not in seen_tor_links:
+                    seen_tor_links.add(link_item)
+                    yield Tor_URL(value=link_item)
+
             tor_links = self.extract_links(
                 body,
                 url_format=tor_hidden_url,
@@ -1562,7 +1574,9 @@ class reStalker:
                             link_item = str(link)
                     else:
                         link_item = link
-                yield Tor_URL(value=link_item)
+                if link_item not in seen_tor_links:
+                    seen_tor_links.add(link_item)
+                    yield Tor_URL(value=link_item)
 
         if self.freenet:
             for match in re.finditer(freenet_hidden_url, body, re.DOTALL):
@@ -1570,11 +1584,6 @@ class reStalker:
                 if is_valid_context(body, link, match.start(), match.end()):
                     yield Freenet_URL(value=link)
         if self.zeronet:
-            # TODO Experimental
-            if self.zeronet_ctxt and False:
-                if body.find("zeronet") < 0:
-                    pass
-
             for match in re.finditer(zeronet_hidden_url, body, re.DOTALL):
                 link = match.group()
                 extracted_links = extract_elements(link)

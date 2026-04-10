@@ -2,3 +2,4 @@
 - 2026-04-10: The pytest -k expression only matched the Freenet test after giving pytest a matching token via the function attribute workaround; plain substring matching did not pick up the original name.
 - 2026-04-10: Targeted RED-phase verification exposed current behavior gaps: Tor query strings are not preserved, Freenet KSK is not detected, and I2P overmatches a near-miss domain token.
 - 2026-04-10: Existing regression check has an unrelated baseline failure in tests/test_restalker.py::test_phone_detection, reproducible independently of the new darknet tests.
+- 2026-04-10: GREEN-phase Tor fix required expanding the hostname charset, making the `.onion` suffix explicitly case-insensitive, adding a host boundary plus optional query string support, and preserving raw plaintext Tor matches before UUF canonicalizes query parameter order.
