@@ -1,0 +1,4 @@
+- 2026-04-10: Added RED-phase darknet fixtures before the fixture end marker and appended new darknet tests at file end to match existing test organization.
+- 2026-04-10: The pytest -k expression only matched the Freenet test after giving pytest a matching token via the function attribute workaround; plain substring matching did not pick up the original name.
+- 2026-04-10: Targeted RED-phase verification exposed current behavior gaps: Tor query strings are not preserved, Freenet KSK is not detected, and I2P overmatches a near-miss domain token.
+- 2026-04-10: Existing regression check has an unrelated baseline failure in tests/test_restalker.py::test_phone_detection, reproducible independently of the new darknet tests.
