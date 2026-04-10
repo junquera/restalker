@@ -547,9 +547,7 @@ dash_wallet_regex = r"(X[a-km-zA-HJ-NP-Z1-9]{33})"
 
 dot_wallet_regex = r"(1[a-km-zA-HJ-NP-Z1-9]{46,47})"
 
-xrp_wallet_regex = (
-    r"([rX][rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz]{26,46})"
-)
+xrp_wallet_regex = r"(r[1-9A-HJ-NP-Za-km-z]{24,34})"
 
 bnb_wallet_regex = r"(bnb[a-zA-Z0-9]{39})"
 
