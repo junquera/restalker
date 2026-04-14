@@ -5,8 +5,21 @@ from urllib.parse import urlparse
 from . import restalker
 
 
+# Base regex string and compiled pattern are resolved lazily to avoid circular import issues.
+any_url_regex = None
+_any_url_pattern = None
+
+
+def _get_any_url_pattern():
+    global any_url_regex, _any_url_pattern
+    if _any_url_pattern is None:
+        any_url_regex = restalker.any_url
+        _any_url_pattern = re.compile(any_url_regex)
+    return _any_url_pattern
+
+
 def looks_like_link(link: str):
-    if re.match(restalker.any_url, link):
+    if _get_any_url_pattern().match(link):
         return True
     else:
         proto = link.split('://')

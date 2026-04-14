@@ -5,6 +5,10 @@ from collections import Counter
 from gliner2 import GLiNER2
 
 
+word_boundary_regex = r'\b\w+\b'
+word_boundary_pattern = re.compile(word_boundary_regex)
+
+
 class TextAnalysis():
     # GLiNER model for entity extraction - loaded once and reused
     model = None
@@ -21,7 +25,7 @@ class TextAnalysis():
     def _extract_keywords(self):
         # Simple tokenization by splitting on whitespace and punctuation
         # Filter tokens: remove short words and common punctuation
-        tokens = re.findall(r'\b\w+\b', self.body.lower())
+        tokens = word_boundary_pattern.findall(self.body.lower())
 
         # Basic stopword list (common English stopwords)
         stopwords = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',

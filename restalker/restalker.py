@@ -161,7 +161,7 @@ class DASH_Wallet(Item):
     def isvalid(address: str) -> bool:
         ret = False
         try:
-            match = re.search(dash_wallet_regex, address)
+            match = dash_wallet_pattern.search(address)
             if match and match[0] == address:
                 decode_address = based58.b58decode(address.encode("utf-8"))
                 ret = (
@@ -179,7 +179,7 @@ class DOT_Wallet(Item):
     def isvalid(address: str) -> bool:
         ret = False
         try:
-            match = re.search(dot_wallet_regex, address)
+            match = dot_wallet_pattern.search(address)
             if match and match[0] == address:
                 prefix, decode = SS58Decoder.Decode(address)
                 ret = prefix == 0
@@ -194,7 +194,7 @@ class XRP_Wallet(Item):
     def isvalid(address: str) -> bool:
         ret = False
         try:
-            match = re.search(xrp_wallet_regex, address)
+            match = xrp_wallet_pattern.search(address)
             if match and match[0] == address:
                 based58.b58decode_check(
                     address.encode("utf-8"),
@@ -212,7 +212,7 @@ class BNB_Wallet(Item):
     def isvalid(address: str) -> bool:
         ret = False
         try:
-            match = re.search(bnb_wallet_regex, address)
+            match = bnb_wallet_pattern.search(address)
             if match and match[0] == address:
                 hrpgot, data, spec = segwit_addr.bech32_decode(address)
                 ret = hrpgot == "bnb"
@@ -435,7 +435,7 @@ class GA_Tracking_Code(Item):
     @staticmethod
     def isvalid(code: str) -> bool:
         # Validate that the code is not part of a larger string
-        return bool(re.fullmatch(r'(?:UA-\d{4,10}-\d|G-[A-Za-z0-9]{10})', code))
+        return bool(ga_tracking_code_pattern.fullmatch(code))
 
 
 class Card_Number(Item):
@@ -834,6 +834,53 @@ md5_regex = r"[a-f0-9]{32}"
 sha1_regex = r"[a-f0-9]{40}"
 sha256_regex = r"[a-f0-9]{64}"
 
+# Keep base regexes as strings for pattern builders; use compiled counterparts for matching.
+dash_wallet_pattern = re.compile(dash_wallet_regex)
+dot_wallet_pattern = re.compile(dot_wallet_regex)
+xrp_wallet_pattern = re.compile(xrp_wallet_regex)
+bnb_wallet_pattern = re.compile(bnb_wallet_regex)
+
+email_pattern = re.compile(email_regex)
+iban_address_pattern = re.compile(iban_address_regex)
+ipv4_address_pattern = re.compile(ipv4_address_regex)
+ipv6_std_pattern = re.compile(ipv6_std_regex)
+ipv6_compressed_pattern = re.compile(ipv6_compressed_regex)
+ipv6_linklocal_pattern = re.compile(ipv6_linklocal_regex)
+ipv6_loose_pattern = re.compile(ipv6_loose_regex)
+btc_wallet_pattern = re.compile(btc_wallet_regex)
+btc_wallet_bech32_pattern = re.compile(btc_wallet_bech32_regex)
+eth_wallet_pattern = re.compile(eth_wallet_regex)
+xmr_wallet_pattern = re.compile(xmr_wallet_regex)
+zec_wallet_transparent_pattern = re.compile(zec_wallet_transparent_regex)
+zec_wallet_private_pattern = re.compile(zec_wallet_private_regex)
+zec_wallet_private_sapling_pattern = re.compile(zec_wallet_private_sapling_regex)
+all_card_pattern = re.compile(all_card_regex)
+compiled_card_patterns = {company: re.compile(regex) for company, regex in card_regex.items()}
+bin_pattern = re.compile(bin_regex)
+ccn_pattern = re.compile(ccn_regex)
+tw_account_pattern = re.compile(tw_account_regex)
+any_url_pattern = re.compile(any_url_regex)
+freenet_hidden_url_pattern = re.compile(freenet_hidden_url, re.DOTALL)
+zeronet_hidden_url_pattern = re.compile(zeronet_hidden_url, re.DOTALL)
+bitname_scheme_pattern = re.compile(r'bitname://[^\s]+')
+bitname_url_pattern = re.compile(bitname_url, re.DOTALL)
+pgp_key_pattern = re.compile(pgp_key, re.DOTALL)
+ipfs_url_pattern = re.compile(ipfs_url, re.DOTALL)
+whatsapp_url_pattern = re.compile(whatsapp_url_regex)
+discord_url_pattern = re.compile(discord_url_regex)
+telegram_url_pattern = re.compile(telegram_url_regex)
+skype_url_pattern = re.compile(skype_url_regex)
+paste_url_pattern = re.compile(paste_url_regex)
+base64_pattern = re.compile(base64_regex)
+md5_pattern = re.compile(md5_regex)
+sha1_pattern = re.compile(sha1_regex)
+sha256_pattern = re.compile(sha256_regex)
+tox_id_pattern = re.compile(tox_id_regex)
+ga_tracking_code_pattern = re.compile(ga_tracking_code_regex)
+session_id_pattern = re.compile(session_id_regex)
+phone_symbols_pattern = re.compile(r'^[\+\d\s\(\)\-\.]+$')
+ipv4_prefix_pattern = re.compile(r'^\d+\.\d+\.\d+')
+
 
 # Method for avoid lists of lists and empty elements
 def extract_elements(x):
@@ -988,9 +1035,13 @@ class reStalker:
             except Exception as e:
                 print(f"[*] Unexpected error with URL {url_str}: {e}")
 
-        # Process URLs found with regex
-        for url in re.findall(url_format, body, re.DOTALL):
-            add_url_safely(url)
+        # Process URLs found with regex (supports both str patterns and compiled patterns)
+        if isinstance(url_format, str):
+            for url in re.findall(url_format, body, re.DOTALL):
+                add_url_safely(url)
+        else:
+            for url in url_format.findall(body):
+                add_url_safely(url)
 
         try:
             # soup = BeautifulSoup(body, "html.parser")
@@ -1033,8 +1084,12 @@ class reStalker:
             if url:
                 parsed_url = UUF(url)
                 # TODO Use complete regex instead of just the domain?
-                if re.match(domain_format, parsed_url.domain, re.DOTALL):
-                    yield parsed_url.rebuild()
+                if isinstance(domain_format, str):
+                    if re.match(domain_format, parsed_url.domain, re.DOTALL):
+                        yield parsed_url.rebuild()
+                else:
+                    if domain_format.match(parsed_url.domain):
+                        yield parsed_url.rebuild()
 
     @staticmethod
     def body_text(body):
@@ -1189,8 +1244,8 @@ class reStalker:
                     # Validate location
                     is_valid = (
                         not location_text.lower().startswith('location') and
-                        not re.match(r'^[\+\d\s\(\)\-\.]+$', location_text) and  # Not only phone/symbols
-                        not re.match(r'^\d+\.\d+\.\d+', location_text) and  # Not an IP
+                        not phone_symbols_pattern.match(location_text) and  # Not only phone/symbols
+                        not ipv4_prefix_pattern.match(location_text) and  # Not an IP
                         len(location_text) > 1
                     )
 
@@ -1365,35 +1420,35 @@ class reStalker:
         # ========================================================================
 
         if self.email:
-            for match in re.finditer(email_regex, body):
+            for match in email_pattern.finditer(body):
                 email = match.group().rstrip('.,;')
                 if is_valid_context(body, email, match.start(), match.end()):
                     yield Email(value=email)
 
         if self.iban_address:
-            for match in re.finditer(iban_address_regex, body):
+            for match in iban_address_pattern.finditer(body):
                 iban_address = match.group().rstrip('.,;')
                 if is_valid_context(body, iban_address, match.start(), match.end()) and IBAN_Address.isvalid(address=iban_address):
                     yield IBAN_Address(value=iban_address)
 
         if self.ipv4:
-            for match in re.finditer(ipv4_address_regex, body):
+            for match in ipv4_address_pattern.finditer(body):
                 ipv4_address = match.group()
                 if is_valid_context(body, ipv4_address, match.start(), match.end()) and IPV4_Address.isvalid(address=ipv4_address):
                     yield IPV4_Address(value=ipv4_address)
 
         if self.ipv6:
             patterns = [
-                ipv6_linklocal_regex,
-                ipv6_std_regex,
-                ipv6_compressed_regex,
-                ipv6_loose_regex
+                ipv6_linklocal_pattern,
+                ipv6_std_pattern,
+                ipv6_compressed_pattern,
+                ipv6_loose_pattern
             ]
 
             seen_ips = set()
 
             for pattern in patterns:
-                for match in re.finditer(pattern, body):
+                for match in pattern.finditer(body):
                     ip_str = match.group()
 
                     if not ip_str:
@@ -1415,92 +1470,92 @@ class reStalker:
                         yield IPV6_Address(value=ip_str)
 
         if self.btc_wallet:
-            for match in re.finditer(btc_wallet_regex, body):
+            for match in btc_wallet_pattern.finditer(body):
                 btc_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, btc_wallet, match.start(), match.end()) and BTC_Wallet.isvalid(address=btc_wallet):
                     yield BTC_Wallet(value=btc_wallet)
-            for match in re.finditer(btc_wallet_bech32_regex, body):
+            for match in btc_wallet_bech32_pattern.finditer(body):
                 btc_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, btc_wallet, match.start(), match.end()) and BTC_Wallet.isvalid(address=btc_wallet):
                     yield BTC_Wallet(value=btc_wallet)
 
         if self.eth_wallet:
-            for match in re.finditer(eth_wallet_regex, body):
+            for match in eth_wallet_pattern.finditer(body):
                 eth_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, eth_wallet, match.start(), match.end()) and ETH_Wallet.isvalid(address=eth_wallet):
                     yield ETH_Wallet(value=eth_wallet)
 
         if self.xmr_wallet:
-            for match in re.finditer(xmr_wallet_regex, body):
+            for match in xmr_wallet_pattern.finditer(body):
                 xmr_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, xmr_wallet, match.start(), match.end()) and XMR_Wallet.isvalid(address=xmr_wallet):
                     yield XMR_Wallet(value=xmr_wallet)
 
         if self.zec_wallet:
-            for match in re.finditer(zec_wallet_transparent_regex, body):
+            for match in zec_wallet_transparent_pattern.finditer(body):
                 zec_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, zec_wallet, match.start(), match.end()) and ZEC_Wallet.isvalid(address=zec_wallet):
                     yield ZEC_Wallet(value=zec_wallet)
-            for match in re.finditer(zec_wallet_private_regex, body):
+            for match in zec_wallet_private_pattern.finditer(body):
                 zec_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, zec_wallet, match.start(), match.end()) and ZEC_Wallet.isvalid(address=zec_wallet):
                     yield ZEC_Wallet(value=zec_wallet)
-            for match in re.finditer(zec_wallet_private_sapling_regex, body):
+            for match in zec_wallet_private_sapling_pattern.finditer(body):
                 zec_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, zec_wallet, match.start(), match.end()) and ZEC_Wallet.isvalid(address=zec_wallet):
                     yield ZEC_Wallet(value=zec_wallet)
 
         if self.dash_wallet:
-            for match in re.finditer(dash_wallet_regex, body):
+            for match in dash_wallet_pattern.finditer(body):
                 dash_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, dash_wallet, match.start(), match.end()) and DASH_Wallet.isvalid(address=dash_wallet):
                     yield DASH_Wallet(value=dash_wallet)
 
         if self.dot_wallet:
-            for match in re.finditer(dot_wallet_regex, body):
+            for match in dot_wallet_pattern.finditer(body):
                 dot_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, dot_wallet, match.start(), match.end()) and DOT_Wallet.isvalid(address=dot_wallet):
                     yield DOT_Wallet(value=dot_wallet)
 
         if self.xrp_wallet:
-            for match in re.finditer(xrp_wallet_regex, body):
+            for match in xrp_wallet_pattern.finditer(body):
                 xrp_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, xrp_wallet, match.start(), match.end()) and XRP_Wallet.isvalid(address=xrp_wallet):
                     yield XRP_Wallet(value=xrp_wallet)
 
         if self.bnb_wallet:
-            for match in re.finditer(bnb_wallet_regex, body):
+            for match in bnb_wallet_pattern.finditer(body):
                 bnb_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, bnb_wallet, match.start(), match.end()) and BNB_Wallet.isvalid(address=bnb_wallet):
                     yield BNB_Wallet(value=bnb_wallet)
 
         if self.credit_card:
-            for match in re.finditer(all_card_regex, body):
+            for match in all_card_pattern.finditer(body):
                 card_number = match.group()
                 if is_valid_context(body, card_number, match.start(), match.end()) and Card_Number.isvalid(card_number):
                     companies = []
-                    for company, regex in card_regex.items():
-                        if re.match(regex, card_number):
+                    for company, company_pattern in compiled_card_patterns.items():
+                        if company_pattern.match(card_number):
                             companies.append(company)
                     yield Card_Number(value=f"Companies=[{','.join(companies)}] Number={card_number}")
 
         # Add BIN/IIN extraction
         if self.bin_number:
-            for match in re.finditer(bin_regex, body):
+            for match in bin_pattern.finditer(body):
                 bin_candidate = match.group()
                 if is_valid_context(body, bin_candidate, match.start(), match.end()):
                     yield Item(value=f"BIN/IIN={bin_candidate}")
 
         # Add generic CCN extraction
         if self.ccn_number:
-            for match in re.finditer(ccn_regex, body):
+            for match in ccn_pattern.finditer(body):
                 ccn_candidate = match.group()
                 # Avoid duplicates with card_numbers
-                if is_valid_context(body, ccn_candidate, match.start(), match.end()) and not (self.credit_card and re.match(all_card_regex, ccn_candidate)):
+                if is_valid_context(body, ccn_candidate, match.start(), match.end()) and not (self.credit_card and all_card_pattern.match(ccn_candidate)):
                     yield Item(value=f"CCN={ccn_candidate}")
 
         if self.twitter:
-            for match in re.finditer(tw_account_regex, body):
+            for match in tw_account_pattern.finditer(body):
                 tw_account = match.group()
                 if is_valid_context(body, tw_account, match.start(), match.end()):
                     yield TW_Account(value=tw_account)
@@ -1525,7 +1580,7 @@ class reStalker:
         if self.url:
             seen_urls = set()
 
-            for match in re.finditer(any_url_regex, body):
+            for match in any_url_pattern.finditer(body):
                 url_candidate = match.group()
                 url_candidate = url_candidate.rstrip('.,;:!?"\')]}')
 
@@ -1564,7 +1619,7 @@ class reStalker:
                 yield Tor_URL(value=link_item)
 
         if self.freenet:
-            for match in re.finditer(freenet_hidden_url, body, re.DOTALL):
+            for match in freenet_hidden_url_pattern.finditer(body):
                 link = match.group()
                 if is_valid_context(body, link, match.start(), match.end()):
                     yield Freenet_URL(value=link)
@@ -1574,7 +1629,7 @@ class reStalker:
                 if body.find("zeronet") < 0:
                     pass
 
-            for match in re.finditer(zeronet_hidden_url, body, re.DOTALL):
+            for match in zeronet_hidden_url_pattern.finditer(body):
                 link = match.group()
                 extracted_links = extract_elements(link)
                 for extracted_link in extracted_links:
@@ -1583,13 +1638,13 @@ class reStalker:
 
         if self.bitname:
             # Detectar bitname URLs con el esquema bitname://
-            for match in re.finditer(r'bitname://[^\s]+', body):
+            for match in bitname_scheme_pattern.finditer(body):
                 bitname_link = match.group()
                 if is_valid_context(body, bitname_link, match.start(), match.end()):
                     yield Bitname_URL(value=bitname_link)
             
             # Detectar bitname URLs con el regex original (dominios .bit)
-            for match in re.finditer(bitname_url, body, re.DOTALL):
+            for match in bitname_url_pattern.finditer(body):
                 link = match.group()
                 extracted_links = extract_elements(link)
                 for extracted_link in extracted_links:
@@ -1599,13 +1654,13 @@ class reStalker:
                        yield Bitname_URL(value=extracted_link)
 
         if self.pgp:
-            for match in re.finditer(pgp_key, body, re.DOTALL):
+            for match in pgp_key_pattern.finditer(body):
                 k = match.group()
                 if is_valid_context(body, k, match.start(), match.end()):
                     yield PGP(value=k)
 
         if self.ipfs:
-            for match in re.finditer(ipfs_url, body, re.DOTALL):
+            for match in ipfs_url_pattern.finditer(body):
                 link = match.group()
                 extracted_links = extract_elements(link)
                 for extracted_link in extracted_links:
@@ -1613,7 +1668,7 @@ class reStalker:
                         yield IPFS_URL(value=extracted_link)
 
         if self.whatsapp:
-            for match in re.finditer(whatsapp_url_regex, body):
+            for match in whatsapp_url_pattern.finditer(body):
                 link = match.group()
                 extracted_links = extract_elements(link)
                 for extracted_link in extracted_links:
@@ -1628,7 +1683,7 @@ class reStalker:
                         yield Whatsapp_URL(value=link_item)
 
         if self.discord:
-            for match in re.finditer(discord_url_regex, body):
+            for match in discord_url_pattern.finditer(body):
                 link = match.group()
                 extracted_links = extract_elements(link)
                 for extracted_link in extracted_links:
@@ -1643,7 +1698,7 @@ class reStalker:
                         yield Discord_URL(value=link_item)
 
         if self.telegram:
-            for match in re.finditer(telegram_url_regex, body):
+            for match in telegram_url_pattern.finditer(body):
                 link = match.group()
                 extracted_links = extract_elements(link)
                 for extracted_link in extracted_links:
@@ -1658,7 +1713,7 @@ class reStalker:
                         yield Telegram_URL(value=link_item)
 
         if self.skype:
-            for match in re.finditer(skype_url_regex, body):
+            for match in skype_url_pattern.finditer(body):
                 link = match.group()
                 if is_valid_context(body, link, match.start(), match.end()):
                     try:
@@ -1679,7 +1734,7 @@ class reStalker:
         # No regex fallback
 
         if self.paste:
-            for match in re.finditer(paste_url_regex, body):
+            for match in paste_url_pattern.finditer(body):
                 pst = match.group()
                 if is_valid_context(body, pst, match.start(), match.end()):
                     yield Paste(value=pst)
@@ -1688,43 +1743,43 @@ class reStalker:
         # No regex fallback
 
         if self.base64:
-            for match in re.finditer(base64_regex, body):
+            for match in base64_pattern.finditer(body):
                 b64 = match.group()
                 if is_valid_context(body, b64, match.start(), match.end()):
                     yield Base64(value=b64)
 
         if self.md5:
-            for match in re.finditer(md5_regex, body):
+            for match in md5_pattern.finditer(body):
                 md5 = match.group()
                 if is_valid_context(body, md5, match.start(), match.end()):
                     yield MD5(value=md5)
 
         if self.sha1:
-            for match in re.finditer(sha1_regex, body):
+            for match in sha1_pattern.finditer(body):
                 sha1 = match.group()
                 if is_valid_context(body, sha1, match.start(), match.end()):
                     yield SHA1(value=sha1)
 
         if self.sha256:
-            for match in re.finditer(sha256_regex, body):
+            for match in sha256_pattern.finditer(body):
                 sha256 = match.group()
                 if is_valid_context(body, sha256, match.start(), match.end()):
                     yield SHA256(value=sha256)
 
         if self.tox:
-            for match in re.finditer(tox_id_regex, body):
+            for match in tox_id_pattern.finditer(body):
                 tox_id = match.group()
                 if is_valid_context(body, tox_id, match.start(), match.end()) and Tox_ID.isvalid(tox_id):
                     yield Tox_ID(value=tox_id)
 
         if self.gatc:
-            for match in re.finditer(ga_tracking_code_regex, body):
+            for match in ga_tracking_code_pattern.finditer(body):
                 g = match.group()
                 if is_valid_context(body, g, match.start(), match.end()) and GA_Tracking_Code.isvalid(g):
                     yield GA_Tracking_Code(value=g)
 
         if self.session_id:
-            for match in re.finditer(session_id_regex, body):
+            for match in session_id_pattern.finditer(body):
                 sid = match.group()
                 session_id_value = sid
                 if is_valid_context(body, session_id_value, match.start(), match.end()) and Session_ID.isvalid(session_id_value):
