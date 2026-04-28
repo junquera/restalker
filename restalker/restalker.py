@@ -34,6 +34,14 @@ class Item:
         return f"{type(self).__name__}({value_str})"
 
 
+def _is_valid_base58_check(value: str) -> bool:
+    try:
+        based58.b58decode_check(value.encode("utf-8"))
+        return True
+    except Exception:
+        return False
+
+
 class Phone(Item):
     pass
 
@@ -94,11 +102,7 @@ class BTC_Wallet(Item):
         ret = False
         try:
             if address[0] in ["1", "3"]:
-                decode_address = based58.b58decode(address.encode("utf-8"))
-                ret = (
-                    decode_address[-4:] == sha256(
-                        sha256(decode_address[:-4]).digest()).digest()[:4]
-                )
+                ret = _is_valid_base58_check(address)
             elif address.startswith("bc"):
                 hrpgot, data, spec = segwit_addr.bech32_decode(address)
                 ret = (hrpgot is not None) and (
@@ -107,6 +111,69 @@ class BTC_Wallet(Item):
             ret = False
 
         return ret
+
+
+class BTC_TxID(Item):
+    @staticmethod
+    def isvalid(txid: str) -> bool:
+        try:
+            return bool(re.fullmatch(r"[0-9a-fA-F]{64}", txid))
+        except Exception:
+            return False
+
+
+class LTC_Wallet(Item):
+    @staticmethod
+    def isvalid(address: str) -> bool:
+        try:
+            return _is_valid_base58_check(address)
+        except Exception:
+            return False
+
+
+class DOGE_Wallet(Item):
+    @staticmethod
+    def isvalid(address: str) -> bool:
+        try:
+            return _is_valid_base58_check(address)
+        except Exception:
+            return False
+
+
+class WIF_Private_Key(Item):
+    @staticmethod
+    def isvalid(private_key: str) -> bool:
+        try:
+            return _is_valid_base58_check(private_key)
+        except Exception:
+            return False
+
+
+class BIP32_Private_Node(Item):
+    @staticmethod
+    def isvalid(node: str) -> bool:
+        try:
+            return node.startswith("xprv") and _is_valid_base58_check(node)
+        except Exception:
+            return False
+
+
+class BIP32_Public_Node(Item):
+    @staticmethod
+    def isvalid(node: str) -> bool:
+        try:
+            return node.startswith("xpub") and _is_valid_base58_check(node)
+        except Exception:
+            return False
+
+
+class BIP38_Encrypted_Private_Key(Item):
+    @staticmethod
+    def isvalid(private_key: str) -> bool:
+        try:
+            return private_key.startswith("6P") and _is_valid_base58_check(private_key)
+        except Exception:
+            return False
 
 
 class ETH_Wallet(Item):
@@ -533,6 +600,22 @@ btc_wallet_regex = r"([13][a-km-zA-HJ-NP-Z1-9]{25,34})"
 
 btc_wallet_bech32_regex = r"(bc1[qp][qpzry9x8gf2tvdw0s3jn54khce6mua7l]{38,58})"
 
+btc_txid_regex = r"\b[a-fA-F0-9]{64}\b"
+
+ltc_wallet_regex = r"([LM3][a-km-zA-HJ-NP-Z1-9]{25,33})"
+
+doge_wallet_regex = r"(D[5-9A-HJ-NP-U][1-9A-HJ-NP-Za-km-z]{32})"
+
+wif_private_key_regex = r"(5[a-km-zA-HJ-NP-Z1-9]{50})"
+
+wif_private_key_compressed_regex = r"([KL][a-km-zA-HJ-NP-Z1-9]{51})"
+
+bip32_private_node_regex = r"(xprv[a-km-zA-HJ-NP-Z1-9]{107,108})"
+
+bip32_public_node_regex = r"(xpub[a-km-zA-HJ-NP-Z1-9]{107,108})"
+
+bip38_private_key_regex = r"(6P[a-km-zA-HJ-NP-Z1-9]{56})"
+
 eth_wallet_regex = r"(0x[0-9a-fA-F]{40})"
 
 xmr_wallet_regex = r"([48][a-km-zA-HJ-NP-Z1-9]{94,105})"
@@ -849,6 +932,14 @@ ipv6_linklocal_pattern = re.compile(ipv6_linklocal_regex)
 ipv6_loose_pattern = re.compile(ipv6_loose_regex)
 btc_wallet_pattern = re.compile(btc_wallet_regex)
 btc_wallet_bech32_pattern = re.compile(btc_wallet_bech32_regex)
+btc_txid_pattern = re.compile(btc_txid_regex)
+ltc_wallet_pattern = re.compile(ltc_wallet_regex)
+doge_wallet_pattern = re.compile(doge_wallet_regex)
+wif_private_key_pattern = re.compile(wif_private_key_regex)
+wif_private_key_compressed_pattern = re.compile(wif_private_key_compressed_regex)
+bip32_private_node_pattern = re.compile(bip32_private_node_regex)
+bip32_public_node_pattern = re.compile(bip32_public_node_regex)
+bip38_private_key_pattern = re.compile(bip38_private_key_regex)
 eth_wallet_pattern = re.compile(eth_wallet_regex)
 xmr_wallet_pattern = re.compile(xmr_wallet_regex)
 zec_wallet_transparent_pattern = re.compile(zec_wallet_transparent_regex)
@@ -905,6 +996,13 @@ class reStalker:
         email=False,
         iban_address=False,
         btc_wallet=False,
+        btc_txid=False,
+        ltc_wallet=False,
+        doge_wallet=False,
+        wif_private_key=False,
+        bip32_private_node=False,
+        bip32_public_node=False,
+        bip38_private_key=False,
         eth_wallet=False,
         xmr_wallet=False,
         zec_wallet=False,
@@ -968,6 +1066,13 @@ class reStalker:
 
         self.iban_address = iban_address or all
         self.btc_wallet = btc_wallet or all
+        self.btc_txid = btc_txid or all
+        self.ltc_wallet = ltc_wallet or all
+        self.doge_wallet = doge_wallet or all
+        self.wif_private_key = wif_private_key or all
+        self.bip32_private_node = bip32_private_node or all
+        self.bip32_public_node = bip32_public_node or all
+        self.bip38_private_key = bip38_private_key or all
         self.eth_wallet = eth_wallet or all
         self.xmr_wallet = xmr_wallet or all
         self.zec_wallet = zec_wallet or all
@@ -1478,6 +1583,52 @@ class reStalker:
                 btc_wallet = match.group().rstrip('.,;')
                 if is_valid_context(body, btc_wallet, match.start(), match.end()) and BTC_Wallet.isvalid(address=btc_wallet):
                     yield BTC_Wallet(value=btc_wallet)
+
+        if self.btc_txid:
+            for match in btc_txid_pattern.finditer(body):
+                txid = match.group().rstrip('.,;')
+                if is_valid_context(body, txid, match.start(), match.end()) and BTC_TxID.isvalid(txid):
+                    yield BTC_TxID(value=txid)
+
+        if self.ltc_wallet:
+            for match in ltc_wallet_pattern.finditer(body):
+                ltc_wallet = match.group().rstrip('.,;')
+                if is_valid_context(body, ltc_wallet, match.start(), match.end()) and LTC_Wallet.isvalid(address=ltc_wallet):
+                    yield LTC_Wallet(value=ltc_wallet)
+
+        if self.doge_wallet:
+            for match in doge_wallet_pattern.finditer(body):
+                doge_wallet = match.group().rstrip('.,;')
+                if is_valid_context(body, doge_wallet, match.start(), match.end()) and DOGE_Wallet.isvalid(address=doge_wallet):
+                    yield DOGE_Wallet(value=doge_wallet)
+
+        if self.wif_private_key:
+            for match in wif_private_key_pattern.finditer(body):
+                wif_private_key = match.group().rstrip('.,;')
+                if is_valid_context(body, wif_private_key, match.start(), match.end()) and WIF_Private_Key.isvalid(private_key=wif_private_key):
+                    yield WIF_Private_Key(value=wif_private_key)
+            for match in wif_private_key_compressed_pattern.finditer(body):
+                wif_private_key = match.group().rstrip('.,;')
+                if is_valid_context(body, wif_private_key, match.start(), match.end()) and WIF_Private_Key.isvalid(private_key=wif_private_key):
+                    yield WIF_Private_Key(value=wif_private_key)
+
+        if self.bip32_private_node:
+            for match in bip32_private_node_pattern.finditer(body):
+                node = match.group().rstrip('.,;')
+                if is_valid_context(body, node, match.start(), match.end()) and BIP32_Private_Node.isvalid(node):
+                    yield BIP32_Private_Node(value=node)
+
+        if self.bip32_public_node:
+            for match in bip32_public_node_pattern.finditer(body):
+                node = match.group().rstrip('.,;')
+                if is_valid_context(body, node, match.start(), match.end()) and BIP32_Public_Node.isvalid(node):
+                    yield BIP32_Public_Node(value=node)
+
+        if self.bip38_private_key:
+            for match in bip38_private_key_pattern.finditer(body):
+                private_key = match.group().rstrip('.,;')
+                if is_valid_context(body, private_key, match.start(), match.end()) and BIP38_Encrypted_Private_Key.isvalid(private_key):
+                    yield BIP38_Encrypted_Private_Key(value=private_key)
 
         if self.eth_wallet:
             for match in eth_wallet_pattern.finditer(body):

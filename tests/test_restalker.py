@@ -1,4 +1,5 @@
 import pytest
+import based58
 
 """  README
 
@@ -50,7 +51,12 @@ from restalker import (
     Bitname_URL,
     BNB_Wallet,
     BTC_Wallet,
+    BTC_TxID,
+    BIP32_Private_Node,
+    BIP32_Public_Node,
+    BIP38_Encrypted_Private_Key,
     DASH_Wallet,
+    DOGE_Wallet,
     Discord_URL,
     DOT_Wallet,
     Email,
@@ -60,6 +66,7 @@ from restalker import (
     Keyphrase,
     Keyword,
     Location,
+    LTC_Wallet,
     Organization,
     OwnName,
     Password,
@@ -71,6 +78,7 @@ from restalker import (
     Tor_URL,
     Tox_ID,
     TW_Account,
+    WIF_Private_Key,
     Username,
     Whatsapp_URL,
     XMR_Wallet,
@@ -92,6 +100,35 @@ def sample_crypto_data():
     DOT: 1FRMM8PEiWXYax7rpS6X4XZX1aAAxSWx1CrKTyrVYhV24fg
     XRP: rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh
     BNB: bnb1u89pj9xfwzc08zuh9gne6t8zr8q8staztrl6gt
+    """
+
+
+def _b58check(payload: bytes) -> str:
+    encoded = based58.b58encode_check(payload)
+    return encoded.decode("ascii") if isinstance(encoded, bytes) else str(encoded)
+
+
+@pytest.fixture
+def sample_btc_extended_data():
+    wif_uncompressed = _b58check(b"\x80" + b"\x11" * 32)
+    wif_compressed = _b58check(b"\x80" + b"\x22" * 32 + b"\x01")
+    bip32_private_node = _b58check(
+        b"\x04\x88\xAD\xE4" + b"\x00" + b"\x00\x00\x00\x00" + b"\x00\x00\x00\x00" + b"\x00" * 32 + b"\x00" + b"\x33" * 32
+    )
+    bip32_public_node = _b58check(
+        b"\x04\x88\xB2\x1E" + b"\x00" + b"\x00\x00\x00\x00" + b"\x00\x00\x00\x00" + b"\x00" * 32 + b"\x02" + b"\x44" * 32
+    )
+    ltc_address = _b58check(b"\x30" + b"\x55" * 20)
+    doge_address = _b58check(b"\x1E" + b"\x66" * 20)
+
+    return f"""
+    TXID: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    LTC: {ltc_address}
+    DOGE: {doge_address}
+    WIF: {wif_uncompressed}
+    WIFC: {wif_compressed}
+    xprv: {bip32_private_node}
+    xpub: {bip32_public_node}
     """
 
 
@@ -458,6 +495,33 @@ def test_crypto_detection(sample_crypto_data):
         + len(bnb)
     )
     assert wallets_found > 0, "No wallet was detected"
+
+
+def test_btc_extended_detection(sample_btc_extended_data):
+    stalker = reStalker(
+        use_ner=False,
+        btc_txid=True,
+        ltc_wallet=True,
+        doge_wallet=True,
+        wif_private_key=True,
+        bip32_private_node=True,
+        bip32_public_node=True,
+    )
+    results = list(stalker.parse(sample_btc_extended_data))
+
+    txids = [r for r in results if isinstance(r, BTC_TxID)]
+    ltc = [r for r in results if isinstance(r, LTC_Wallet)]
+    doge = [r for r in results if isinstance(r, DOGE_Wallet)]
+    wif = [r for r in results if isinstance(r, WIF_Private_Key)]
+    xprv = [r for r in results if isinstance(r, BIP32_Private_Node)]
+    xpub = [r for r in results if isinstance(r, BIP32_Public_Node)]
+
+    assert len(txids) == 1
+    assert len(ltc) == 1
+    assert len(doge) == 1
+    assert len(wif) == 2
+    assert len(xprv) == 1
+    assert len(xpub) == 1
 
 
 def test_url_detection(sample_url_data):
