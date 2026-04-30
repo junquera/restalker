@@ -51,41 +51,89 @@ class Keyword(Item):
 
 
 class IBAN_Address(Item):
+    # IBAN length by country code (ISO 13616)
+    IBAN_LENGTH = {
+        "AD": 24, "AE": 23, "AT": 20, "AZ": 28, "BA": 20, "BE": 16,
+        "BG": 22, "BH": 22, "BR": 29, "CH": 21, "CR": 22, "CY": 28,
+        "CZ": 24, "DE": 22, "DK": 18, "DO": 28, "EE": 20, "ES": 24,
+        "FI": 18, "FO": 18, "FR": 27, "GB": 22, "GI": 23, "GL": 18,
+        "GR": 27, "GT": 28, "HR": 21, "HU": 28, "IE": 22, "IL": 23,
+        "IS": 26, "IT": 27, "JO": 30, "KW": 30, "KZ": 20, "LB": 28,
+        "LI": 21, "LT": 20, "LU": 20, "LV": 21, "MC": 27, "MD": 24,
+        "ME": 22, "MK": 19, "MR": 27, "MT": 31, "MU": 30, "NL": 18,
+        "NO": 15, "PK": 24, "PL": 28, "PS": 29, "PT": 25, "QA": 29,
+        "RO": 24, "RS": 22, "SA": 24, "SE": 24, "SI": 19, "SK": 24,
+        "SM": 27, "TN": 24, "TR": 26, "AL": 28, "BY": 28, "DJ": 27,
+        "EG": 29, "GE": 22, "IQ": 23, "LC": 32, "SC": 31, "ST": 25,
+        "SV": 28, "TL": 23, "UA": 29, "VA": 22, "VG": 24, "XK": 20,
+        "BI": 27, "FK": 18, "LY": 25, "MN": 20, "NI": 28, "RV": 33,
+        "SD": 18, "SO": 23
+    }
+    
+    # Character to number conversion for IBAN validation
+    CHAR_CONVERSION = {
+        "A": 10, "B": 11, "C": 12, "D": 13, "E": 14, "F": 15, "G": 16,
+        "H": 17, "I": 18, "J": 19, "K": 20, "L": 21, "M": 22, "N": 23,
+        "O": 24, "P": 25, "Q": 26, "R": 27, "S": 28, "T": 29, "U": 30,
+        "V": 31, "W": 32, "X": 33, "Y": 34, "Z": 35
+    }
+
     @staticmethod
     def isvalid(address: str) -> bool:
-        ret = False
+        """Return true if the input string is a valid IBAN
+        
+        An IBAN comprises of 15-32 alphanumeric characters with format:
+          - 2 characters for country code
+          - 2 control characters (checksum)
+          - up to 28 account characters depending on country
+        
+        Validator checks length for country and IBAN checksum (ISO 13616)
+        """
         try:
             if not address:
                 return False
 
-            iban = address.replace(" ", "").upper()
+            # Normalize: strip, uppercase, remove spaces and hyphens
+            iban = address.strip().upper()
+            iban = iban.replace(" ", "").replace("-", "")
 
-            # Minimum length is from Norway with 15 chars
-            if len(iban) < 15:
+            # Must have at least 4 characters (country code + checksum)
+            if len(iban) < 4:
                 return False
 
-            # First 2 must be country code, then 2 numbers
+            # First 2 must be country code, then 2 digits for checksum
             if not (iban[:2].isalpha() and iban[2:4].isdigit()):
                 return False
 
-            # Checksum ISO-13616
-            rearranged = iban[4:] + iban[:4]
+            # Check length matches expected length for country
+            country_code = iban[:2]
+            expected_length = IBAN_Address.IBAN_LENGTH.get(country_code, None)
+            if expected_length is None:
+                return False  # Unknown country code
+            
+            if len(iban) != expected_length:
+                return False  # Wrong length for this country
 
-            numeric = ""
-            for ch in rearranged:
-                if ch.isdigit():
-                    numeric += ch
-                elif ch.isalpha():
-                    numeric += str(ord(ch) - 55)  # A=10, B=11, ...
+            # Build checksum string: account + country code + check digits
+            check_str = ""
+            for char in iban[4:]:
+                if char.isdigit():
+                    check_str += char
+                elif char.isalpha():
+                    check_str += str(IBAN_Address.CHAR_CONVERSION.get(char, 0))
                 else:
-                    return False  # Invalid Character
+                    return False  # Invalid character
+            
+            # Append converted country code and check digits
+            check_str += str(IBAN_Address.CHAR_CONVERSION.get(iban[0], 0))
+            check_str += str(IBAN_Address.CHAR_CONVERSION.get(iban[1], 0))
+            check_str += iban[2:4]
 
-            # IBAN if valid if mod 97 == 1
-            ret = int(numeric) % 97 == 1
+            # IBAN is valid if mod 97 equals 1 (ISO 13616 checksum)
+            return (int(check_str) % 97) == 1
+            
         except Exception:
-            ret = False
-
-        return ret
+            return False
 
 
 class BTC_Wallet(Item):
@@ -506,7 +554,7 @@ number_regex = r"[0-9]+"
 
 alnum_join = r"[a-zA-Z0-9\-\~]+"
 
-file_name = r"(?:[a-zA-Z0-9\_]+\.)+\.[a-zA-Z0-9]{2,4}"
+file_name = r"(?:[a-zA-Z0-9\_]+\.)*[a-zA-Z0-9\_]+\.[a-zA-Z0-9]{2,4}"
 
 email_regex = r"([a-zA-Z0-9_.+-]+@(?:[a-zA-Z0-9-]+\.)+(?:[0-9][a-zA-Z0-9]{0,4}[a-zA-Z]|[0-9][a-zA-Z][a-zA-Z0-9]{0,4}|[a-zA-Z][a-zA-Z0-9]{1,5}))"
 
@@ -547,9 +595,7 @@ dash_wallet_regex = r"(X[a-km-zA-HJ-NP-Z1-9]{33})"
 
 dot_wallet_regex = r"(1[a-km-zA-HJ-NP-Z1-9]{46,47})"
 
-xrp_wallet_regex = (
-    r"([rX][rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz]{26,46})"
-)
+xrp_wallet_regex = r"(r[1-9A-HJ-NP-Za-km-z]{24,34})"
 
 bnb_wallet_regex = r"(bnb[a-zA-Z0-9]{39})"
 
@@ -583,12 +629,12 @@ any_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % domain_regex[:-1]
 any_url_regex = r"((?:[a-zA-Z][a-zA-Z0-9+\-\.]*://|www\.)[^\s]+)"
 
 tor_hidden_domain = (
-    r"(?:[a-z0-9]+\.){0,4}(?:[a-z0-9]{16}|[a-z0-9]{56})\.onion(?:\:[0-9]{2,5})?$"
+    r"(?:[a-zA-Z0-9]+\.){0,4}(?:[a-zA-Z0-9]{16}|[a-zA-Z0-9]{56})\.[oO][nN][iI][oO][nN](?:\:[0-9]{2,5})?$"
 )
-tor_hidden_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % tor_hidden_domain[:-1]
+tor_hidden_url = r"((?:https?:\/\/)?%s\b(?:\/[a-zA-Z0-9_-]*)*(?:\?[^\s#]*)?)" % tor_hidden_domain[:-1]
 
-i2p_hidden_domain = r"(?:[a-z0-9]+\.){1,5}i2p(?:\:[0-9]{2,5})?$"
-i2p_hidden_url = r"((?:https?:\/\/)?%s(?:\/[a-zA-Z0-9_-]*)*)" % i2p_hidden_domain[:-1]
+i2p_hidden_domain = r"(?:[a-zA-Z0-9]+\.){1,5}i2p(?:\:[0-9]{2,5})?$"
+i2p_hidden_url = r"((?:https?:\/\/)?%s\b(?:\/[a-zA-Z0-9_-]*)*(?:\?[^\s#]*)?)" % i2p_hidden_domain[:-1]
 
 card_regex = {
     # American Express - 34, 37 - length 15
@@ -900,7 +946,8 @@ def extract_elements(x):
 class reStalker:
     def __init__(
         self,
-        use_ner=False,
+        use_ner,
+        gliner_model=None,
         phone=False,
         email=False,
         iban_address=False,
@@ -950,6 +997,7 @@ class reStalker:
     ):
 
         self.use_ner = use_ner
+        self.gliner_model = gliner_model
         
         self.own_name = own_name or all
         self.location = location or all
@@ -1111,9 +1159,6 @@ class reStalker:
 
         return text
 
-    # GLiNER model for Named Entity Recognition - loaded once and reused
-    gliner_model = None
-
     def _analyze_chunk(self, body, origin=None):
         """
         Analyze a text chunk and extract entities using GLiNER and other methods.
@@ -1174,9 +1219,11 @@ class reStalker:
 
         # Load GLiNER model if not loaded yet and use_ner is enabled
         if self.use_ner:
-            if reStalker.gliner_model is None:
-                from gliner2 import GLiNER2
-                reStalker.gliner_model = GLiNER2.from_pretrained('fastino/gliner2-large-v1')
+            from gliner2 import GLiNER2
+            if self.gliner_model is None:
+                self.gliner_model = GLiNER2.from_pretrained('fastino/gliner2-large-v1')
+            elif isinstance(self.gliner_model, str):
+                self.gliner_model = GLiNER2.from_pretrained(self.gliner_model)
 
         # Extract entities with GLiNER if any NER-related feature is enabled
         entities_dict = {}
@@ -1189,7 +1236,7 @@ class reStalker:
                            'LOCATION', 'CITY', 'USERNAME', 'PASSWORD', 'PHONE']
 
             # Extract entities using GLiNER2
-            result = reStalker.gliner_model.extract_entities(body, entity_labels)
+            result = self.gliner_model.extract_entities(body, entity_labels)
 
             # Access the nested 'entities' dict
             if isinstance(result, dict) and 'entities' in result:
@@ -1594,6 +1641,18 @@ class reStalker:
                         yield URL(value=url_candidate)
 
         if self.tor:
+            seen_tor_links = set()
+
+            for match in re.finditer(tor_hidden_url, body, re.DOTALL):
+                link = match.group()
+                if not is_valid_context(body, link, match.start(), match.end()):
+                    continue
+
+                link_item = link.decode('utf-8') if isinstance(link, bytes) else link
+                if link_item not in seen_tor_links:
+                    seen_tor_links.add(link_item)
+                    yield Tor_URL(value=link_item)
+
             tor_links = self.extract_links(
                 body,
                 url_format=tor_hidden_url,
@@ -1616,7 +1675,9 @@ class reStalker:
                             link_item = str(link)
                     else:
                         link_item = link
-                yield Tor_URL(value=link_item)
+                if link_item not in seen_tor_links:
+                    seen_tor_links.add(link_item)
+                    yield Tor_URL(value=link_item)
 
         if self.freenet:
             for match in freenet_hidden_url_pattern.finditer(body):

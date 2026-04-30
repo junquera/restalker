@@ -1,6 +1,6 @@
 # 🕵️ reStalker
 
-![reStalker Logo](https://github.com/junquera/restalker/blob/develop/doc/img/icon.png)
+![reStalker Logo](https://raw.githubusercontent.com/junquera/restalker/develop/doc/img/icon.png)
 
 **IOC and Entities Extractor**
 
@@ -246,6 +246,8 @@ reStalker v2.2.0+ uses the **`fastino/gliner2-large-v1`** model (~340MB):
 ### Enhanced Phone Detection
 
 GLiNER2 includes advanced phone number detection with **hex filtering** to prevent false positives:
+
+- As of **v2.2.2**, phone parsing uses stricter `EXACT_GROUPING` validation in `phonenumbers` to reduce loosely formatted false positives.
 
 ```python
 import restalker

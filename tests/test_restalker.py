@@ -40,6 +40,7 @@ def require_gliner():
 
 
 from restalker import (
+    Freenet_URL,
     I2P_URL,
     IPFS_URL,
     MD5,
@@ -346,6 +347,52 @@ def sample_contextual_data():
     Person: John Smith
     Keyphrase: "highly confidential internal document"
     BitName: example.bit
+    """
+
+
+@pytest.fixture
+def sample_tor_plaintext():
+    return """
+    Tor v2: duskgytldkxiuqc6.onion
+    Tor v3: vww6ybal4bd7szmgncyruucpgfkqahzddi37ktceo3ah7ngmcopnpyyd.onion
+    With https: https://duskgytldkxiuqc6.onion/path/to/page
+    With subdomain: www.duskgytldkxiuqc6.onion
+    With query: http://duskgytldkxiuqc6.onion/page?key=value&foo=bar
+    UPPERCASE: http://DUSKGYTLDKXIUQC6.ONION/path
+    Negative cases: notanonion something.onionextra too.onion
+    """
+
+
+@pytest.fixture
+def sample_freenet_plaintext():
+    return """
+    CHK: CHK@SVbD9~HM5nzf3AX4yFCBc-A4dhNUF5DPJZLL5NX5Brs,bA7qLNJR7IXRKn6uS5PAySjIM6azPFvK~18kSi6bbNQ,AAEA--8
+    SSK: SSK@GB3wuHmto-eHK35w,c63EzO7u3YDduXDs,AQABAAE/mysite-4
+    USK: USK@GB3wuHmto-eHK35w,c63EzO7u3YDduXDs,AQABAAE/mysite/5/
+    KSK: KSK@myfile.txt
+    With prefix: freenet:CHK@SVbD9~HM5nzf3AX4yFCBc-A4dhNUF5DPJZLL5NX5Brs,bA7qLNJR7IXRKn6uS5PAySjIM6azPFvK~18kSi6bbNQ,AAEA--8
+    Gateway: http://localhost:8888/freenet:USK@GB3wuHmto-eHK35w,c63EzO7u3YDduXDs,AQABAAE/freesite/11/
+    """
+
+
+@pytest.fixture
+def sample_ipfs_standalone():
+    return """
+    Native IPFS: ipfs://QmW2WQi7j6c7UgJTarActp7tDNikE4B2qXtFCfLPdsgaTQ
+    Native IPNS: ipns://k51qzi5uqu5dlvj2bv6qxyjsmshdc2czmgrnx6q76crop84unevfz7hma13d5
+    Gateway: https://ipfs.io/ipfs/QmW2WQi7j6c7UgJTarActp7tDNikE4B2qXtFCfLPdsgaTQ
+    CIDv1: ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi
+    Negative: ipfs://short
+    """
+
+
+@pytest.fixture
+def sample_bitname_standalone():
+    return """
+    Bitname scheme: bitname://example.bit/path
+    Bare domain: example.bit
+    With path: example.bit/blog/post
+    With subdomain: sub.example.bit
     """
 
 
@@ -998,3 +1045,240 @@ def test_keyword_extraction():
 
     keyphrase_values = [k.value.lower() for k in keyphrases if k.value is not None]
     assert keyphrase_values == []
+
+
+def test_tor_plaintext_detection(sample_tor_plaintext):
+    stalker = reStalker(use_ner=False, tor=True)
+    results = list(stalker.parse(sample_tor_plaintext))
+    tor_urls = [r for r in results if isinstance(r, Tor_URL)]
+
+    tor_values = [str(u).lower() for u in tor_urls]
+    assert any("duskgytldkxiuqc6.onion" in v for v in tor_values), "Should detect v2 onion"
+    assert any(
+        "vww6ybal4bd7szmgncyruucpgfkqahzddi37ktceo3ah7ngmcopnpyyd.onion" in v
+        for v in tor_values
+    ), "Should detect v3 onion"
+    assert any("https://duskgytldkxiuqc6.onion/path/to/page" in v for v in tor_values), (
+        "Should detect https onion URL"
+    )
+    assert any("www.duskgytldkxiuqc6.onion" in v for v in tor_values), (
+        "Should detect onion subdomain"
+    )
+    assert any("?key=value&foo=bar" in v for v in tor_values), (
+        "Should detect onion query string"
+    )
+    assert any("http://duskgytldkxiuqc6.onion/path" in v for v in tor_values), (
+        "Should detect uppercase onion URL"
+    )
+    assert not any("something.onionextra" in v for v in tor_values), (
+        "Should not overmatch onionextra"
+    )
+    assert not any("too.onion" in v for v in tor_values), "Should not match short onion"
+
+
+def test_freenet_detection_comprehensive(sample_freenet_plaintext):
+    stalker = reStalker(use_ner=False, freenet=True)
+    results = list(stalker.parse(sample_freenet_plaintext))
+    freenet_urls = [r for r in results if isinstance(r, Freenet_URL)]
+
+    freenet_values = [str(u) for u in freenet_urls]
+    assert any("CHK@" in v for v in freenet_values), "Should detect CHK key"
+    assert any("SSK@" in v for v in freenet_values), "Should detect SSK key"
+    assert any("USK@" in v for v in freenet_values), "Should detect USK key"
+    assert any("KSK@" in v for v in freenet_values), "Should detect KSK key"
+    assert any("freenet:CHK@" in v for v in freenet_values), "Should detect freenet prefix"
+    assert any("freesite/11" in v for v in freenet_values), "Should detect localhost gateway"
+
+
+test_freenet_detection_comprehensive.freenet_comprehensive = True
+
+
+def test_ipfs_standalone_detection(sample_ipfs_standalone):
+    stalker = reStalker(use_ner=False, ipfs=True)
+    results = list(stalker.parse(sample_ipfs_standalone))
+    ipfs_urls = [r for r in results if isinstance(r, IPFS_URL)]
+
+    ipfs_values = [str(u).lower() for u in ipfs_urls]
+    assert any("ipfs://" in v for v in ipfs_values), "Should detect native IPFS"
+    assert any("ipns://" in v for v in ipfs_values), "Should detect native IPNS"
+    assert any("ipfs.io" in v for v in ipfs_values), "Should detect gateway"
+    assert any("bafybei" in v for v in ipfs_values), "Should detect CIDv1"
+    assert not any("ipfs://short" in v for v in ipfs_values), "Should not detect short CID"
+
+
+def test_bitname_standalone_detection(sample_bitname_standalone):
+    stalker = reStalker(use_ner=False, bitname=True)
+    results = list(stalker.parse(sample_bitname_standalone))
+    bitname_urls = [r for r in results if isinstance(r, Bitname_URL)]
+
+    bitname_values = [str(u) for u in bitname_urls]
+    assert any("bitname://example.bit/path" in v for v in bitname_values), (
+        "Should detect bitname:// scheme"
+    )
+    assert any("example.bit" in v for v in bitname_values), "Should detect .bit domain"
+    assert any("example.bit/blog/post" in v for v in bitname_values), (
+        "Should detect .bit path"
+    )
+    assert any("sub.example.bit" in v for v in bitname_values), (
+        "Should detect .bit subdomain"
+    )
+
+
+def test_darknet_negative_cases():
+    clean_text = """
+    Regular website: https://example.com
+    Email: test@example.com
+    IP: 192.168.1.1
+    """
+    stalker = reStalker(
+        use_ner=False,
+        tor=True,
+        i2p=True,
+        freenet=True,
+        zeronet=True,
+        bitname=True,
+        ipfs=True,
+    )
+    results = list(stalker.parse(clean_text))
+
+    darknet_types = (Tor_URL, I2P_URL, Freenet_URL, Zeronet_URL, Bitname_URL, IPFS_URL)
+    darknet_items = [r for r in results if isinstance(r, darknet_types)]
+    assert len(darknet_items) == 0, (
+        f"Should not detect darknet in clean text, got: {darknet_items}"
+    )
+
+    near_miss_text = "notanonion something.onionextra notreal.i2pmore CHK@short ipfs://short"
+    results = list(stalker.parse(near_miss_text))
+    darknet_items = [r for r in results if isinstance(r, darknet_types)]
+    assert len(darknet_items) == 0, (
+        f"Should not detect near-miss patterns, got: {darknet_items}"
+    )
+
+
+def test_darknet_all_types_combined():
+    """Test all 6 darknet types enabled simultaneously."""
+    text = """
+    Tor: http://duskgytldkxiuqc6.onion/page
+    I2P: http://example.i2p/path
+    Freenet: CHK@SVbD9~HM5nzf3AX4yFCBc-A4dhNUF5DPJZLL5NX5Brs,bA7qLNJR7IXRKn6uS5PAySjIM6azPFvK~18kSi6bbNQ,AAEA--8
+    ZeroNet: 1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D
+    Bitname: example.bit
+    IPFS: ipfs://QmW2WQi7j6c7UgJTarActp7tDNikE4B2qXtFCfLPdsgaTQ
+    """
+    stalker = reStalker(
+        use_ner=False,
+        tor=True,
+        i2p=True,
+        freenet=True,
+        zeronet=True,
+        bitname=True,
+        ipfs=True,
+    )
+    results = list(stalker.parse(text))
+
+    tor = [r for r in results if isinstance(r, Tor_URL)]
+    i2p = [r for r in results if isinstance(r, I2P_URL)]
+    freenet = [r for r in results if isinstance(r, Freenet_URL)]
+    zeronet = [r for r in results if isinstance(r, Zeronet_URL)]
+    bitname = [r for r in results if isinstance(r, Bitname_URL)]
+    ipfs = [r for r in results if isinstance(r, IPFS_URL)]
+
+    assert len(tor) >= 1, f"Expected Tor URLs, got {len(tor)}"
+    assert len(i2p) >= 1, f"Expected I2P URLs, got {len(i2p)}"
+    assert len(freenet) >= 1, f"Expected Freenet URLs, got {len(freenet)}"
+    # ZeroNet/Bitname may overlap due to shared regex - verify at least one darknet type found
+    assert len(zeronet) + len(bitname) >= 1, (
+        f"Expected ZeroNet or Bitname, got {len(zeronet)}+{len(bitname)}"
+    )
+    assert len(ipfs) >= 1, f"Expected IPFS URLs, got {len(ipfs)}"
+def test_xrp_false_positives_issue_58():
+    """Test that false positive strings from issue #58 are NOT detected as XRP addresses"""
+    false_positives = [
+        "rrocchiapreziosissimosangue",
+        "rivheavenskingdomchristianschoo",
+        "rawdedziwnyjesttenswiatSP4ESF",
+        "r1962KLLLLAAAAAAAAAAAAAAAAUUUD",
+    ]
+
+    stalker = reStalker(use_ner=False, xrp_wallet=True)
+
+    for fp in false_positives:
+        results = list(stalker.parse(fp))
+        xrp_wallets = [r for r in results if isinstance(r, XRP_Wallet)]
+        assert len(xrp_wallets) == 0, (
+            f"False positive '{fp}' was incorrectly detected as XRP wallet"
+        )
+
+
+def test_xrp_valid_addresses_still_detected():
+    """Test that valid XRP addresses are still detected after regex fix"""
+    valid_xrp_addresses = [
+        "rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh",
+        "rMJctfTc2XGeNyiATi4aE4UHLDpE6WBZaW",
+        "rJ1ytK9Ya6HPmyozCogGtF79nqXjqSZRkE",
+    ]
+
+    stalker = reStalker(use_ner=False, xrp_wallet=True)
+
+    for valid_xrp_address in valid_xrp_addresses:
+        results = list(stalker.parse(valid_xrp_address))
+        xrp_wallets = [r for r in results if isinstance(r, XRP_Wallet)]
+
+        assert len(xrp_wallets) >= 1, (
+            f"Valid XRP address '{valid_xrp_address}' was not detected"
+        )
+        assert xrp_wallets[0].value == valid_xrp_address, (
+            f"Detected address '{xrp_wallets[0].value}' doesn't match input '{valid_xrp_address}'"
+        )
+
+
+def test_btc_false_positive_check():
+    """Test BTC false positive behavior from issue #58"""
+    btc_false_positive = "14uBSjQBjgHaoUwXW4nSxzxJZ2e23iGQLi"
+
+    stalker = reStalker(use_ner=False, btc_wallet=True)
+    results = list(stalker.parse(btc_false_positive))
+    btc_wallets = [r for r in results if isinstance(r, BTC_Wallet)]
+
+    if len(btc_wallets) > 0:
+        assert not BTC_Wallet.isvalid(btc_false_positive), (
+            f"BTC false positive '{btc_false_positive}' passed validation"
+        )
+
+
+def test_crypto_regex_no_word_false_positives():
+    """Test that common English words don't match crypto patterns"""
+    test_words = [
+        "restaurant",
+        "requirements",
+        "responsibility",
+        "1password",
+        "3commas",
+        "Xenophobia",
+    ]
+
+    stalker = reStalker(
+        use_ner=False,
+        btc_wallet=True,
+        eth_wallet=True,
+        xrp_wallet=True,
+        xmr_wallet=True,
+        zec_wallet=True,
+        dash_wallet=True,
+        dot_wallet=True,
+        bnb_wallet=True,
+    )
+
+    for word in test_words:
+        results = list(stalker.parse(word))
+
+        crypto_wallets = [
+            r for r in results
+            if isinstance(r, (BTC_Wallet, ETH_Wallet, XRP_Wallet, XMR_Wallet,
+                              ZEC_Wallet, DASH_Wallet, DOT_Wallet, BNB_Wallet))
+        ]
+
+        assert len(crypto_wallets) == 0, (
+            f"Common word '{word}' was incorrectly detected as crypto wallet: "
+            f"{[w.value for w in crypto_wallets]}"
+        )
