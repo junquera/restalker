@@ -1191,3 +1191,94 @@ def test_darknet_all_types_combined():
         f"Expected ZeroNet or Bitname, got {len(zeronet)}+{len(bitname)}"
     )
     assert len(ipfs) >= 1, f"Expected IPFS URLs, got {len(ipfs)}"
+def test_xrp_false_positives_issue_58():
+    """Test that false positive strings from issue #58 are NOT detected as XRP addresses"""
+    false_positives = [
+        "rrocchiapreziosissimosangue",
+        "rivheavenskingdomchristianschoo",
+        "rawdedziwnyjesttenswiatSP4ESF",
+        "r1962KLLLLAAAAAAAAAAAAAAAAUUUD",
+    ]
+
+    stalker = reStalker(use_ner=False, xrp_wallet=True)
+
+    for fp in false_positives:
+        results = list(stalker.parse(fp))
+        xrp_wallets = [r for r in results if isinstance(r, XRP_Wallet)]
+        assert len(xrp_wallets) == 0, (
+            f"False positive '{fp}' was incorrectly detected as XRP wallet"
+        )
+
+
+def test_xrp_valid_addresses_still_detected():
+    """Test that valid XRP addresses are still detected after regex fix"""
+    valid_xrp_addresses = [
+        "rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh",
+        "rMJctfTc2XGeNyiATi4aE4UHLDpE6WBZaW",
+        "rJ1ytK9Ya6HPmyozCogGtF79nqXjqSZRkE",
+    ]
+
+    stalker = reStalker(use_ner=False, xrp_wallet=True)
+
+    for valid_xrp_address in valid_xrp_addresses:
+        results = list(stalker.parse(valid_xrp_address))
+        xrp_wallets = [r for r in results if isinstance(r, XRP_Wallet)]
+
+        assert len(xrp_wallets) >= 1, (
+            f"Valid XRP address '{valid_xrp_address}' was not detected"
+        )
+        assert xrp_wallets[0].value == valid_xrp_address, (
+            f"Detected address '{xrp_wallets[0].value}' doesn't match input '{valid_xrp_address}'"
+        )
+
+
+def test_btc_false_positive_check():
+    """Test BTC false positive behavior from issue #58"""
+    btc_false_positive = "14uBSjQBjgHaoUwXW4nSxzxJZ2e23iGQLi"
+
+    stalker = reStalker(use_ner=False, btc_wallet=True)
+    results = list(stalker.parse(btc_false_positive))
+    btc_wallets = [r for r in results if isinstance(r, BTC_Wallet)]
+
+    if len(btc_wallets) > 0:
+        assert not BTC_Wallet.isvalid(btc_false_positive), (
+            f"BTC false positive '{btc_false_positive}' passed validation"
+        )
+
+
+def test_crypto_regex_no_word_false_positives():
+    """Test that common English words don't match crypto patterns"""
+    test_words = [
+        "restaurant",
+        "requirements",
+        "responsibility",
+        "1password",
+        "3commas",
+        "Xenophobia",
+    ]
+
+    stalker = reStalker(
+        use_ner=False,
+        btc_wallet=True,
+        eth_wallet=True,
+        xrp_wallet=True,
+        xmr_wallet=True,
+        zec_wallet=True,
+        dash_wallet=True,
+        dot_wallet=True,
+        bnb_wallet=True,
+    )
+
+    for word in test_words:
+        results = list(stalker.parse(word))
+
+        crypto_wallets = [
+            r for r in results
+            if isinstance(r, (BTC_Wallet, ETH_Wallet, XRP_Wallet, XMR_Wallet,
+                              ZEC_Wallet, DASH_Wallet, DOT_Wallet, BNB_Wallet))
+        ]
+
+        assert len(crypto_wallets) == 0, (
+            f"Common word '{word}' was incorrectly detected as crypto wallet: "
+            f"{[w.value for w in crypto_wallets]}"
+        )

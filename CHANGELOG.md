@@ -132,6 +132,7 @@ This release incorporates significant improvements from **PR #47** by [@contribu
 
 ---
 
+[2.2.4]: https://github.com/junquera/restalker/compare/v2.2.3...v2.2.4
 [2.2.3]: https://github.com/junquera/restalker/compare/v2.2.2...v2.2.3
 [2.2.2]: https://github.com/junquera/restalker/compare/v2.2.1...v2.2.2
 [2.2.1]: https://github.com/junquera/restalker/compare/v2.2.0...v2.2.1
