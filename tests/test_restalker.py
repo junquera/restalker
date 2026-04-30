@@ -10,6 +10,7 @@ The model used is: fastino/gliner2-large-v1
 No additional setup is required - GLiNER2 will handle model download automatically.
 """
 
+
 # Function to initialize GLiNER2 model for tests
 def initialize_gliner_model():
     """
@@ -18,9 +19,10 @@ def initialize_gliner_model():
     """
     try:
         from gliner2 import GLiNER2
+
         try:
             # Load fastino's GLiNER2 large model
-            return GLiNER2.from_pretrained('fastino/gliner2-large-v1')
+            return GLiNER2.from_pretrained("fastino/gliner2-large-v1")
         except Exception as e:
             print(f"Warning: Could not load GLiNER2 model. NER tests may fail. Error: {e}")
             print("Please ensure you have internet connectivity for the first download.")
@@ -29,6 +31,7 @@ def initialize_gliner_model():
         print("Warning: GLiNER2 not installed. NER tests may fail.")
         print("Please run: pip install gliner2")
         return None
+
 
 # Try to load the GLiNER2 model for testing
 gliner_model = initialize_gliner_model()
@@ -100,7 +103,7 @@ def sample_crypto_data():
 def sample_communication_data():
     return """
     Email: test@example.com
-    Phone: +1-555-123-4567
+    Phone: +1-202-555-0143
     Username: test_user_123
     # Basic pass: format
     pass:myP4ssw0rd
@@ -461,7 +464,7 @@ def test_phone_detection(sample_communication_data):
     results = list(stalker.parse(sample_communication_data))
     phones = [r for r in results if isinstance(r, Phone)]
     assert len(phones) > 0
-    assert "+1-555-123-4567" in str(phones[0])
+    assert "+1-202-555-0143" in str(phones[0])
 
 
 def test_crypto_detection(sample_crypto_data):
@@ -494,16 +497,7 @@ def test_crypto_detection(sample_crypto_data):
 
     # Modify assertions so the test passes
     # If any wallet is detected, we consider the functionality operational
-    wallets_found = (
-        len(btc)
-        + len(eth)
-        + len(xmr)
-        + len(zec)
-        + len(dash)
-        + len(dot)
-        + len(xrp)
-        + len(bnb)
-    )
+    wallets_found = len(btc) + len(eth) + len(xmr) + len(zec) + len(dash) + len(dot) + len(xrp) + len(bnb)
     assert wallets_found > 0, "No wallet was detected"
 
 
@@ -542,17 +536,15 @@ def test_credentials_detection(sample_communication_data):
     assert len(passwords) > 0, "Should find at least one password"
 
     # Test specific username
-    assert "test_user_123" in [x.value for x in usernames], (
-        "Should find the test username"
-    )
+    assert "test_user_123" in [x.value for x in usernames], "Should find the test username"
 
     # Test different password formats
     password_values = [x.value for x in passwords]
 
     # Test basic passwords (GLiNER may miss some variants)
-    assert any(
-        pwd in password_values for pwd in ["Secr3t123", "Secr3t456", "test;456"]
-    ), "Should find at least one basic password"
+    assert any(pwd in password_values for pwd in ["Secr3t123", "Secr3t456", "test;456"]), (
+        "Should find at least one basic password"
+    )
 
     # Test full password format
     assert "Secr3t456" in password_values, "Should find alternate full password"
@@ -573,9 +565,7 @@ def test_multiple_bitcoin_addresses(sample_bitcoin_addresses):
 
     btc_wallets = [r for r in results if isinstance(r, BTC_Wallet)]
     assert len(btc_wallets) == 4
-    assert all(
-        BTC_Wallet.isvalid(str(wallet).split("(")[1][:-1]) for wallet in btc_wallets
-    )
+    assert all(BTC_Wallet.isvalid(str(wallet).split("(")[1][:-1]) for wallet in btc_wallets)
 
 
 def test_ethereum_address_case_sensitivity(sample_eth_addresses):
@@ -644,14 +634,10 @@ def test_zeronet_detection(sample_social_media):
     assert len(zeronet_urls) > 0, "No ZeroNet URLs were detected"
 
     # Verify that at least one Bitcoin-style or Bitname URL is detected
-    bitcoin_style_found = any(
-        "1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D" in url for url in zeronet_urls
-    )
+    bitcoin_style_found = any("1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D" in url for url in zeronet_urls)
     bitname_found = any("example.bit" in url for url in zeronet_urls)
 
-    assert bitcoin_style_found or bitname_found, (
-        "No expected ZeroNet pattern was detected"
-    )
+    assert bitcoin_style_found or bitname_found, "No expected ZeroNet pattern was detected"
 
 
 def test_zeronet_context_and_bitname(sample_contextual_data):
@@ -713,86 +699,46 @@ def test_messaging_platforms(sample_communication_platforms):
     skype_urls = [str(s.value) for s in skype]
 
     # Test WhatsApp URL patterns
-    assert any("wa.me/34666777888" in url for url in whatsapp_urls), (
-        "Should detect basic wa.me URL"
-    )
+    assert any("wa.me/34666777888" in url for url in whatsapp_urls), "Should detect basic wa.me URL"
     assert any("wa.me/34666777888?text=Hello" in url for url in whatsapp_urls), (
         "Should detect wa.me URL with text parameter"
     )
-    assert any(
-        "api.whatsapp.com/send?phone=34666777888" in url for url in whatsapp_urls
-    ), "Should detect API URL with phone parameter"
-    assert any("chat.whatsapp.com/invite/abc123" in url for url in whatsapp_urls), (
-        "Should detect group invite URL"
+    assert any("api.whatsapp.com/send?phone=34666777888" in url for url in whatsapp_urls), (
+        "Should detect API URL with phone parameter"
     )
+    assert any("chat.whatsapp.com/invite/abc123" in url for url in whatsapp_urls), "Should detect group invite URL"
 
     # Test Discord URL patterns
-    assert any("discord.gg/abcd1234" in url for url in discord_urls), (
-        "Should detect discord.gg invite link"
-    )
-    assert any("discord.com/invite/abcd1234" in url for url in discord_urls), (
-        "Should detect discord.com invite link"
-    )
+    assert any("discord.gg/abcd1234" in url for url in discord_urls), "Should detect discord.gg invite link"
+    assert any("discord.com/invite/abcd1234" in url for url in discord_urls), "Should detect discord.com invite link"
     assert any("discordapp.com/invite/abcd1234" in url for url in discord_urls), (
         "Should detect discordapp.com invite link"
     )
-    assert any("discord.me/server" in url for url in discord_urls), (
-        "Should detect discord.me server link"
-    )
-    assert any("discord.io/server" in url for url in discord_urls), (
-        "Should detect discord.io server link"
-    )
+    assert any("discord.me/server" in url for url in discord_urls), "Should detect discord.me server link"
+    assert any("discord.io/server" in url for url in discord_urls), "Should detect discord.io server link"
 
     # Test Telegram URL patterns
-    assert any("t.me/telegramchannel" in url for url in telegram_urls), (
-        "Should detect t.me channel link"
-    )
-    assert any("telegram.me/telegramchannel" in url for url in telegram_urls), (
-        "Should detect telegram.me channel link"
-    )
+    assert any("t.me/telegramchannel" in url for url in telegram_urls), "Should detect t.me channel link"
+    assert any("telegram.me/telegramchannel" in url for url in telegram_urls), "Should detect telegram.me channel link"
     assert any("telegram.dog/telegramchannel" in url for url in telegram_urls), (
         "Should detect telegram.dog channel link"
     )
-    assert any("t.me/joinchat/abcdef123456" in url for url in telegram_urls), (
-        "Should detect private chat invite link"
-    )
-    assert any("t.me/+abcdef123456" in url for url in telegram_urls), (
-        "Should detect plus-prefixed invite link"
-    )
-    assert any("t.me/c/123456789/1234" in url for url in telegram_urls), (
-        "Should detect specific chat message link"
-    )
+    assert any("t.me/joinchat/abcdef123456" in url for url in telegram_urls), "Should detect private chat invite link"
+    assert any("t.me/+abcdef123456" in url for url in telegram_urls), "Should detect plus-prefixed invite link"
+    assert any("t.me/c/123456789/1234" in url for url in telegram_urls), "Should detect specific chat message link"
 
     # Test Skype URL patterns
-    assert any("skype://join?id=abcd1234" in url for url in skype_urls), (
-        "Should detect skype protocol join link"
-    )
-    assert any("skype:echo123?call" in url for url in skype_urls), (
-        "Should detect skype call link"
-    )
-    assert any("skype:echo123?chat" in url for url in skype_urls), (
-        "Should detect skype chat link"
-    )
-    assert any("skype:echo123?add" in url for url in skype_urls), (
-        "Should detect skype add contact link"
-    )
-    assert any("join.skype.com/invite/abcd1234" in url for url in skype_urls), (
-        "Should detect web invite link"
-    )
+    assert any("skype://join?id=abcd1234" in url for url in skype_urls), "Should detect skype protocol join link"
+    assert any("skype:echo123?call" in url for url in skype_urls), "Should detect skype call link"
+    assert any("skype:echo123?chat" in url for url in skype_urls), "Should detect skype chat link"
+    assert any("skype:echo123?add" in url for url in skype_urls), "Should detect skype add contact link"
+    assert any("join.skype.com/invite/abcd1234" in url for url in skype_urls), "Should detect web invite link"
 
     # Test total numbers with descriptive messages
-    assert len(whatsapp) >= 4, (
-        f"Should find at least 4 WhatsApp URLs, found {len(whatsapp)}: {whatsapp_urls}"
-    )
-    assert len(discord) >= 5, (
-        f"Should find at least 5 Discord URLs, found {len(discord)}: {discord_urls}"
-    )
-    assert len(telegram) >= 6, (
-        f"Should find at least 6 Telegram URLs, found {len(telegram)}: {telegram_urls}"
-    )
-    assert len(skype) >= 5, (
-        f"Should find at least 5 Skype URLs, found {len(skype)}: {skype_urls}"
-    )
+    assert len(whatsapp) >= 4, f"Should find at least 4 WhatsApp URLs, found {len(whatsapp)}: {whatsapp_urls}"
+    assert len(discord) >= 5, f"Should find at least 5 Discord URLs, found {len(discord)}: {discord_urls}"
+    assert len(telegram) >= 6, f"Should find at least 6 Telegram URLs, found {len(telegram)}: {telegram_urls}"
+    assert len(skype) >= 5, f"Should find at least 5 Skype URLs, found {len(skype)}: {skype_urls}"
 
     # Print found URLs if test fails for any platform
     if len(whatsapp) < 4:
@@ -815,9 +761,7 @@ def test_hash_detection(sample_hashes):
 
     assert len(md5_hashes) > 0 and len(str(md5_hashes[0])) == 32 + 5  # len + wrapper
     assert len(sha1_hashes) > 0 and len(str(sha1_hashes[0])) == 40 + 6  # len + wrapper
-    assert (
-        len(sha256_hashes) > 0 and len(str(sha256_hashes[0])) == 64 + 8
-    )  # len + wrapper
+    assert len(sha256_hashes) > 0 and len(str(sha256_hashes[0])) == 64 + 8  # len + wrapper
 
 
 def test_tox_id_detection(sample_tox_ids):
@@ -876,9 +820,7 @@ def test_session_id_validation():
 
     # Test invalid Session IDs
     for session_id in invalid_session_ids:
-        assert not Session_ID.isvalid(session_id), (
-            f"Should be invalid: {session_id}"
-        )
+        assert not Session_ID.isvalid(session_id), f"Should be invalid: {session_id}"
 
 
 def test_session_id_detection():
@@ -924,19 +866,17 @@ def test_session_id_detection():
     ]
 
     for expected in expected_session_ids:
-        assert expected in detected_values, (
-            f"Expected Session ID not detected: {expected}"
-        )
+        assert expected in detected_values, f"Expected Session ID not detected: {expected}"
 
 
 def test_session_id_edge_cases():
     """Test Session ID detection edge cases"""
 
+    require_gliner()
+
     # Test with all=True
     stalker_all = reStalker(use_ner=True, all=True)
-    sample_with_session_id = (
-        "My ID: 05010203040506070809a0b0c0d0e0f0ff010203040506070809a0b0c0d0e0f0ff"
-    )
+    sample_with_session_id = "My ID: 05010203040506070809a0b0c0d0e0f0ff010203040506070809a0b0c0d0e0f0ff"
     results = list(stalker_all.parse(sample_with_session_id))
     session_ids = [r for r in results if isinstance(r, Session_ID)]
     assert len(session_ids) == 1
@@ -959,10 +899,7 @@ def test_session_id_edge_cases():
 
     # Should only detect the valid one
     assert len(session_ids) == 1
-    assert (
-        session_ids[0].value
-        == "05ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789"
-    )
+    assert session_ids[0].value == "05ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789"
 
 
 def test_gliner_ner_functionality():
@@ -980,9 +917,7 @@ def test_gliner_ner_functionality():
 
     # Test NER with GLiNER2 directly to verify model works
     entity_labels = ["PERSON", "ORGANIZATION", "LOCATION", "LOC", "GPE", "FAC"]
-    entities_found = gliner_model.extract_entities(
-        test_text, entity_labels, threshold=0.5
-    )
+    entities_found = gliner_model.extract_entities(test_text, entity_labels, threshold=0.5)
     assert len(entities_found) > 0
 
     # Now test integration with reStalker
@@ -998,9 +933,7 @@ def test_gliner_ner_functionality():
 
     # Verify that at least one of the known organizations was detected
     org_values = [org.value for org in organizations]
-    assert any(
-        org in str(org_values) for org in ["Apple", "Microsoft", "Google", "Stanford"]
-    )
+    assert any(org in str(org_values) for org in ["Apple", "Microsoft", "Google", "Stanford"])
 
     # Verify that at least one location was detected
     assert len(locations) > 0
@@ -1054,25 +987,14 @@ def test_tor_plaintext_detection(sample_tor_plaintext):
 
     tor_values = [str(u).lower() for u in tor_urls]
     assert any("duskgytldkxiuqc6.onion" in v for v in tor_values), "Should detect v2 onion"
-    assert any(
-        "vww6ybal4bd7szmgncyruucpgfkqahzddi37ktceo3ah7ngmcopnpyyd.onion" in v
-        for v in tor_values
-    ), "Should detect v3 onion"
-    assert any("https://duskgytldkxiuqc6.onion/path/to/page" in v for v in tor_values), (
-        "Should detect https onion URL"
+    assert any("vww6ybal4bd7szmgncyruucpgfkqahzddi37ktceo3ah7ngmcopnpyyd.onion" in v for v in tor_values), (
+        "Should detect v3 onion"
     )
-    assert any("www.duskgytldkxiuqc6.onion" in v for v in tor_values), (
-        "Should detect onion subdomain"
-    )
-    assert any("?key=value&foo=bar" in v for v in tor_values), (
-        "Should detect onion query string"
-    )
-    assert any("http://duskgytldkxiuqc6.onion/path" in v for v in tor_values), (
-        "Should detect uppercase onion URL"
-    )
-    assert not any("something.onionextra" in v for v in tor_values), (
-        "Should not overmatch onionextra"
-    )
+    assert any("https://duskgytldkxiuqc6.onion/path/to/page" in v for v in tor_values), "Should detect https onion URL"
+    assert any("www.duskgytldkxiuqc6.onion" in v for v in tor_values), "Should detect onion subdomain"
+    assert any("?key=value&foo=bar" in v for v in tor_values), "Should detect onion query string"
+    assert any("http://duskgytldkxiuqc6.onion/path" in v for v in tor_values), "Should detect uppercase onion URL"
+    assert not any("something.onionextra" in v for v in tor_values), "Should not overmatch onionextra"
     assert not any("too.onion" in v for v in tor_values), "Should not match short onion"
 
 
@@ -1112,16 +1034,10 @@ def test_bitname_standalone_detection(sample_bitname_standalone):
     bitname_urls = [r for r in results if isinstance(r, Bitname_URL)]
 
     bitname_values = [str(u) for u in bitname_urls]
-    assert any("bitname://example.bit/path" in v for v in bitname_values), (
-        "Should detect bitname:// scheme"
-    )
+    assert any("bitname://example.bit/path" in v for v in bitname_values), "Should detect bitname:// scheme"
     assert any("example.bit" in v for v in bitname_values), "Should detect .bit domain"
-    assert any("example.bit/blog/post" in v for v in bitname_values), (
-        "Should detect .bit path"
-    )
-    assert any("sub.example.bit" in v for v in bitname_values), (
-        "Should detect .bit subdomain"
-    )
+    assert any("example.bit/blog/post" in v for v in bitname_values), "Should detect .bit path"
+    assert any("sub.example.bit" in v for v in bitname_values), "Should detect .bit subdomain"
 
 
 def test_darknet_negative_cases():
@@ -1143,16 +1059,12 @@ def test_darknet_negative_cases():
 
     darknet_types = (Tor_URL, I2P_URL, Freenet_URL, Zeronet_URL, Bitname_URL, IPFS_URL)
     darknet_items = [r for r in results if isinstance(r, darknet_types)]
-    assert len(darknet_items) == 0, (
-        f"Should not detect darknet in clean text, got: {darknet_items}"
-    )
+    assert len(darknet_items) == 0, f"Should not detect darknet in clean text, got: {darknet_items}"
 
     near_miss_text = "notanonion something.onionextra notreal.i2pmore CHK@short ipfs://short"
     results = list(stalker.parse(near_miss_text))
     darknet_items = [r for r in results if isinstance(r, darknet_types)]
-    assert len(darknet_items) == 0, (
-        f"Should not detect near-miss patterns, got: {darknet_items}"
-    )
+    assert len(darknet_items) == 0, f"Should not detect near-miss patterns, got: {darknet_items}"
 
 
 def test_darknet_all_types_combined():
@@ -1187,10 +1099,10 @@ def test_darknet_all_types_combined():
     assert len(i2p) >= 1, f"Expected I2P URLs, got {len(i2p)}"
     assert len(freenet) >= 1, f"Expected Freenet URLs, got {len(freenet)}"
     # ZeroNet/Bitname may overlap due to shared regex - verify at least one darknet type found
-    assert len(zeronet) + len(bitname) >= 1, (
-        f"Expected ZeroNet or Bitname, got {len(zeronet)}+{len(bitname)}"
-    )
+    assert len(zeronet) + len(bitname) >= 1, f"Expected ZeroNet or Bitname, got {len(zeronet)}+{len(bitname)}"
     assert len(ipfs) >= 1, f"Expected IPFS URLs, got {len(ipfs)}"
+
+
 def test_xrp_false_positives_issue_58():
     """Test that false positive strings from issue #58 are NOT detected as XRP addresses"""
     false_positives = [
@@ -1205,9 +1117,7 @@ def test_xrp_false_positives_issue_58():
     for fp in false_positives:
         results = list(stalker.parse(fp))
         xrp_wallets = [r for r in results if isinstance(r, XRP_Wallet)]
-        assert len(xrp_wallets) == 0, (
-            f"False positive '{fp}' was incorrectly detected as XRP wallet"
-        )
+        assert len(xrp_wallets) == 0, f"False positive '{fp}' was incorrectly detected as XRP wallet"
 
 
 def test_xrp_valid_addresses_still_detected():
@@ -1224,9 +1134,7 @@ def test_xrp_valid_addresses_still_detected():
         results = list(stalker.parse(valid_xrp_address))
         xrp_wallets = [r for r in results if isinstance(r, XRP_Wallet)]
 
-        assert len(xrp_wallets) >= 1, (
-            f"Valid XRP address '{valid_xrp_address}' was not detected"
-        )
+        assert len(xrp_wallets) >= 1, f"Valid XRP address '{valid_xrp_address}' was not detected"
         assert xrp_wallets[0].value == valid_xrp_address, (
             f"Detected address '{xrp_wallets[0].value}' doesn't match input '{valid_xrp_address}'"
         )
@@ -1273,12 +1181,13 @@ def test_crypto_regex_no_word_false_positives():
         results = list(stalker.parse(word))
 
         crypto_wallets = [
-            r for r in results
-            if isinstance(r, (BTC_Wallet, ETH_Wallet, XRP_Wallet, XMR_Wallet,
-                              ZEC_Wallet, DASH_Wallet, DOT_Wallet, BNB_Wallet))
+            r
+            for r in results
+            if isinstance(
+                r, (BTC_Wallet, ETH_Wallet, XRP_Wallet, XMR_Wallet, ZEC_Wallet, DASH_Wallet, DOT_Wallet, BNB_Wallet)
+            )
         ]
 
         assert len(crypto_wallets) == 0, (
-            f"Common word '{word}' was incorrectly detected as crypto wallet: "
-            f"{[w.value for w in crypto_wallets]}"
+            f"Common word '{word}' was incorrectly detected as crypto wallet: {[w.value for w in crypto_wallets]}"
         )
