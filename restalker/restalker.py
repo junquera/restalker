@@ -569,6 +569,165 @@ class Tox_ID(Item):
         return ret
 
 
+# AWS Resources
+class AWS_ARN(Item):
+    @staticmethod
+    def isvalid(arn: str) -> bool:
+        """Verify if the string is a valid AWS ARN
+        Format: arn:partition:service:region:account-id:resource-type/resource-id
+        """
+        try:
+            if not arn or not isinstance(arn, str):
+                return False
+            
+            parts = arn.split(':')
+            
+            # ARN must have at least 6 parts: arn:partition:service:region:account-id:resource
+            if len(parts) < 6:
+                return False
+            
+            # First part must be "arn"
+            if parts[0] != "arn":
+                return False
+            
+            # Partition (usually "aws", "aws-cn", "aws-us-gov")
+            if parts[1] not in ["aws", "aws-cn", "aws-us-gov"]:
+                return False
+            
+            # Service must be alphanumeric (e.g., "s3", "ec2", "iam", "rds")
+            if not parts[2] or not all(c.isalnum() or c == "-" for c in parts[2]):
+                return False
+            
+            return True
+        except Exception:
+            return False
+
+
+class S3_Bucket(Item):
+    @staticmethod
+    def isvalid(bucket: str) -> bool:
+        """Verify if the string is a valid S3 bucket name
+        Bucket names must be 3-63 characters, alphanumeric, hyphens, and dots
+        """
+        try:
+            if not bucket or not isinstance(bucket, str):
+                return False
+            
+            # Remove protocol if present
+            bucket = bucket.replace("s3://", "").replace("https://", "").replace("http://", "")
+            
+            # Handle domain format (bucket.s3.amazonaws.com or bucket.s3.region.amazonaws.com)
+            if ".s3" in bucket:
+                bucket = bucket.split(".s3")[0]
+            
+            # Check length
+            if len(bucket) < 3 or len(bucket) > 63:
+                return False
+            
+            # Must start and end with alphanumeric
+            if not (bucket[0].isalnum() and bucket[-1].isalnum()):
+                return False
+            
+            # Only alphanumeric, hyphens, and dots allowed
+            if not all(c.isalnum() or c in ".-" for c in bucket):
+                return False
+            
+            # Cannot have consecutive dots
+            if ".." in bucket:
+                return False
+            
+            return True
+        except Exception:
+            return False
+
+
+class AWS_Access_Key(Item):
+    @staticmethod
+    def isvalid(access_key: str) -> bool:
+        """Verify if the string is a valid AWS Access Key ID
+        AWS Access Keys start with AKIA followed by 16 alphanumeric characters
+        """
+        try:
+            if not access_key or not isinstance(access_key, str):
+                return False
+            
+            # Access Key IDs are 20 characters: AKIA + 16 alphanumeric
+            if len(access_key) != 20:
+                return False
+            
+            # Must start with AKIA
+            if not access_key.startswith("AKIA"):
+                return False
+            
+            # Rest must be alphanumeric (uppercase)
+            if not all(c.isalnum() for c in access_key[4:]):
+                return False
+            
+            return True
+        except Exception:
+            return False
+
+
+class EC2_Instance(Item):
+    @staticmethod
+    def isvalid(instance_id: str) -> bool:
+        """Verify if the string is a valid EC2 Instance ID
+        Format: i-XXXXXXXX (8 hexadecimal) or i-XXXXXXXXXXXXXXXX (16 hexadecimal)
+        """
+        try:
+            if not instance_id or not isinstance(instance_id, str):
+                return False
+            
+            if not instance_id.startswith("i-"):
+                return False
+            
+            hex_part = instance_id[2:]
+            
+            # Instance IDs are either 8 or 17 characters long (i- + hex)
+            if len(hex_part) not in [8, 17]:
+                return False
+            
+            # Must be hexadecimal
+            int(hex_part, 16)
+            
+            return True
+        except ValueError:
+            return False
+        except Exception:
+            return False
+
+
+class RDS_Endpoint(Item):
+    @staticmethod
+    def isvalid(endpoint: str) -> bool:
+        """Verify if the string is a valid RDS endpoint
+        Format: identifier.XXXXXXXXX.region.rds.amazonaws.com
+        """
+        try:
+            if not endpoint or not isinstance(endpoint, str):
+                return False
+            
+            # Must contain .rds.amazonaws.com
+            if not endpoint.endswith(".rds.amazonaws.com"):
+                return False
+            
+            # Remove the .rds.amazonaws.com part
+            prefix = endpoint[:-18]  # len(".rds.amazonaws.com") = 18
+            
+            # Should have at least 3 parts separated by dots (name.hash.region)
+            parts = prefix.split(".")
+            if len(parts) < 3:
+                return False
+            
+            # The hash part should be alphanumeric (usually 8-12 characters)
+            if not all(c.isalnum() for c in parts[1]):
+                return False
+            
+            return True
+        except Exception:
+            return False
+
+
 number_regex = r"[0-9]+"
 
 alnum_join = r"[a-zA-Z0-9\-\~]+"
@@ -807,6 +966,17 @@ session_id_regex = r"(?<![0-9a-fA-F])[0-9a-fA-F]{66}(?![0-9a-fA-F])"
 
 tox_id_regex = r"([a-fA-F0-9]{76})"
 
+# AWS Resources regex patterns
+aws_arn_regex = r"(arn:(?:aws|aws-cn|aws-us-gov):[a-zA-Z0-9\-]+:[a-zA-Z0-9\-]*:[0-9]*:[a-zA-Z0-9\-\/_\.]*)"
+
+s3_bucket_regex = r"(?:s3://)?([a-z0-9][a-z0-9\-\.]{1,61}[a-z0-9]\.s3(?:\.[a-z0-9\-]*)?\.amazonaws\.com|[a-z0-9][a-z0-9\-\.]{1,61}[a-z0-9](?=\s|$|/|:|,))"
+
+aws_access_key_regex = r"(AKIA[0-9A-Z]{16})"
+
+ec2_instance_regex = r"(i-[0-9a-f]{8}(?:[0-9a-f]{9})?)"
+
+rds_endpoint_regex = r"([a-z0-9\-]+\.[a-z0-9]{8,12}\.[a-z0-9\-]+\.rds\.amazonaws\.com)"
+
 """
 Freenet URL spec:
     - CHK@file hash,decryption key,crypto settings
@@ -972,6 +1142,13 @@ session_id_pattern = re.compile(session_id_regex)
 phone_symbols_pattern = re.compile(r'^[\+\d\s\(\)\-\.]+$')
 ipv4_prefix_pattern = re.compile(r'^\d+\.\d+\.\d+')
 
+# AWS Resources patterns
+aws_arn_pattern = re.compile(aws_arn_regex)
+s3_bucket_pattern = re.compile(s3_bucket_regex)
+aws_access_key_pattern = re.compile(aws_access_key_regex)
+ec2_instance_pattern = re.compile(ec2_instance_regex)
+rds_endpoint_pattern = re.compile(rds_endpoint_regex)
+
 
 # Method for avoid lists of lists and empty elements
 def extract_elements(x):
@@ -1044,6 +1221,11 @@ class reStalker:
         session_id=False,
         tox=False,
         url=False,
+        aws_arn=False,
+        s3_bucket=False,
+        aws_access_key=False,
+        ec2_instance=False,
+        rds_endpoint=False,
         all=False,
     ):
 
@@ -1113,6 +1295,13 @@ class reStalker:
         self.sha256 = sha256 or all
         self.session_id = session_id or all
         self.tox = tox or all
+
+        # AWS Resources
+        self.aws_arn = aws_arn or all
+        self.s3_bucket = s3_bucket or all
+        self.aws_access_key = aws_access_key or all
+        self.ec2_instance = ec2_instance or all
+        self.rds_endpoint = rds_endpoint or all
 
     def add_keyword(self, keyword):
         self.keywords.append(keyword)
@@ -1935,6 +2124,40 @@ class reStalker:
                 session_id_value = sid
                 if is_valid_context(body, session_id_value, match.start(), match.end()) and Session_ID.isvalid(session_id_value):
                     yield Session_ID(value=session_id_value)
+
+        # AWS Resources Detection
+        if self.aws_arn:
+            for match in aws_arn_pattern.finditer(body):
+                arn = match.group().rstrip('.,;')
+                if is_valid_context(body, arn, match.start(), match.end()) and AWS_ARN.isvalid(arn):
+                    yield AWS_ARN(value=arn)
+
+        if self.s3_bucket:
+            seen_buckets = set()
+            for match in s3_bucket_pattern.finditer(body):
+                bucket = match.group().rstrip('.,;')
+                if bucket and bucket not in seen_buckets and is_valid_context(body, bucket, match.start(), match.end()) and S3_Bucket.isvalid(bucket):
+                    seen_buckets.add(bucket)
+                    yield S3_Bucket(value=bucket)
+
+        if self.aws_access_key:
+            for match in aws_access_key_pattern.finditer(body):
+                access_key = match.group()
+                if is_valid_context(body, access_key, match.start(), match.end()) and AWS_Access_Key.isvalid(access_key):
+                    yield AWS_Access_Key(value=access_key)
+
+        if self.ec2_instance:
+            for match in ec2_instance_pattern.finditer(body):
+                instance_id = match.group().rstrip('.,;')
+                if is_valid_context(body, instance_id, match.start(), match.end()) and EC2_Instance.isvalid(instance_id):
+                    yield EC2_Instance(value=instance_id)
+
+        if self.rds_endpoint:
+            for match in rds_endpoint_pattern.finditer(body):
+                endpoint = match.group().rstrip('.,;')
+                if is_valid_context(body, endpoint, match.start(), match.end()) and RDS_Endpoint.isvalid(endpoint):
+                    yield RDS_Endpoint(value=endpoint)
+
     def parse(self, body, origin=None, buff_size=20480):
 
         i = 0
