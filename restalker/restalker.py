@@ -2,7 +2,7 @@ import re
 from hashlib import sha256
 from urllib.parse import urljoin, urlparse
 
-import based58
+import base58
 from bech32ref import segwit_addr
 from bip_utils import SS58Decoder
 from bs4 import BeautifulSoup, Tag

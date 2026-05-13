@@ -1,5 +1,5 @@
 # reStalker - AMD GPU (ROCm) Requirements
-# Install with: pip install -r requirements-gpu-rocm.txt
+# Install with: uv pip install -r requirements-gpu-rocm.txt
 #
 # ⚠️  COMPATIBILITY WARNING ⚠️
 # ROCm support is LIMITED to specific AMD GPUs. Before installing, verify your GPU is supported:
@@ -19,7 +19,7 @@
 # Check compatibility: https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html
 #
 # If your GPU is NOT supported, use CPU-only installation instead:
-#   pip install -r requirements.txt
+#   uv pip install -r requirements.txt
 #
 # System Requirements:
 #   - AMD GPU with ROCm support (see list above)
@@ -29,16 +29,11 @@
 # Disk Space: ~3.5GB
 # Performance: 3-7x faster than CPU for entity extraction
 #
-# Installation:
-#   # First, verify GPU compatibility above
-#   # Then install ROCm from AMD: https://rocm.docs.amd.com/
-#   pip install -r requirements-gpu-rocm.txt
-#
 # Verify GPU is detected:
 #   python -c "import torch; print(f'ROCm available: {torch.cuda.is_available()}')"
 
 # Core dependencies
-based58
+base58
 bech32ref
 bip-utils
 bs4
@@ -53,3 +48,4 @@ python-magic
 # Note: ROCm must be installed on your system first
 --index-url https://download.pytorch.org/whl/rocm6.0
 torch>=2.0.0
+

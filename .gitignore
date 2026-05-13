@@ -107,8 +107,8 @@ ENV/
 # Visual Studio Code
 .vscode
 
-# Package manager locks (keep poetry.lock for reproducibility)
-# Ignore JavaScript/Node.js lock files if they appear
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+# Package manager locks
+# For uv: include uv.lock for reproducible builds (CLI/application)
+# For poetry: include poetry.lock for reproducible builds
+# uv.lock  # Uncomment this if uv.lock should be ignored (library packages only)
+

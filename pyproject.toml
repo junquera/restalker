@@ -1,54 +1,73 @@
-[tool.poetry]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
 name = "restalker"
 version = "2.2.1"
 description = "Text analyzer package"
-authors = ["Javier Junquera-Sánchez <javier@junquera.io>"]
+authors = [{name = "Javier Junquera-Sánchez", email = "javier@junquera.io"}]
 readme = "README.md"
-license = "MIT"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+keywords = ["text-analysis", "nlp", "cryptocurrency", "blockchain", "osint"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Text Processing",
+]
+dependencies = [
+    "base58>=1.0.0",
+    "web3>=6.0.0",
+    "monero>=0.0.3",
+    "bip-utils>=0.7.0",
+    "bech32ref",
+    "bs4>=0.0.2",
+    "lxml>=5.0.0",
+    "phonenumbers>=8.13.0",
+    "python-magic>=0.4.27",
+    "gliner2>=0.2.0",
+    "torch>=2.0.0",
+]
 
-[[tool.poetry.source]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-priority = "explicit"
+[project.urls]
+Homepage = "https://gitlab.com/junquera/stalker"
+Repository = "https://gitlab.com/junquera/stalker.git"
+Documentation = "https://gitlab.com/junquera/stalker#readme"
 
-[tool.poetry.dependencies]
-python = "^3.10"
-# Core dependencies
-based58 = "*"
-web3 = "*"
-monero = "*"
-bip-utils = "*"
-bech32ref = "*"
-bs4 = "^0.0.2"
-lxml = "*"
-phonenumbers = "*"
-python-magic = "*"
+[project.scripts]
+restalker = "restalker.restalker:main"
 
-# ML dependencies - CPU-only by default to minimize install size
-# For GPU support, use: poetry install --extras gpu (NVIDIA) or --extras amd-gpu (AMD)
-torch = {version = ">=2.0.0", source = "pytorch-cpu"}
-gliner2 = "*"
-
-[tool.poetry.extras]
-# NVIDIA GPU support (CUDA 11.8+)
-# Install with: poetry install --extras gpu
+[project.optional-dependencies]
+# NVIDIA GPU support (CUDA 12.1)
+# Install with: uv pip install -e ".[gpu]"
 # Disk space: ~3.2GB | Performance: 5-10x faster
-gpu = []
+gpu = ["torch>=2.0.0"]
 
-# AMD GPU support (ROCm 5.x+)
-# Install with: poetry install --extras amd-gpu  
+# AMD GPU support (ROCm 6.0+)
+# Install with: uv pip install -e ".[amd-gpu]"
 # Disk space: ~3.5GB | Performance: 3-7x faster
-amd-gpu = []
+amd-gpu = ["torch>=2.0.0"]
 
-# Explicit CPU-only (default)
-# Install with: poetry install
-# Disk space: ~500MB | Portable, no GPU required
-cpu = []
+# Development dependencies
+dev = [
+    "pytest",
+    "pytest-cov",
+    "ruff>=0.15.0",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "*"
-pytest-cov = "*"
-ruff = "^0.15.0"
+[tool.uv]
+# uv will use torch from PyTorch CPU wheels by default
+# Override with --index-url for GPU variants
+
+[tool.hatch.build.targets.wheel]
+packages = ["restalker"]
 
 [tool.pytest.ini_options]
 # Test discovery
@@ -137,7 +156,3 @@ select = [
 "tests/demos/demo_gliner.py" = ["E402"]
 # Allow imports after GLiNER2 initialization and long test data strings
 "tests/test_restalker.py" = ["E402", "E501"]
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
