@@ -1,6 +1,21 @@
 version: 2
 updates:
-  # pyproject.toml + requirements*.txt (PEP 517/621 — uv-compatible, post-PR #63)
+  - package-ecosystem: "poetry"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+    groups:
+      poetry-patch:
+        update-types:
+          - "patch"
+    ignore:
+      - dependency-name: "torch"
+
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
