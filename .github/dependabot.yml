@@ -1,0 +1,45 @@
+version: 2
+updates:
+  - package-ecosystem: "poetry"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+    groups:
+      poetry-patch:
+        update-types:
+          - "patch"
+    ignore:
+      - dependency-name: "torch"
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+    # Group non-critical updates to reduce noise
+    groups:
+      pip-patch:
+        update-types:
+          - "patch"
+    ignore:
+      # torch: GPU/CPU variant selection is manual — automated bumps are risky
+      - dependency-name: "torch"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "ci"
