@@ -45,7 +45,7 @@ bs4
 monero
 web3
 lxml
-gliner2
+gliner2>=1.2.4,<2.0.0
 phonenumbers
 python-magic
 

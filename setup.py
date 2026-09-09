@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="restalker",
-    version="2.2.6",
+    version="2.2.7",
     description="Text analyzer package",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -19,7 +19,7 @@ setup(
         "bech32ref",
         "bip-utils",
         "bs4",
-        "gliner2",
+        "gliner2>=1.2.4,<2.0.0",
         "monero",
         "web3",
         "lxml",

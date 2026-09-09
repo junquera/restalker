@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.7] - 2026-09-09
+
+### Security
+
+- **Dependency bumps addressing 16 Dependabot alerts**: `urllib3` 2.5.0 → 2.7.0, `aiohttp` 3.12.14 → 3.14.3, `transformers` 5.1.0 → 5.16.1, `soupsieve` 2.7 → 2.9.2, `cbor2` 5.6.5 → 5.9.0, `lxml` 6.0.2 → 6.1.3, `idna` 3.10 → 3.19, `web3` 7.12.1 → 8.0.0, `gliner` 0.2.25 → 0.2.29.
+
+### Fixed
+
+- **PyPI install broken by gliner2 2.0.0**: `gliner2` 2.0.0 made `transformers`/`torch` optional (moved to the `local` extra), which broke `GLiNER2.from_pretrained()` for users installing restalker from PyPI. Pinned `gliner2>=1.2.4,<2.0.0` in `pyproject.toml`, `setup.py`, and all `requirements*.txt` until restalker migrates to the new API.
+
+---
+
 ## [2.2.2] - 2026-03-02
 
 ### Fixed
@@ -132,6 +144,7 @@ This release incorporates significant improvements from **PR #47** by [@contribu
 
 ---
 
+[2.2.7]: https://github.com/junquera/restalker/compare/v2.2.6...v2.2.7
 [2.2.6]: https://github.com/junquera/restalker/compare/v2.2.5...v2.2.6
 [2.2.5]: https://github.com/junquera/restalker/compare/v2.2.4...v2.2.5
 [2.2.4]: https://github.com/junquera/restalker/compare/v2.2.3...v2.2.4

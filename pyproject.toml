@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "restalker"
-version = "2.2.6"
+version = "2.2.7"
 description = "Text analyzer package"
 authors = ["Javier Junquera-Sánchez <javier@junquera.io>"]
 readme = "README.md"
@@ -27,7 +27,10 @@ python-magic = "*"
 # ML dependencies - CPU-only by default to minimize install size
 # For GPU support, use: poetry install --extras gpu (NVIDIA) or --extras amd-gpu (AMD)
 torch = {version = ">=2.0.0", source = "pytorch-cpu"}
-gliner2 = "*"
+# gliner2 2.0.0 made transformers/torch optional (moved to 'local' extra),
+# which breaks GLiNER2.from_pretrained() used by restalker. Pin to 1.x until
+# restalker migrates to the new API or switches to gliner2[local].
+gliner2 = ">=1.2.4,<2.0.0"
 
 [tool.poetry.extras]
 # NVIDIA GPU support (CUDA 11.8+)
