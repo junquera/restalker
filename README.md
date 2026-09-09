@@ -81,6 +81,7 @@ elements = s.parse(input_text)
 - **DOT** (Polkadot) wallet addresses (`dot_wallet=True`)
 - **XRP** (Ripple) wallet addresses (`xrp_wallet=True`)
 - **BNB** (Binance) wallet addresses (`bnb_wallet=True`)
+- **TRX** (Tron) wallet addresses (`trx_wallet=True`)
 
 ### 📱 Social Networks & Communication
 
