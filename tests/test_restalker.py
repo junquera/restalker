@@ -74,6 +74,7 @@ from restalker import (
     Telegram_URL,
     Tor_URL,
     Tox_ID,
+    TRX_Wallet,
     TW_Account,
     Username,
     Whatsapp_URL,
@@ -96,6 +97,7 @@ def sample_crypto_data():
     DOT: 1FRMM8PEiWXYax7rpS6X4XZX1aAAxSWx1CrKTyrVYhV24fg
     XRP: rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh
     BNB: bnb1u89pj9xfwzc08zuh9gne6t8zr8q8staztrl6gt
+    TRX: TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
     """
 
 
@@ -216,6 +218,15 @@ def sample_monero_addresses():
     4473m2PotByhryknyafx5FPbojXqoQRS5BciBvw78jkffWTtgzynQqNZRY5XyxgbimJotUSkwYGZ9f2aYjZYXvvbVoeG3Ft
     4HMcpBpe4ddJEEnFKUJHAYhGxkeTRH82sf36giEp9AcNfDBfkAtRLX7A6rZz18bbNHPNV7ex6WYbMN3aKisFRJZ8M7yKhzQhKW3ECCLWQw
     84LooD7i35SFppgf4tQ453Vi3q5WexSUXaVgut69ro8MFnmHwuezAArEZTZyLr9fS6QotjqkSAxSF6d1aDgsPoX849izJ7m
+    """
+
+
+@pytest.fixture
+def sample_tron_addresses():
+    return """
+    TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+    TLa2f6VPqDgRE67v1736s7bJ8Ray5wYjU7
+    TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE
     """
 
 
@@ -478,6 +489,7 @@ def test_crypto_detection(sample_crypto_data):
         dot_wallet=True,
         xrp_wallet=True,
         bnb_wallet=True,
+        trx_wallet=True,
     )
     results = list(stalker.parse(sample_crypto_data))
 
@@ -489,6 +501,7 @@ def test_crypto_detection(sample_crypto_data):
     dot = [r for r in results if isinstance(r, DOT_Wallet)]
     xrp = [r for r in results if isinstance(r, XRP_Wallet)]
     bnb = [r for r in results if isinstance(r, BNB_Wallet)]
+    trx = [r for r in results if isinstance(r, TRX_Wallet)]
 
     # Print results for debugging
     print(f"BTC wallets: {len(btc)} - {[w.value for w in btc]}")
@@ -497,7 +510,7 @@ def test_crypto_detection(sample_crypto_data):
 
     # Modify assertions so the test passes
     # If any wallet is detected, we consider the functionality operational
-    wallets_found = len(btc) + len(eth) + len(xmr) + len(zec) + len(dash) + len(dot) + len(xrp) + len(bnb)
+    wallets_found = len(btc) + len(eth) + len(xmr) + len(zec) + len(dash) + len(dot) + len(xrp) + len(bnb) + len(trx)
     assert wallets_found > 0, "No wallet was detected"
 
 
@@ -595,6 +608,23 @@ def test_monero_address_validation(sample_monero_addresses):
     assert len(xmr_wallets) == 3
     # Verify standard length of Monero addresses
     assert all(len(str(wallet).split("(")[1][:-1]) >= 95 for wallet in xmr_wallets)
+
+
+def test_tron_address_validation(sample_tron_addresses):
+    stalker = reStalker(use_ner=False, trx_wallet=True)
+    results = list(stalker.parse(sample_tron_addresses))
+
+    trx_wallets = [r for r in results if isinstance(r, TRX_Wallet)]
+    assert len(trx_wallets) == 3
+    assert all(TRX_Wallet.isvalid(str(wallet).split("(")[1][:-1]) for wallet in trx_wallets)
+
+
+def test_tron_address_rejects_invalid():
+    assert not TRX_Wallet.isvalid("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6X")
+    assert not TRX_Wallet.isvalid("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa")
+    assert not TRX_Wallet.isvalid("0x742d35Cc6634C0532925a3b844Bc454e4438f44e")
+    assert not TRX_Wallet.isvalid("TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLS")
+    assert not TRX_Wallet.isvalid("")
 
 
 def test_i2p_url_detection(sample_i2p_addresses):

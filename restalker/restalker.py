@@ -350,6 +350,21 @@ class BNB_Wallet(Item):
         return ret
 
 
+class TRX_Wallet(Item):
+    @staticmethod
+    def isvalid(address: str) -> bool:
+        ret = False
+        try:
+            if address.startswith("T") and len(address) == 34:
+                decode_address = based58.b58decode(address.encode("utf-8"))
+                if len(decode_address) == 25 and decode_address[0] == 0x41:
+                    ret = decode_address[-4:] == sha256(sha256(decode_address[:-4]).digest()).digest()[:4]
+        except Exception:
+            ret = False
+
+        return ret
+
+
 class TW_Account(Item):
     pass
 
@@ -678,6 +693,8 @@ xrp_wallet_regex = r"(r[1-9A-HJ-NP-Za-km-z]{24,34})"
 
 bnb_wallet_regex = r"(bnb[a-zA-Z0-9]{39})"
 
+tron_wallet_regex = r"(T[a-km-zA-HJ-NP-Z1-9]{33})"
+
 bitname_domain_regex = r"(?:[a-zA-Z0-9]+\.)+bit"
 
 tw_account_regex = r"[^a-zA-Z0-9]@([a-zA-Z0-9_]{3,15})"
@@ -954,6 +971,7 @@ dash_wallet_pattern = re.compile(dash_wallet_regex)
 dot_wallet_pattern = re.compile(dot_wallet_regex)
 xrp_wallet_pattern = re.compile(xrp_wallet_regex)
 bnb_wallet_pattern = re.compile(bnb_wallet_regex)
+tron_wallet_pattern = re.compile(tron_wallet_regex)
 
 email_pattern = re.compile(email_regex)
 iban_address_pattern = re.compile(iban_address_regex)
@@ -1028,6 +1046,7 @@ class reStalker:
         dot_wallet=False,
         xrp_wallet=False,
         bnb_wallet=False,
+        trx_wallet=False,
         credit_card=False,
         bin_number=False,
         ccn_number=False,
@@ -1091,6 +1110,7 @@ class reStalker:
         self.dot_wallet = dot_wallet or all
         self.xrp_wallet = xrp_wallet or all
         self.bnb_wallet = bnb_wallet or all
+        self.trx_wallet = trx_wallet or all
 
         self.credit_card = credit_card or all
         self.bin_number = bin_number or all
@@ -1698,6 +1718,14 @@ class reStalker:
                     address=bnb_wallet
                 ):
                     yield BNB_Wallet(value=bnb_wallet)
+
+        if self.trx_wallet:
+            for match in tron_wallet_pattern.finditer(body):
+                trx_wallet = match.group().rstrip(".,;")
+                if is_valid_context(body, trx_wallet, match.start(), match.end()) and TRX_Wallet.isvalid(
+                    address=trx_wallet
+                ):
+                    yield TRX_Wallet(value=trx_wallet)
 
         if self.credit_card:
             for match in all_card_pattern.finditer(body):
