@@ -222,7 +222,7 @@ def sample_monero_addresses():
 
 
 @pytest.fixture
-def sample_tron_addresses():
+def sample_trx_addresses():
     return """
     TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
     TLa2f6VPqDgRE67v1736s7bJ8Ray5wYjU7
@@ -610,16 +610,16 @@ def test_monero_address_validation(sample_monero_addresses):
     assert all(len(str(wallet).split("(")[1][:-1]) >= 95 for wallet in xmr_wallets)
 
 
-def test_tron_address_validation(sample_tron_addresses):
+def test_trx_address_validation(sample_trx_addresses):
     stalker = reStalker(use_ner=False, trx_wallet=True)
-    results = list(stalker.parse(sample_tron_addresses))
+    results = list(stalker.parse(sample_trx_addresses))
 
     trx_wallets = [r for r in results if isinstance(r, TRX_Wallet)]
     assert len(trx_wallets) == 3
     assert all(TRX_Wallet.isvalid(str(wallet).split("(")[1][:-1]) for wallet in trx_wallets)
 
 
-def test_tron_address_rejects_invalid():
+def test_trx_address_rejects_invalid():
     assert not TRX_Wallet.isvalid("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6X")
     assert not TRX_Wallet.isvalid("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa")
     assert not TRX_Wallet.isvalid("0x742d35Cc6634C0532925a3b844Bc454e4438f44e")

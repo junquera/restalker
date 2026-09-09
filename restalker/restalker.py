@@ -693,7 +693,7 @@ xrp_wallet_regex = r"(r[1-9A-HJ-NP-Za-km-z]{24,34})"
 
 bnb_wallet_regex = r"(bnb[a-zA-Z0-9]{39})"
 
-tron_wallet_regex = r"(T[a-km-zA-HJ-NP-Z1-9]{33})"
+trx_wallet_regex = r"(T[a-km-zA-HJ-NP-Z1-9]{33})"
 
 bitname_domain_regex = r"(?:[a-zA-Z0-9]+\.)+bit"
 
@@ -971,7 +971,7 @@ dash_wallet_pattern = re.compile(dash_wallet_regex)
 dot_wallet_pattern = re.compile(dot_wallet_regex)
 xrp_wallet_pattern = re.compile(xrp_wallet_regex)
 bnb_wallet_pattern = re.compile(bnb_wallet_regex)
-tron_wallet_pattern = re.compile(tron_wallet_regex)
+trx_wallet_pattern = re.compile(trx_wallet_regex)
 
 email_pattern = re.compile(email_regex)
 iban_address_pattern = re.compile(iban_address_regex)
@@ -1720,7 +1720,7 @@ class reStalker:
                     yield BNB_Wallet(value=bnb_wallet)
 
         if self.trx_wallet:
-            for match in tron_wallet_pattern.finditer(body):
+            for match in trx_wallet_pattern.finditer(body):
                 trx_wallet = match.group().rstrip(".,;")
                 if is_valid_context(body, trx_wallet, match.start(), match.end()) and TRX_Wallet.isvalid(
                     address=trx_wallet
